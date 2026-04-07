@@ -1,0 +1,4036 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Rotas Exclusivas</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <style>
+        .small-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: .03em;
+            color: #6c757d;
+        }
+
+        #modal-itinerario .modal-body,
+        #modal-itinerario-rotas .modal-body {
+            max-height: calc(80vh - 120px);
+            overflow-y: auto;
+        }
+
+        .select2-container--default .select2-selection--multiple {
+            background-color: #1b1f24;
+            border-color: #343a40;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #343a40;
+            border-color: #495057;
+        }
+
+        .badge-itinerario {
+            font-size: 0.75rem;
+        }
+
+        .table-itinerarios td {
+            vertical-align: middle;
+        }
+
+        .table-rotas-itinerario td {
+            vertical-align: middle;
+        }
+
+        /* Modal lateral (slide da direita para a esquerda) - MAIS LARGO E EM TELA CHEIA */
+        .modal.modal-slide-right .modal-dialog {
+            position: fixed;
+            top: 0;
+            right: 0;
+            margin: 0;
+            height: 100%;
+            max-width: 900px;
+            width: 100%;
+            transform: translateX(100%);
+            transition: transform .3s ease-out;
+        }
+
+        .modal.modal-slide-right.show .modal-dialog {
+            transform: translateX(0);
+        }
+
+        .modal.modal-slide-right .modal-content {
+            height: 100%;
+            border-radius: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .modal.modal-slide-right .modal-body {
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        @media (max-width: 767.98px) {
+            .modal.modal-slide-right .modal-dialog {
+                max-width: 100%;
+            }
+        }
+
+        #mapa-rota-alunos {
+            width: 100%;
+            height: 380px;
+            background: #111;
+            border-radius: .25rem;
+        }
+
+        .resumo-trajeto-container {
+            border-radius: .25rem;
+            background-color: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .resumo-trajeto-itens>div {
+            margin-right: 1.75rem;
+            margin-bottom: .35rem;
+        }
+
+        .resumo-trajeto-itens strong {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Rotas escolares exclusivas</h2>
+                                <p class="text-muted mb-0">
+                                    Gerencie rotas exclusivas (alunos com deficiência, busca em casa usando a
+                                    localização do aluno).
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- RESUMO RÁPIDO -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Total de itinerários</span>
+                                        <h3 class="mb-0" id="resumo-total-itinerarios">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Escolas atendidas</span>
+                                        <h3 class="mb-0" id="resumo-escolas-atendidas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Zoneamentos usados</span>
+                                        <h3 class="mb-0" id="resumo-zoneamentos-usados">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Média de escolas / itinerário</span>
+                                        <h3 class="mb-0" id="resumo-media-escolas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <!-- RESUMO FROTA / ROTAS -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Rotas geradas</span>
+                                        <h3 class="mb-0" id="resumo-total-rotas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Rotas com veículo</span>
+                                        <h3 class="mb-0" id="resumo-rotas-com-veiculo">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Rotas sem veículo</span>
+                                        <h3 class="mb-0" id="resumo-rotas-sem-veiculo">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Empresas responsáveis</span>
+                                        <h3 class="mb-0" id="resumo-total-empresas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6 class="mb-2">Tipos de veículos em uso</h6>
+                                                <div id="resumo-tipos-veiculos" class="small text-muted">—</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6 class="mb-2">Rotas por empresa</h6>
+                                                <div id="resumo-rotas-por-empresa" class="small text-muted">—</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE ITINERÁRIOS -->
+                        <div class="row">
+                            <div class="col-12 my-4">
+                                <div class="d-flex mb-2 align-items-center">
+                                    <div>
+                                        <h2 class="h4 mb-1">Itinerários cadastrados</h2>
+                                        <p class="mb-0 text-muted">
+                                            Cada itinerário agrupa escolas e zoneamentos que serão utilizados na
+                                            geração de rotas escolares.
+                                        </p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <button class="btn btn-primary" type="button" id="btn-novo-itinerario">
+                                            Novo itinerário +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col-md-6">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-itinerarios"
+                                                                class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control"
+                                                                id="search-itinerarios"
+                                                                placeholder="Pesquisar por escola ou zoneamento">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0 table-itinerarios"
+                                                id="tabela-itinerarios">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width:70px;">ID</th>
+                                                        <th>Zoneamentos</th>
+                                                        <th>Escolas</th>
+                                                        <th style="width:130px;">Tipo</th>
+                                                        <th style="width:150px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-itinerarios"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de itinerários" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-itinerarios">
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL CADASTRO/EDIÇÃO DE ITINERÁRIO -->
+            <div class="modal fade" id="modal-itinerario" tabindex="-1" role="dialog"
+                aria-labelledby="modalItinerarioLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-itinerario" novalidate>
+                            <input type="hidden" id="itinerario-id">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalItinerarioLabel">Novo itinerário</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small-label">Composição do itinerário</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="itinerario-escolas">
+                                                Escolas do itinerário
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <select id="itinerario-escolas" class="form-control" multiple required>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Selecione uma ou mais escolas. Os zoneamentos disponíveis
+                                                serão carregados com base nas escolas escolhidas.
+                                            </small>
+                                        </div>
+
+                                        <div class="form-group mb-0">
+                                            <label for="itinerario-zoneamentos">
+                                                Zoneamentos utilizados
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <select id="itinerario-zoneamentos" class="form-control" multiple required>
+                                            </select>
+                                            <small class="form-text text-muted">
+                                                Somente serão listados zoneamentos associados às escolas
+                                                selecionadas.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar itinerário</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL ROTAS ESCOLARES DO ITINERÁRIO -->
+            <div class="modal fade" id="modal-itinerario-rotas" tabindex="-1" role="dialog"
+                aria-labelledby="modalItinerarioRotasLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalItinerarioRotasLabel">
+                                Rotas escolares do itinerário <span id="rotas-itinerario-id"></span>
+                            </h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="d-flex mb-3 align-items-center">
+                                <div>
+                                    <span class="small-label d-block mb-1">Rotas escolares</span>
+                                    <p class="mb-0 text-muted">
+                                        Rotas geradas a partir da combinação de escolas e zoneamentos deste itinerário.
+                                    </p>
+                                </div>
+                                <div class="ml-auto">
+                                    <button type="button" class="btn btn-primary" id="btn-gerar-rotas-itinerario">
+                                        Gerar rotas para este itinerário
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm">
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-hover mb-0 table-rotas-itinerario"
+                                            id="tabela-itinerario-rotas">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Nome</th>
+                                                    <th>Veículo</th>
+                                                    <th>Empresa / Instituição</th>
+                                                    <th style="width:120px;">Capacidade</th>
+                                                    <th style="width:90px;">Manhã</th>
+                                                    <th style="width:90px;">Tarde</th>
+                                                    <th style="width:90px;">Noite</th>
+                                                    <th style="width:90px;">Integral</th>
+                                                    <th style="width:160px;">Quantidade de Paradas</th>
+
+                                                    <th style="width:70px;" class="text-right">Ações</th>
+                                                </tr>
+                                            </thead>
+
+                                            <tbody id="tbody-itinerario-rotas"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- MODAL: MODO DE GERAÇÃO DE ROTAS DO ITINERÁRIO -->
+            <div class="modal fade" id="modal-gerar-rotas-modo" tabindex="-1" role="dialog"
+                aria-labelledby="modalGerarRotasModoTitulo" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalGerarRotasModoTitulo">Gerar rotas do itinerário</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p class="text-muted mb-3">
+                                Em rotas exclusivas, mesmo com vagas no veículo, adicionar muitos alunos pode deixar o
+                                trajeto demorado.
+                                Escolha como deseja gerar as rotas:
+                            </p>
+
+                            <div class="custom-control custom-radio mb-2">
+                                <input type="radio" id="modo-alocacao-distribuir" name="modo-alocacao"
+                                    class="custom-control-input" value="distribuir" checked>
+                                <label class="custom-control-label" for="modo-alocacao-distribuir">
+                                    Distribuir alunos entre os veículos (prioriza rotas mais curtas)
+                                </label>
+                                <small class="form-text text-muted">
+                                    Cria mais rotas e adiciona cada aluno ao veículo com menos alunos no turno dele
+                                    (respeitando a lotação).
+                                </small>
+                            </div>
+
+                            <div class="custom-control custom-radio">
+                                <input type="radio" id="modo-alocacao-unificar" name="modo-alocacao"
+                                    class="custom-control-input" value="unificar">
+                                <label class="custom-control-label" for="modo-alocacao-unificar">
+                                    Unificar / concentrar alunos (usa menos veículos)
+                                </label>
+                                <small class="form-text text-muted">
+                                    Tenta aproveitar ao máximo a capacidade dos veículos antes de abrir novas rotas.
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="btn-confirmar-gerar-rotas">Gerar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: TROCAR VEÍCULO DA ROTA -->
+            <div class="modal fade" id="modal-trocar-veiculo" tabindex="-1" role="dialog"
+                aria-labelledby="modalTrocarVeiculoTitulo" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalTrocarVeiculoTitulo">Trocar veículo</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-2 text-muted small" id="troca-veiculo-contexto"></div>
+                            <div class="form-group">
+                                <label for="troca-veiculo-select">Novo veículo</label>
+                                <select class="form-control" id="troca-veiculo-select" style="width:100%">
+                                    <option value="">Carregando...</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    Você pode selecionar "Sem veículo" para desassociar o veículo da rota.
+                                </small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="btn-confirmar-troca-veiculo">
+                                Salvar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <div class="modal fade" id="modal-preview-geracao-rotas" tabindex="-1" role="dialog"
+                aria-labelledby="modalPreviewGeracaoRotasTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalPreviewGeracaoRotasTitulo">Revisar inclusão de alunos</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row mb-3" id="preview-geracao-resumo"></div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm" id="tabela-preview-geracao-rotas">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Aluno</th>
+                                            <th>Turno</th>
+                                            <th>Necessidade</th>
+                                            <th>Rota destino</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-preview-geracao-rotas"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="btn-aplicar-geracao-rotas">Aplicar
+                                geração</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: TRANSFERIR ALUNO ENTRE ROTAS -->
+            <div class="modal fade" id="modal-transferir-aluno" tabindex="-1" role="dialog"
+                aria-labelledby="modalTransferirAlunoLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalTransferirAlunoLabel">Transferir aluno</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="alert alert-light border mb-3">
+                                <div><strong>Aluno(s):</strong> <span id="transfer-aluno-nome">—</span></div>
+                                <div class="small text-muted">
+                                    <span><strong>Origem:</strong> <span id="transfer-rota-origem">—</span></span>
+                                    <span class="ml-3"><strong>Turno:</strong> <span id="transfer-turno">—</span></span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="transfer-rota-destino">Rota destino</label>
+                                <select class="form-control" id="transfer-rota-destino"></select>
+                                <small class="text-muted" id="transfer-ajuda">Se a rota destino estiver lotada, será
+                                    necessário escolher um aluno dela para trocar na transferência individual. Em lote,
+                                    a transferência exige vagas suficientes.</small>
+                            </div>
+
+                            <div id="transfer-swap-section" class="d-none">
+                                <hr>
+                                <div class="form-group mb-1">
+                                    <label for="transfer-aluno-troca">Aluno da rota destino para trocar</label>
+                                    <select class="form-control" id="transfer-aluno-troca"></select>
+                                </div>
+                                <small class="text-muted">Selecione um aluno da rota destino (mesmo turno) para voltar
+                                    para a rota de origem.</small>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary"
+                                id="btn-confirmar-transferencia">Transferir</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAIS GLOBAIS DE SISTEMA -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL LATERAL: ALUNOS POR ROTA E TURNO -->
+            <div class="modal fade modal-slide-right" id="modal-rota-alunos" tabindex="-1" role="dialog"
+                aria-labelledby="modalRotaAlunosTitulo" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+                            <div>
+                                <h5 class="modal-title" id="modalRotaAlunosTitulo">
+                                    Alunos da rota <span id="detalhe-rota-nome"></span>
+                                </h5>
+                                <small class="text-muted">
+                                    Turno: <span id="detalhe-rota-turno"></span>
+                                </small>
+                            </div>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            <!-- MAPA DO TRAJETO -->
+                            <div class="mb-3">
+                                <span class="small-label d-block mb-2">Mapa do trajeto</span>
+                                <div id="mapa-rota-alunos"></div>
+                                <small class="form-text text-muted mt-1">
+                                    Trajeto otimizado entre a garagem do fornecedor (quando informada),
+                                    pontos de parada e a escola de destino.
+                                </small>
+                            </div>
+
+                            <!-- RESUMO DO TRAJETO -->
+                            <div class="resumo-trajeto-container mb-3">
+                                <div class="card-body py-2">
+                                    <span class="small-label d-block mb-2">Resumo do trajeto</span>
+                                    <div class="d-flex flex-wrap resumo-trajeto-itens">
+                                        <div>
+                                            <strong>Distância:</strong>
+                                            <span id="rota-alunos-distancia">–</span>
+                                        </div>
+                                        <div>
+                                            <strong>Duração estimada:</strong>
+                                            <span id="rota-alunos-duracao">–</span>
+                                        </div>
+                                        <div>
+                                            <strong>Escola:</strong>
+                                            <span id="rota-alunos-escola">–</span>
+                                        </div>
+                                        <div>
+                                            <strong>Fornecedor:</strong>
+                                            <span id="rota-alunos-fornecedor">–</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- LISTA DE ALUNOS -->
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <span class="small-label d-block mb-0">Alunos deste turno</span>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary mr-2"
+                                            id="btn-limpar-selecao-alunos" disabled>Limpar seleção</button>
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                            id="btn-transferir-selecionados" disabled>Transferir selecionados</button>
+                                    </div>
+                                </div>
+                                <div class="small text-muted mb-2" id="resumo-selecao-alunos">Nenhum aluno selecionado.
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-striped mb-0">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th style="width:42px;"><input type="checkbox"
+                                                        id="check-todos-alunos-turno"></th>
+                                                <th style="width:70px;">ID</th>
+                                                <th>Nome</th>
+                                                <th>Telefone</th>
+                                                <th>Ponto de parada (endereço)</th>
+                                                <th>Escola</th>
+                                                <th style="width:170px;">Deficiência</th>
+                                                <th style="width:120px;" class="text-right">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lista-rota-alunos-body">
+                                            <!-- preenchido via JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Fechar</button>
+                            <button type="button" class="btn btn-primary" id="btn-salvar-trajeto-rota">
+                                Salvar trajeto desta rota
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+
+    <!-- Modal: Associar motorista -->
+    <div class="modal fade" id="modal-associar-motorista" tabindex="-1" role="dialog"
+        aria-labelledby="modalAssociarMotoristaTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAssociarMotoristaTitulo">Associar motorista</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label for="assoc-motorista-select">Motorista</label>
+                    <select class="form-control" id="assoc-motorista-select" style="width:100%"></select>
+                    <small class="text-muted d-block mt-2">
+                        Dica: digite para filtrar rapidamente.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirmar-assoc-motorista">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Associar monitor -->
+    <div class="modal fade" id="modal-associar-monitor" tabindex="-1" role="dialog"
+        aria-labelledby="modalAssociarMonitorTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAssociarMonitorTitulo">Associar monitores</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <label for="assoc-monitor-select">Monitores</label>
+                    <select class="form-control" id="assoc-monitor-select" style="width:100%" multiple></select>
+                    <small class="text-muted d-block mt-2">
+                        Dica: digite para filtrar rapidamente.
+                    </small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirmar-assoc-monitor">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/d3.min.js"></script>
+    <script src="../../js/topojson.min.js"></script>
+    <script src="../../js/datamaps.all.min.js"></script>
+    <script src="../../js/datamaps-zoomto.js"></script>
+    <script src="../../js/datamaps.custom.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAw5m0VNubftWh7FO5yJ8OeENkLMpAFcU0&language=pt-BR"></script>
+
+    <script>
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+
+        function formatarDeficienciaAluno(valor) {
+            var v = (valor == null ? '' : String(valor)).trim();
+            return v ? v : 'Sem Deficiência';
+        }
+        function formatarEnderecoPonto(aluno) {
+            if (!aluno) return '—';
+            if (aluno.ponto_endereco) return aluno.ponto_endereco;
+            var partes = [];
+            if (aluno.ponto_logradouro) partes.push(aluno.ponto_logradouro);
+            if (aluno.ponto_numero) partes.push(aluno.ponto_numero);
+            if (aluno.ponto_complemento) partes.push(aluno.ponto_complemento);
+            if (partes.length) return partes.join(', ');
+            if (aluno.ponto_bairro) return aluno.ponto_bairro;
+            return '—';
+        }
+        function formatarEscolaAluno(aluno) {
+            if (!aluno) return '—';
+            return aluno.escola_nome || (aluno.escola && aluno.escola.nome) || '—';
+        }
+
+    </script>
+
+    <script>
+        // =========================
+        // AUTH / MULTI-TENANT (JWT)
+        // =========================
+        function getAuthToken() {
+            // 1) chaves mais comuns
+            const direct =
+                localStorage.getItem('token') ||
+                localStorage.getItem('authToken') ||
+                localStorage.getItem('access_token') ||
+                localStorage.getItem('accessToken') ||
+                localStorage.getItem('jwt') ||
+                localStorage.getItem('setrane_token') ||
+                sessionStorage.getItem('token') ||
+                sessionStorage.getItem('authToken') ||
+                sessionStorage.getItem('access_token') ||
+                sessionStorage.getItem('accessToken') ||
+                sessionStorage.getItem('jwt') ||
+                sessionStorage.getItem('setrane_token');
+
+            if (direct) return direct;
+
+            // 2) fallback: procura qualquer valor que pareça um JWT em localStorage/sessionStorage
+            const jwtLike = /^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/;
+
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    const v = k ? localStorage.getItem(k) : '';
+                    if (v && jwtLike.test(v)) return v;
+                }
+            } catch { }
+
+            try {
+                for (let i = 0; i < sessionStorage.length; i++) {
+                    const k = sessionStorage.key(i);
+                    const v = k ? sessionStorage.getItem(k) : '';
+                    if (v && jwtLike.test(v)) return v;
+                }
+            } catch { }
+
+            return '';
+        }
+
+        // Wrapper: só injeta Authorization quando a URL é /api/...
+
+        // ==============================
+        // Troca de veículo (Ações ⋯)
+        // ==============================
+        var stRotaTrocaVeiculo = null;
+        var stCacheVeiculosTroca = null;
+
+        function stGetApiRotasBase() {
+            try {
+                var p = String(window.location.pathname || '');
+                if (p.indexOf('/rotas-exclusivas') !== -1) return '/api/rotas-exclusivas';
+            } catch (e) { }
+            // municipal/escolar
+            return '/api/rotas-escolares';
+        }
+
+        function stLabelVeiculo(veic) {
+            if (!veic) return 'Sem veículo';
+            var placa = (veic.placa || veic.veiculo_placa || '').toString().trim();
+            var modelo = (veic.modelo || veic.prefixo || veic.marca || veic.veiculo_nome || veic.nome || veic.descricao || '').toString().trim();
+            var out = '';
+            if (placa) out += placa;
+            if (modelo) out += (out ? ' — ' : '') + modelo;
+            return out || 'Sem veículo';
+        }
+
+        function stAbrirModalTrocarVeiculo(rota) {
+            stRotaTrocaVeiculo = rota || null;
+
+            var titulo = 'Trocar veículo';
+            var desc = (rota && (rota.nome || rota.descricao)) ? (rota.nome || rota.descricao) : (rota && rota.id ? ('Rota #' + rota.id) : 'Rota');
+            $('#modalTrocarVeiculoTitulo').text(titulo + ' • ' + desc);
+
+            var atual = stLabelVeiculo({ nome: rota?.veiculo_nome || rota?.veiculo || '', placa: rota?.veiculo_placa || rota?.placa || '' });
+            $('#troca-veiculo-contexto').text('Veículo atual: ' + atual);
+
+            stCarregarVeiculosTroca()
+                .then(function () {
+                    stPreencherSelectTrocaVeiculo(rota);
+                    $('#modal-trocar-veiculo').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err?.message || 'Não foi possível carregar os veículos.');
+                });
+        }
+
+        function stCarregarVeiculosTroca() {
+            if (Array.isArray(stCacheVeiculosTroca)) return Promise.resolve(stCacheVeiculosTroca);
+
+            return apiFetch('/api/veiculos')
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar veículos. Status: ' + resp.status);
+                    return resp.json();
+                })
+                .then(function (payload) {
+                    // aceita: array direto OU {data:[]}
+                    var lista = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
+                    stCacheVeiculosTroca = lista;
+                    return lista;
+                });
+        }
+
+        function stPreencherSelectTrocaVeiculo(rota) {
+            var sel = document.getElementById('troca-veiculo-select');
+            if (!sel) return;
+
+            sel.innerHTML = '';
+
+            var optNenhum = document.createElement('option');
+            optNenhum.value = '';
+            optNenhum.textContent = 'Sem veículo';
+            sel.appendChild(optNenhum);
+
+            (stCacheVeiculosTroca || []).forEach(function (v) {
+                var opt = document.createElement('option');
+                opt.value = String(v.id);
+                opt.textContent = stLabelVeiculo(v);
+                sel.appendChild(opt);
+            });
+
+            var atualId = rota?.veiculo_id != null ? String(rota.veiculo_id) : '';
+            if (atualId) sel.value = atualId;
+            else sel.value = '';
+
+            // Select2 (pesquisa por placa/modelo digitando)
+            try {
+                if (window.jQuery && jQuery.fn && jQuery.fn.select2) {
+                    var $sel = jQuery('#troca-veiculo-select');
+                    if ($sel.length) {
+                        // evita re-init duplicado
+                        if ($sel.data('select2')) $sel.select2('destroy');
+                        $sel.select2({
+                            width: '100%',
+                            dropdownParent: jQuery('#modal-trocar-veiculo'),
+                            placeholder: 'Digite a placa para filtrar',
+                            allowClear: true,
+                            minimumResultsForSearch: 0
+                        });
+                    }
+                }
+            } catch (e) { }
+        }
+
+        function stSalvarTrocaVeiculo() {
+            if (!stRotaTrocaVeiculo || !stRotaTrocaVeiculo.id) return;
+
+            var sel = document.getElementById('troca-veiculo-select');
+            var novoId = sel ? String(sel.value || '') : '';
+            var veiculoIdNum = novoId ? Number(novoId) : null;
+
+            var rotaId = Number(stRotaTrocaVeiculo.id);
+            var base = stGetApiRotasBase();
+
+            var $btn = $('#btn-confirmar-troca-veiculo');
+            $btn.prop('disabled', true).text('Salvando...');
+
+            // Regra do sistema: ao trocar, o veículo deve sair da rota antiga (conflitante)
+            // e esta rota passa a usar o veículo. A rota antiga permanece com a mesma empresa,
+            // apenas fica sem veículo.
+            apiFetch(base + '/' + rotaId + '/veiculo', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    veiculo_id: veiculoIdNum,
+                    transferir_conflitante: true
+                })
+            })
+                .then(function (resp) {
+                    if (resp.ok) return resp.json();
+
+                    // Conflito de veículo no mesmo turno (trigger / validação server-side)
+                    if (resp.status === 409) {
+                        return resp.json().catch(function () { return null; }).then(function (p) {
+                            if (p && p.conflito && Array.isArray(p.rotas_conflitantes) && p.rotas_conflitantes.length) {
+                                var lista = p.rotas_conflitantes
+                                    .map(function (r) { return (r.id ? ('#' + r.id) : '') + (r.nome ? (' - ' + r.nome) : ''); })
+                                    .join('<br>');
+                                return confirmarAcaoSistema(
+                                    'Conflito de veículo',
+                                    'Este veículo já está em outra rota no mesmo turno:<br><br>' + lista +
+                                    '<br><br>Deseja transferir o veículo para esta rota?<br>' +
+                                    '<small>As rotas conflitantes ficarão com a mesma empresa/fornecedor, porém sem veículo atribuído.</small>',
+                                    'Transferir'
+                                ).then(function (ok) {
+                                    if (!ok) throw new Error(p.error || 'Operação cancelada.');
+                                    return apiFetch(base + '/' + rotaId + '/veiculo', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ veiculo_id: veiculoIdNum, transferir_conflitante: true })
+                                    }).then(function (r2) {
+                                        if (!r2.ok) {
+                                            return r2.json().catch(function () { return null; }).then(function (p2) {
+                                                throw new Error(p2?.error || ('Erro ao transferir. Status: ' + r2.status));
+                                            });
+                                        }
+                                        return r2.json();
+                                    });
+                                });
+                            }
+                            throw new Error(p?.error || 'Conflito ao atribuir veículo.');
+                        });
+                    }
+
+                    return resp.json().catch(function () { return null; }).then(function (p) {
+                        var msg = p?.error || ('Erro ao salvar. Status: ' + resp.status);
+                        throw new Error(msg);
+                    });
+                })
+                .then(function (payload) {
+                    // Atualiza o objeto em memória (se existir) e re-renderiza
+                    var veic = payload?.veiculo || null;
+
+                    stRotaTrocaVeiculo.veiculo_id = veiculoIdNum;
+                    stRotaTrocaVeiculo.veiculo_nome = veic?.nome || '';
+                    stRotaTrocaVeiculo.veiculo_placa = veic?.placa || '';
+
+                    $('#modal-trocar-veiculo').modal('hide');
+                    renderizarTabelaRotasItinerario();
+                    mostrarMensagemSistema('Sucesso', 'Veículo atualizado com sucesso.');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err?.message || 'Não foi possível trocar o veículo.');
+                })
+                .finally(function () {
+                    $btn.prop('disabled', false).text('Salvar');
+                });
+        }
+
+        // botão salvar
+        $(document).off('click', '#btn-confirmar-troca-veiculo').on('click', '#btn-confirmar-troca-veiculo', function (ev) {
+            ev.preventDefault();
+            stSalvarTrocaVeiculo();
+        });
+
+
+        // ==============================
+        // Associação de motorista / monitor (Ações ⋯)
+        // ==============================
+        var stRotaAssocMotorista = null;
+        var stRotaAssocMonitor = null;
+        var stCacheMotoristas = null;
+        var stCacheMonitores = null;
+
+        function stGetApiRotasEscolaresBase() {
+            return '/api/rotas-exclusivas';
+        }
+
+        function stCarregarLookupMotoristas() {
+            if (Array.isArray(stCacheMotoristas)) return Promise.resolve(stCacheMotoristas);
+            return apiFetch(stGetApiRotasEscolaresBase() + '/lookup/motoristas')
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar motoristas. Status: ' + resp.status);
+                    return resp.json();
+                })
+                .then(function (lista) {
+                    stCacheMotoristas = Array.isArray(lista) ? lista : [];
+                    return stCacheMotoristas;
+                });
+        }
+
+        function stCarregarLookupMonitores() {
+            if (Array.isArray(stCacheMonitores)) return Promise.resolve(stCacheMonitores);
+            return apiFetch(stGetApiRotasEscolaresBase() + '/lookup/monitores')
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar monitores. Status: ' + resp.status);
+                    return resp.json();
+                })
+                .then(function (lista) {
+                    stCacheMonitores = Array.isArray(lista) ? lista : [];
+                    return stCacheMonitores;
+                });
+        }
+
+        function stCarregarAssociacoesDaRota(rotaId) {
+            return apiFetch(stGetApiRotasEscolaresBase() + '/' + rotaId + '/associacoes')
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar associações. Status: ' + resp.status);
+                    return resp.json();
+                });
+        }
+
+        function stPreencherSelectAssoc(selId, lista, atualId, modalId, placeholder, multiple) {
+            var sel = document.getElementById(selId);
+            if (!sel) return;
+
+            var selecionados = [];
+            if (Array.isArray(atualId)) {
+                selecionados = atualId.map(function (x) { return String(x); });
+            } else if (atualId != null && atualId !== '') {
+                selecionados = [String(atualId)];
+            }
+
+            sel.innerHTML = '';
+            if (multiple) {
+                sel.setAttribute('multiple', 'multiple');
+            } else {
+                sel.removeAttribute('multiple');
+                var optNenhum = document.createElement('option');
+                optNenhum.value = '';
+                optNenhum.textContent = 'Nenhum';
+                sel.appendChild(optNenhum);
+            }
+
+            (lista || []).forEach(function (x) {
+                var opt = document.createElement('option');
+                opt.value = String(x.id);
+                opt.textContent = x.nome || ('#' + x.id);
+                if (selecionados.indexOf(String(x.id)) !== -1) {
+                    opt.selected = true;
+                }
+                sel.appendChild(opt);
+            });
+
+            if (!multiple) {
+                sel.value = selecionados.length ? selecionados[0] : '';
+            }
+
+            try {
+                if (window.jQuery && jQuery.fn && jQuery.fn.select2) {
+                    var $sel = jQuery('#' + selId);
+                    if ($sel.length) {
+                        if ($sel.data('select2')) $sel.select2('destroy');
+                        $sel.select2({
+                            width: '100%',
+                            dropdownParent: jQuery('#' + modalId),
+                            placeholder: placeholder || 'Digite para filtrar',
+                            allowClear: !multiple,
+                            closeOnSelect: !multiple,
+                            multiple: !!multiple,
+                            minimumResultsForSearch: 0
+                        });
+                        if (multiple) {
+                            $sel.val(selecionados).trigger('change');
+                        }
+                    }
+                }
+            } catch (e) { }
+        }
+
+        function stAbrirModalAssociarMotorista(rota) {
+            stRotaAssocMotorista = rota || null;
+            var rotaId = Number(rota?.id || 0);
+            if (!rotaId) return;
+
+            var desc = rota?.nome || rota?.descricao || ('Rota #' + rotaId);
+            $('#modalAssociarMotoristaTitulo').text('Associar motorista • ' + desc);
+
+            Promise.all([stCarregarLookupMotoristas(), stCarregarAssociacoesDaRota(rotaId)])
+                .then(function (arr) {
+                    var lista = arr[0] || [];
+                    var assoc = arr[1] || {};
+                    var atual = assoc?.motorista?.id || null;
+                    stPreencherSelectAssoc('assoc-motorista-select', lista, atual, 'modal-associar-motorista', 'Digite o nome do motorista');
+                    $('#modal-associar-motorista').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err?.message || 'Não foi possível carregar motoristas.');
+                });
+        }
+
+        function stAbrirModalAssociarMonitor(rota) {
+            stRotaAssocMonitor = rota || null;
+            var rotaId = Number(rota?.id || 0);
+            if (!rotaId) return;
+
+            var desc = rota?.nome || rota?.descricao || ('Rota #' + rotaId);
+            $('#modalAssociarMonitorTitulo').text('Associar monitores • ' + desc);
+
+            Promise.all([stCarregarLookupMonitores(), stCarregarAssociacoesDaRota(rotaId)])
+                .then(function (arr) {
+                    var lista = arr[0] || [];
+                    var assoc = arr[1] || {};
+                    var atuais = Array.isArray(assoc?.monitores) ? assoc.monitores.map(function (m) { return m.id; }) : (assoc?.monitor?.id ? [assoc.monitor.id] : []);
+                    stPreencherSelectAssoc('assoc-monitor-select', lista, atuais, 'modal-associar-monitor', 'Digite o nome do monitor', true);
+                    $('#modal-associar-monitor').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err?.message || 'Não foi possível carregar monitores.');
+                });
+        }
+
+        function stSalvarAssocMotorista() {
+            if (!stRotaAssocMotorista || !stRotaAssocMotorista.id) return;
+
+            var rotaId = Number(stRotaAssocMotorista.id);
+            var sel = document.getElementById('assoc-motorista-select');
+            var novoId = sel ? String(sel.value || '') : '';
+            var motoristaIdNum = novoId ? Number(novoId) : null;
+
+            var $btn = $('#btn-confirmar-assoc-motorista');
+            $btn.prop('disabled', true).text('Salvando...');
+
+            apiFetch(stGetApiRotasEscolaresBase() + '/' + rotaId + '/motorista', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ motorista_id: motoristaIdNum })
+            })
+                .then(function (resp) {
+                    return resp.json().catch(function () { return null; }).then(function (p) {
+                        if (!resp.ok) throw new Error(p?.error || ('Erro ao salvar. Status: ' + resp.status));
+                        return p;
+                    });
+                })
+                .then(function (payload) {
+                    // opcional: salva em memória para uso futuro
+                    stRotaAssocMotorista.motorista_id = payload?.motorista?.id || null;
+                    stRotaAssocMotorista.motorista_nome = payload?.motorista?.nome || '';
+                    $('#modal-associar-motorista').modal('hide');
+                    mostrarMensagemSistema('Sucesso', 'Motorista associado com sucesso.');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err?.message || 'Não foi possível salvar o motorista.');
+                })
+                .finally(function () {
+                    $btn.prop('disabled', false).text('Salvar');
+                });
+        }
+
+        function stSalvarAssocMonitor() {
+            if (!stRotaAssocMonitor || !stRotaAssocMonitor.id) return;
+
+            var rotaId = Number(stRotaAssocMonitor.id);
+            var sel = document.getElementById('assoc-monitor-select');
+            var monitorIds = [];
+            if (sel) {
+                monitorIds = Array.from(sel.selectedOptions || [])
+                    .map(function (opt) { return Number(opt.value); })
+                    .filter(function (id) { return Number.isInteger(id) && id > 0; });
+            }
+
+            var $btn = $('#btn-confirmar-assoc-monitor');
+            $btn.prop('disabled', true).text('Salvando...');
+
+            apiFetch(stGetApiRotasEscolaresBase() + '/' + rotaId + '/monitor', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ monitor_ids: monitorIds })
+            })
+                .then(function (resp) {
+                    return resp.json().catch(function () { return null; }).then(function (p) {
+                        if (!resp.ok) throw new Error(p?.error || ('Erro ao salvar. Status: ' + resp.status));
+                        return p;
+                    });
+                })
+                .then(function (payload) {
+                    stRotaAssocMonitor.monitor_ids = Array.isArray(payload?.monitores) ? payload.monitores.map(function (m) { return m.id; }) : [];
+                    stRotaAssocMonitor.monitor_nomes = Array.isArray(payload?.monitores) ? payload.monitores.map(function (m) { return m.nome; }) : [];
+                    $('#modal-associar-monitor').modal('hide');
+                    mostrarMensagemSistema('Sucesso', 'Monitores associados com sucesso.');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err?.message || 'Não foi possível salvar os monitores.');
+                })
+                .finally(function () {
+                    $btn.prop('disabled', false).text('Salvar');
+                });
+        }
+
+        $(document).off('click', '#btn-confirmar-assoc-motorista').on('click', '#btn-confirmar-assoc-motorista', function (ev) {
+            ev.preventDefault();
+            stSalvarAssocMotorista();
+        });
+
+        $(document).off('click', '#btn-confirmar-assoc-monitor').on('click', '#btn-confirmar-assoc-monitor', function (ev) {
+            ev.preventDefault();
+            stSalvarAssocMonitor();
+        });
+
+        function apiFetch(url, options) {
+            options = options || {};
+            const headers = new Headers(options.headers || {});
+
+            const urlStr = String(url);
+            const isApi = urlStr.startsWith('/api/') || urlStr.includes('/api/');
+
+            // garante envio de cookies quando existir sessão/cookie de auth
+            if (isApi && !options.credentials) {
+                options.credentials = 'include';
+            }
+
+            // injeta Bearer se houver token acessível ao JS
+            if (isApi) {
+                const token = getAuthToken();
+                if (token) headers.set('Authorization', 'Bearer ' + token);
+            }
+
+            options.headers = headers;
+            return fetch(url, options);
+        }
+
+        var apiBaseItinerarios = '/api/itinerarios';
+        var PAGE_TIPO_ITINERARIO = 'exclusiva';
+        var apiBaseEscolas = '/api/escolas';
+        // Rotas exclusivas: usar endpoints dedicados (somente alunos com deficiência + parada na casa do aluno)
+        // Ex.: GET /api/rotas-exclusivas/:rotaId/alunos?turno=manha
+        var apiBaseRotas = '/api/rotas-exclusivas';
+
+        var itinerarios = [];
+        var escolas = [];
+        var zoneamentosDisponiveis = [];
+        var rotasItinerario = [];
+        var previewGeracaoRotas = null;
+
+        var paginaAtualItinerarios = 1;
+        var totalPaginasItinerarios = 1;
+        var tamanhoPaginaItinerarios = 20;
+
+        // Estado do modal lateral de alunos
+        var detalhesRotaAtual = {
+            rotaId: null,
+            turno: null,
+            itinerarioId: null
+        };
+
+        // Itinerário atualmente aberto no modal "Rotas do Itinerário"
+        var itinerarioIdAtualNoModalRotas = null;
+
+        function obterEscolasSelecionadasDoItinerario(itinerarioId) {
+            var it = itinerarios.find(function (x) { return x && x.id === itinerarioId; }) || null;
+            if (!it) return [];
+
+            var ids = [];
+            if (Array.isArray(it.escolas)) {
+                ids = it.escolas.map(function (e) { return e && e.id; }).filter(function (v) { return v != null; });
+            } else if (Array.isArray(it.escola_ids)) {
+                ids = it.escola_ids.slice();
+            }
+
+            // Resolve detalhes completos na lista global "escolas" (inclui lat/lng quando disponível)
+            return ids
+                .map(function (id) { return escolas.find(function (e) { return e && e.id === id; }) || { id: id, nome: ('Escola #' + id) }; })
+                .filter(function (e) { return e && e.id != null; });
+        }
+
+        // Estado do último trajeto calculado no mapa (para salvar no banco)
+        var ultimaRotaCalculada = null;
+
+        // Google Maps
+        var mapaRotaAlunos = null;
+        var directionsService = null;
+        var directionsRenderer = null;
+
+        function atualizarResumoItinerarios() {
+            var total = itinerarios.length;
+
+            var setEscolas = new Set();
+            var setZoneamentos = new Set();
+            var somaEscolas = 0;
+
+            itinerarios.forEach(function (it) {
+                var escolasIds = [];
+
+                if (Array.isArray(it.escola_ids)) {
+                    escolasIds = it.escola_ids;
+                } else if (Array.isArray(it.escolas)) {
+                    escolasIds = it.escolas.map(function (e) { return e.id; });
+                }
+
+                var zoneamentosIds = [];
+
+                if (Array.isArray(it.zoneamento_ids)) {
+                    zoneamentosIds = it.zoneamento_ids;
+                } else if (Array.isArray(it.zoneamentos)) {
+                    zoneamentosIds = it.zoneamentos.map(function (z) { return z.id; });
+                }
+
+                escolasIds.forEach(function (id) { setEscolas.add(id); });
+                zoneamentosIds.forEach(function (id) { setZoneamentos.add(id); });
+                somaEscolas += escolasIds.length;
+            });
+
+            var totalEscolas = setEscolas.size;
+            var totalZoneamentos = setZoneamentos.size;
+            var mediaEscolas = total > 0 ? (somaEscolas / total).toFixed(1) : '0';
+
+            $('#resumo-total-itinerarios').text(total);
+            $('#resumo-escolas-atendidas').text(totalEscolas);
+            $('#resumo-zoneamentos-usados').text(totalZoneamentos);
+            $('#resumo-media-escolas').text(mediaEscolas);
+        }
+
+
+        function classificarTipoVeiculo(rota) {
+            var nome = (rota.veiculo_nome || '').toString().toUpperCase();
+
+            if (nome.includes('VAN')) return 'Van';
+            if (nome.includes('MICRO')) return 'Micro-ônibus';
+            if (nome.includes('MINIBUS') || nome.includes('MINI BUS')) return 'Micro-ônibus';
+            if (nome.includes('ONIBUS') || nome.includes('ÔNIBUS') || nome.includes('BUS')) return 'Ônibus';
+
+            var cap = Number(rota.capacidade || 0);
+            if (!cap || isNaN(cap)) return 'Não informado';
+            if (cap <= 18) return 'Van';
+            if (cap <= 33) return 'Micro-ônibus';
+            return 'Ônibus';
+        }
+
+        async function atualizarResumoFrotaGlobal() {
+            try {
+                // Se não houver itinerários, zera os indicadores
+                if (!Array.isArray(itinerarios) || itinerarios.length === 0) {
+                    $('#resumo-total-rotas').text('0');
+                    $('#resumo-rotas-com-veiculo').text('0');
+                    $('#resumo-rotas-sem-veiculo').text('0');
+                    $('#resumo-total-empresas').text('0');
+                    $('#resumo-tipos-veiculos').html('—');
+                    $('#resumo-rotas-por-empresa').html('—');
+                    return;
+                }
+
+                // Busca rotas de todos os itinerários e agrega
+                var promessas = itinerarios.map(function (it) {
+                    return apiFetch(apiBaseItinerarios + '/' + it.id + '/rotas')
+                        .then(function (r) { return r.ok ? r.json() : []; })
+                        .catch(function () { return []; });
+                });
+
+                var listas = await Promise.all(promessas);
+                var todasRotas = [];
+                listas.forEach(function (arr) {
+                    if (Array.isArray(arr)) todasRotas = todasRotas.concat(arr);
+                });
+
+                var totalRotas = todasRotas.length;
+                var comVeiculo = 0;
+                var semVeiculo = 0;
+
+                var contPorTipo = {};
+                var contPorEmpresa = {};
+
+                todasRotas.forEach(function (r) {
+                    var temVeiculo = !!(r.veiculo_nome || r.veiculo_placa);
+                    if (temVeiculo) comVeiculo++; else semVeiculo++;
+
+                    var tipo = classificarTipoVeiculo(r);
+                    contPorTipo[tipo] = (contPorTipo[tipo] || 0) + 1;
+
+                    var emp = (r.empresa || 'Sem empresa');
+                    contPorEmpresa[emp] = (contPorEmpresa[emp] || 0) + 1;
+                });
+
+                var empresasAtivas = Object.keys(contPorEmpresa).filter(function (k) { return k && k !== 'Sem empresa'; }).length;
+
+                $('#resumo-total-rotas').text(totalRotas);
+                $('#resumo-rotas-com-veiculo').text(comVeiculo);
+                $('#resumo-rotas-sem-veiculo').text(semVeiculo);
+                $('#resumo-total-empresas').text(empresasAtivas);
+
+                function renderListaOrdenada(obj) {
+                    var entries = Object.entries(obj || {});
+                    entries.sort(function (a, b) { return b[1] - a[1]; });
+                    if (entries.length === 0) return '—';
+                    return entries.map(function (kv) {
+                        var nome = kv[0];
+                        var qtd = kv[1];
+                        return '<div class="d-flex justify-content-between"><span>' + nome + '</span><strong>' + qtd + '</strong></div>';
+                    }).join('');
+                }
+
+                $('#resumo-tipos-veiculos').html(renderListaOrdenada(contPorTipo));
+                $('#resumo-rotas-por-empresa').html(renderListaOrdenada(contPorEmpresa));
+            } catch (e) {
+                console.error('Erro ao atualizar resumo de frota', e);
+                // não quebra a página
+            }
+        }
+
+        function atualizarPaginacaoItinerarios() {
+            var ul = document.getElementById('paginacao-itinerarios');
+            if (!ul) return;
+
+            ul.innerHTML = '';
+
+            var liPrev = document.createElement('li');
+            liPrev.className = 'page-item' + (paginaAtualItinerarios <= 1 ? ' disabled' : '');
+            var aPrev = document.createElement('a');
+            aPrev.className = 'page-link';
+            aPrev.href = '#';
+            aPrev.textContent = 'Anterior';
+            aPrev.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualItinerarios > 1) {
+                    irParaPaginaItinerarios(paginaAtualItinerarios - 1);
+                }
+            });
+            liPrev.appendChild(aPrev);
+            ul.appendChild(liPrev);
+
+            var liInfo = document.createElement('li');
+            liInfo.className = 'page-item disabled';
+            var aInfo = document.createElement('a');
+            aInfo.className = 'page-link';
+            aInfo.href = '#';
+            aInfo.textContent = paginaAtualItinerarios + ' / ' + totalPaginasItinerarios;
+            liInfo.appendChild(aInfo);
+            ul.appendChild(liInfo);
+
+            var liNext = document.createElement('li');
+            liNext.className = 'page-item' + (paginaAtualItinerarios >= totalPaginasItinerarios ? ' disabled' : '');
+            var aNext = document.createElement('a');
+            aNext.className = 'page-link';
+            aNext.href = '#';
+            aNext.textContent = 'Próxima';
+            aNext.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualItinerarios < totalPaginasItinerarios) {
+                    irParaPaginaItinerarios(paginaAtualItinerarios + 1);
+                }
+            });
+            liNext.appendChild(aNext);
+            ul.appendChild(liNext);
+        }
+
+        function irParaPaginaItinerarios(pagina) {
+            if (pagina < 1 || pagina > totalPaginasItinerarios) return;
+            paginaAtualItinerarios = pagina;
+            renderizarTabelaItinerarios();
+        }
+
+        function carregarItinerarios() {
+            return apiFetch(apiBaseItinerarios)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar itinerários');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    itinerarios = data || [];
+                    paginaAtualItinerarios = 1;
+                    renderizarTabelaItinerarios();
+                    atualizarResumoItinerarios();
+                    atualizarResumoFrotaGlobal();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de itinerários.');
+                });
+        }
+
+        function nomeEscolaPorId(id) {
+            var esc = escolas.find(function (e) { return e.id === id; });
+            return esc ? esc.nome : ('Escola #' + id);
+        }
+
+        function renderTipoBadge(tipo) {
+            var t = (tipo || 'municipal').toString().trim().toLowerCase();
+            if (t === 'exclusiva') return '<span class="badge badge-danger badge-itinerario">Exclusiva</span>';
+            if (t === 'estadual') return '<span class="badge badge-warning text-dark badge-itinerario">Estadual</span>';
+            return '<span class="badge badge-primary badge-itinerario">Municipal</span>';
+        }
+
+
+        function renderizarTabelaItinerarios() {
+            var tbody = document.getElementById('tbody-itinerarios');
+            if (!tbody) return;
+
+            var termo = ($('#search-itinerarios').val() || '').toLowerCase();
+
+            var filtrados = itinerarios.filter(function (it) {
+                var tipoIt = (it.tipo || 'municipal').toString().trim().toLowerCase();
+                if (tipoIt !== PAGE_TIPO_ITINERARIO) return false;
+                var nomesEscolas = [];
+                var nomesZoneamentos = [];
+
+                if (Array.isArray(it.escolas)) {
+                    nomesEscolas = it.escolas.map(function (e) { return e.nome || ('Escola #' + e.id); });
+                } else if (Array.isArray(it.escola_ids)) {
+                    nomesEscolas = it.escola_ids.map(function (id) { return nomeEscolaPorId(id); });
+                }
+
+                if (Array.isArray(it.zoneamentos)) {
+                    nomesZoneamentos = it.zoneamentos.map(function (z) { return z.nome || ('Zoneamento #' + z.id); });
+                } else if (Array.isArray(it.zoneamento_ids)) {
+                    nomesZoneamentos = it.zoneamento_ids.map(function (id) { return 'Zoneamento #' + id; });
+                }
+
+                var textoBusca = (nomesEscolas.join(' ') + ' ' + nomesZoneamentos.join(' ')).toLowerCase();
+
+                if (termo && textoBusca.indexOf(termo) === -1) return false;
+                return true;
+            });
+
+            totalPaginasItinerarios = Math.max(1, Math.ceil(filtrados.length / tamanhoPaginaItinerarios));
+            if (paginaAtualItinerarios > totalPaginasItinerarios) {
+                paginaAtualItinerarios = totalPaginasItinerarios;
+            }
+            if (paginaAtualItinerarios < 1) {
+                paginaAtualItinerarios = 1;
+            }
+
+            var inicio = (paginaAtualItinerarios - 1) * tamanhoPaginaItinerarios;
+            var fim = inicio + tamanhoPaginaItinerarios;
+            var paginaItens = filtrados.slice(inicio, fim);
+
+            tbody.innerHTML = '';
+
+            paginaItens.forEach(function (it) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', it.id);
+
+                var escolasDisplay = [];
+                var zoneamentosDisplay = [];
+
+                if (Array.isArray(it.escolas)) {
+                    escolasDisplay = it.escolas.map(function (e) { return e.nome || ('Escola #' + e.id); });
+                } else if (Array.isArray(it.escola_ids)) {
+                    escolasDisplay = it.escola_ids.map(function (id) { return nomeEscolaPorId(id); });
+                }
+
+                if (Array.isArray(it.zoneamentos)) {
+                    zoneamentosDisplay = it.zoneamentos.map(function (z) { return z.nome || ('Zoneamento #' + z.id); });
+                } else if (Array.isArray(it.zoneamento_ids)) {
+                    zoneamentosDisplay = it.zoneamento_ids.map(function (id) { return 'Zoneamento #' + id; });
+                }
+
+                var tdId = document.createElement('td');
+                tdId.textContent = it.id;
+                tr.appendChild(tdId);
+
+                var tdZoneamentos = document.createElement('td');
+                if (zoneamentosDisplay.length) {
+                    tdZoneamentos.innerHTML = zoneamentosDisplay
+                        .map(function (nome) {
+                            return '<span class="badge badge-secondary badge-itinerario mr-1 mb-1">' +
+                                nome + '</span>';
+                        })
+                        .join(' ');
+                } else {
+                    tdZoneamentos.innerHTML = '<span class="text-muted">Sem zoneamentos</span>';
+                }
+                tr.appendChild(tdZoneamentos);
+
+                var tdEscolas = document.createElement('td');
+                if (escolasDisplay.length) {
+                    tdEscolas.innerHTML = escolasDisplay
+                        .map(function (nome) {
+                            return '<span class="badge badge-info badge-itinerario mr-1 mb-1">' +
+                                nome + '</span>';
+                        })
+                        .join(' ');
+                } else {
+                    tdEscolas.innerHTML = '<span class="text-muted">Sem escolas</span>';
+                }
+                tr.appendChild(tdEscolas);
+
+                var tdTipo = document.createElement('td');
+                tdTipo.innerHTML = renderTipoBadge(it.tipo);
+                tr.appendChild(tdTipo);
+
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+                btnDrop.appendChild(spanSr);
+
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aRotas = document.createElement('a');
+                aRotas.className = 'dropdown-item action-rotas-itinerario';
+                aRotas.href = '#';
+                aRotas.setAttribute('data-id', it.id);
+                aRotas.textContent = 'Rotas escolares';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-itinerario';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', it.id);
+                aEditar.textContent = 'Ver / editar';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-itinerario';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', it.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aRotas);
+                menu.appendChild(aEditar);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarPaginacaoItinerarios();
+        }
+
+        function preencherSelectEscolas(selectedIds) {
+            selectedIds = selectedIds || [];
+            var $select = $('#itinerario-escolas');
+            if (!$select.length) return;
+
+            var currentVal = selectedIds.length ? selectedIds.map(String) : ($select.val() || []);
+
+            $select.empty();
+
+            escolas.forEach(function (e) {
+                var label = e.id + ' - ' + (e.nome || 'Escola sem nome');
+                $select.append(
+                    $('<option>', { value: e.id, text: label })
+                );
+            });
+
+            if (currentVal.length) {
+                $select.val(currentVal);
+            } else {
+                $select.val(null);
+            }
+
+            $select.trigger('change.select2');
+        }
+
+        function preencherSelectZoneamentos(selectedIds) {
+            selectedIds = selectedIds || [];
+            var $select = $('#itinerario-zoneamentos');
+            if (!$select.length) return;
+
+            var currentVal = selectedIds.length ? selectedIds.map(String) : ($select.val() || []);
+
+            $select.empty();
+
+            zoneamentosDisponiveis.forEach(function (z) {
+                var label = (z.nome || ('Zoneamento #' + z.id)) +
+                    (z.tipo_zona ? ' (' + z.tipo_zona + ')' : '');
+                $select.append(
+                    $('<option>', { value: z.id, text: label })
+                );
+            });
+
+            if (currentVal.length) {
+                $select.val(currentVal);
+            } else {
+                $select.val(null);
+            }
+
+            $select.trigger('change.select2');
+        }
+
+        function atualizarZoneamentosParaEscolasSelecionadas(preSelecionados) {
+            var $selectEscolas = $('#itinerario-escolas');
+            var valores = $selectEscolas.val() || [];
+            if (!valores.length) {
+                zoneamentosDisponiveis = [];
+                preencherSelectZoneamentos([]);
+                return;
+            }
+
+            var ids = valores
+                .map(function (v) { return parseInt(v, 10); })
+                .filter(function (n) { return !isNaN(n); });
+
+            if (!ids.length) {
+                zoneamentosDisponiveis = [];
+                preencherSelectZoneamentos([]);
+                return;
+            }
+
+            var url = apiBaseItinerarios + '/zoneamentos?escolas=' + ids.join(',');
+
+            apiFetch(url)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar zoneamentos');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    zoneamentosDisponiveis = data || [];
+                    preencherSelectZoneamentos(preSelecionados || []);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema(
+                        'Erro',
+                        'Erro ao carregar os zoneamentos associados às escolas selecionadas.'
+                    );
+                });
+        }
+
+        function carregarEscolas() {
+            return apiFetch(apiBaseEscolas)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar escolas');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    escolas = data || [];
+                    preencherSelectEscolas();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema(
+                        'Aviso',
+                        'Não foi possível carregar a lista de escolas. Verifique a conexão ou tente novamente.'
+                    );
+                });
+        }
+
+        function limparFormItinerario() {
+            $('#itinerario-id').val('');
+            $('#itinerario-escolas').val(null).trigger('change');
+            $('#itinerario-zoneamentos').val(null).trigger('change');
+            zoneamentosDisponiveis = [];
+            preencherSelectZoneamentos([]);
+        }
+
+        function preencherFormItinerario(dados) {
+            $('#itinerario-id').val(dados.id || '');
+
+            var escolaIds = [];
+            if (Array.isArray(dados.escola_ids)) {
+                escolaIds = dados.escola_ids;
+            } else if (Array.isArray(dados.escolas)) {
+                escolaIds = dados.escolas.map(function (e) { return e.id; });
+            }
+
+            var zoneamentoIds = [];
+            if (Array.isArray(dados.zoneamento_ids)) {
+                zoneamentoIds = dados.zoneamento_ids;
+            } else if (Array.isArray(dados.zoneamentos)) {
+                zoneamentoIds = dados.zoneamentos.map(function (z) { return z.id; });
+            }
+
+            preencherSelectEscolas(escolaIds);
+            atualizarZoneamentosParaEscolasSelecionadas(zoneamentoIds);
+        }
+
+        function abrirModalNovoItinerario() {
+            limparFormItinerario();
+            $('#modalItinerarioLabel').text('Novo itinerário');
+            $('#modal-itinerario').modal('show');
+        }
+
+        function abrirModalEditarItinerario(id) {
+            apiFetch(apiBaseItinerarios + '/' + id)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar itinerário');
+                    return resp.json();
+                })
+                .then(function (dados) {
+                    limparFormItinerario();
+                    preencherFormItinerario(dados || {});
+                    $('#modalItinerarioLabel').text('Editar itinerário #' + id);
+                    $('#modal-itinerario').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar os dados do itinerário.');
+                });
+        }
+
+        function salvarItinerario(event) {
+            event.preventDefault();
+
+            var escolasSelecionadas = $('#itinerario-escolas').val() || [];
+            var zoneamentosSelecionados = $('#itinerario-zoneamentos').val() || [];
+
+            if (!escolasSelecionadas.length || !zoneamentosSelecionados.length) {
+                mostrarMensagemSistema(
+                    'Dados incompletos',
+                    'Selecione pelo menos uma escola e um zoneamento para o itinerário.'
+                );
+                return;
+            }
+
+            var escolaIds = escolasSelecionadas
+                .map(function (v) { return parseInt(v, 10); })
+                .filter(function (n) { return !isNaN(n); });
+
+            var zoneamentoIds = zoneamentosSelecionados
+                .map(function (v) { return parseInt(v, 10); })
+                .filter(function (n) { return !isNaN(n); });
+
+            if (!escolaIds.length || !zoneamentoIds.length) {
+                mostrarMensagemSistema(
+                    'Dados inválidos',
+                    'Não foi possível interpretar os IDs das escolas ou zoneamentos selecionados.'
+                );
+                return;
+            }
+
+            var id = $('#itinerario-id').val() || null;
+
+            var payload = {
+                escola_ids: escolaIds,
+                zoneamento_ids: zoneamentoIds,
+                tipo: 'exclusiva'
+            };
+
+            var method = id ? 'PUT' : 'POST';
+            var url = apiBaseItinerarios + (id ? '/' + id : '');
+
+            apiFetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao salvar itinerário');
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-itinerario').modal('hide');
+                    return carregarItinerarios();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar os dados do itinerário.');
+                });
+        }
+
+        function excluirItinerario(id) {
+            confirmarAcaoSistema(
+                'Excluir itinerário',
+                'Deseja realmente excluir este itinerário? Esta ação não poderá ser desfeita.',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                apiFetch(apiBaseItinerarios + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao excluir itinerário');
+                        return resp.json();
+                    })
+                    .then(function () {
+                        carregarItinerarios();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir o itinerário.');
+                    });
+            });
+        }
+
+        // -------- ROTAS ESCOLARES DO ITINERÁRIO (FRONTEND) --------
+
+        function classificarTipoVeiculoPorCapacidade(capacidade, veiculoNome) {
+            var nome = (veiculoNome || '').toString().toUpperCase();
+
+            // Heurística por nome (quando cadastrado)
+            if (nome.includes('VAN') || nome.includes('SPRINTER')) return 'Van';
+            if (nome.includes('MICRO') || nome.includes('MINIBUS') || nome.includes('MINI BUS')) return 'Micro-ônibus';
+            if (nome.includes('ONIBUS') || nome.includes('ÔNIBUS') || nome.includes('BUS')) return 'Ônibus';
+
+            var cap = Number(capacidade);
+            if (!isFinite(cap) || cap <= 0) return 'Não definido';
+
+            // Heurística por capacidade (ajuste se necessário)
+            if (cap <= 18) return 'Van';
+            if (cap <= 33) return 'Micro-ônibus';
+            return 'Ônibus';
+        }
+
+        function renderBadgesResumo(containerId, contagemPorChave, vazioLabel) {
+            var el = document.getElementById(containerId);
+            if (!el) return;
+
+            el.innerHTML = '';
+
+            var entries = Object.entries(contagemPorChave || {})
+                .sort(function (a, b) { return b[1] - a[1]; });
+
+            if (!entries.length) {
+                el.innerHTML = '<span class="text-muted">' + (vazioLabel || '–') + '</span>';
+                return;
+            }
+
+            entries.forEach(function (kv) {
+                var chave = kv[0];
+                var qtd = kv[1];
+
+                var badge = document.createElement('span');
+                badge.className = 'badge badge-secondary mr-2 mb-1';
+                badge.textContent = chave + ': ' + qtd;
+
+                el.appendChild(badge);
+            });
+        }
+
+        function atualizarResumoRotasItinerario() {
+            var total = rotasItinerario.length;
+
+            var comVeiculo = 0;
+            var semVeiculo = 0;
+
+            var porTipo = {};
+            var porEmpresa = {};
+
+            rotasItinerario.forEach(function (rota) {
+                var veiculoId = rota.veiculo_id || rota.veiculoId || null;
+                var veicNome = rota.veiculo_nome || rota.veiculo || '';
+                var capacidade = rota.capacidade || rota.capacidade_veiculo || rota.lotacao || 0;
+
+                var empresa = rota.empresa ||
+                    rota.empresa_nome ||
+                    rota.instituicao ||
+                    rota.fornecedor_nome ||
+                    'Não informado';
+
+                if (veiculoId) {
+                    comVeiculo++;
+                    var tipo = classificarTipoVeiculoPorCapacidade(capacidade, veicNome);
+                    porTipo[tipo] = (porTipo[tipo] || 0) + 1;
+
+                    porEmpresa[empresa] = (porEmpresa[empresa] || 0) + 1;
+                } else {
+                    semVeiculo++;
+                }
+            });
+
+            var elTotal = document.getElementById('resumo-rotas-total');
+            var elCom = document.getElementById('resumo-rotas-com-veiculo');
+            var elSem = document.getElementById('resumo-rotas-sem-veiculo');
+
+            if (elTotal) elTotal.textContent = total;
+            if (elCom) elCom.textContent = comVeiculo;
+            if (elSem) elSem.textContent = semVeiculo;
+
+            renderBadgesResumo('resumo-rotas-tipos', porTipo, 'Nenhum veículo atribuído');
+            renderBadgesResumo('resumo-rotas-empresas', porEmpresa, 'Nenhum veículo atribuído');
+        }
+
+
+        function renderizarTabelaRotasItinerario() {
+            var tbody = document.getElementById('tbody-itinerario-rotas');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (!rotasItinerario.length) {
+                var trEmpty = document.createElement('tr');
+                var tdEmpty = document.createElement('td');
+                tdEmpty.colSpan = 10;
+                tdEmpty.className = 'text-center text-muted';
+                tdEmpty.textContent = 'Nenhuma rota cadastrada para este itinerário.';
+                trEmpty.appendChild(tdEmpty);
+                tbody.appendChild(trEmpty);
+                atualizarResumoRotasItinerario();
+                return;
+            }
+
+            function celulaAlunos(rota, campoQtd, turnoChave) {
+                var td = document.createElement('td');
+                var qtd = rota[campoQtd] || 0;
+
+                if (!rota.id) {
+                    td.textContent = qtd;
+                    return td;
+                }
+
+                if (qtd > 0) {
+                    var a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'link-rota-turno';
+                    a.setAttribute('data-rota-id', rota.id);
+                    a.setAttribute('data-turno', turnoChave);
+                    a.textContent = qtd;
+                    td.appendChild(a);
+                } else {
+                    td.innerHTML = '<span class="text-muted">0</span>';
+                }
+                return td;
+            }
+
+            rotasItinerario.forEach(function (rota) {
+                var tr = document.createElement('tr');
+
+                // Nome
+                var tdNome = document.createElement('td');
+                var desc = rota.nome || rota.descricao || ('Rota #' + (rota.id || ''));
+                tdNome.innerHTML = '<strong>' + desc + '</strong>';
+                tr.appendChild(tdNome);
+
+                // Veículo
+                var tdVeiculo = document.createElement('td');
+                var veicNome = rota.veiculo_nome || rota.veiculo || '';
+                var veicPlaca = rota.veiculo_placa || rota.placa || '';
+                if (veicNome || veicPlaca) {
+                    var veicHtml = '';
+                    if (veicNome) veicHtml += '<strong>' + veicNome + '</strong>';
+                    if (veicPlaca) {
+                        veicHtml += '<br><small class="text-muted">' + veicPlaca + '</small>';
+                    }
+                    if (rota.veiculo_adaptado) {
+                        veicHtml += '<br><span class="badge badge-warning">Adaptado</span>';
+                    }
+                    tdVeiculo.innerHTML = veicHtml;
+                } else {
+                    tdVeiculo.innerHTML = '<span class="text-muted">Não definido</span>';
+                }
+                tr.appendChild(tdVeiculo);
+
+                // Empresa / Instituição
+                var tdEmpresa = document.createElement('td');
+                var empresa = rota.empresa ||
+                    rota.empresa_nome ||
+                    rota.instituicao ||
+                    rota.fornecedor_nome ||
+                    '';
+                if (empresa) {
+                    tdEmpresa.textContent = empresa;
+                } else {
+                    tdEmpresa.innerHTML = '<span class="text-muted">Não informado</span>';
+                }
+                tr.appendChild(tdEmpresa);
+
+                // Capacidade
+                var tdCapacidade = document.createElement('td');
+                var capacidade = rota.capacidade ||
+                    rota.capacidade_veiculo ||
+                    rota.lotacao ||
+                    null;
+                if (capacidade != null && capacidade !== '') {
+                    tdCapacidade.textContent = capacidade;
+                } else {
+                    tdCapacidade.innerHTML = '<span class="text-muted">–</span>';
+                }
+                tr.appendChild(tdCapacidade);
+
+                // Quantidades por turno (clique para ver alunos + mapa)
+                tr.appendChild(celulaAlunos(rota, 'qtd_alunos_manha', 'manha'));
+                tr.appendChild(celulaAlunos(rota, 'qtd_alunos_tarde', 'tarde'));
+                tr.appendChild(celulaAlunos(rota, 'qtd_alunos_noite', 'noite'));
+                tr.appendChild(celulaAlunos(rota, 'qtd_alunos_integral', 'integral'));
+
+                // Quantidade de Paradas
+                var tdParadas = document.createElement('td');
+                var qtdParadas =
+                    rota.qtd_paradas ||
+                    rota.quantidade_paradas ||
+                    rota.paradas_count ||
+                    rota.total_paradas ||
+                    0;
+                tdParadas.textContent = qtdParadas;
+                tr.appendChild(tdParadas);
+
+                // Ações (⋯)
+                var tdAcoes = document.createElement('td');
+                tdAcoes.className = 'text-right';
+                tdAcoes.innerHTML = `
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                            title="Ações">
+                            &#8942;
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a class="dropdown-item" href="#" data-action="trocar-veiculo">Trocar veículo</a>
+                            <a class="dropdown-item" href="#" data-action="dividir-rota">Dividir rota</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#" data-action="associar-motorista">Associar motorista</a>
+                            <a class="dropdown-item" href="#" data-action="associar-monitor">Associar monitor</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item text-danger" href="#" data-action="excluir-rota">Excluir rota</a>
+                        </div>
+                    </div>
+                `;
+                // bind ação
+                var linkTrocar = tdAcoes.querySelector('[data-action="trocar-veiculo"]');
+                if (linkTrocar) {
+                    linkTrocar.addEventListener('click', function (ev) {
+                        ev.preventDefault();
+                        stAbrirModalTrocarVeiculo(rota);
+                    });
+                }
+
+                var linkDividir = tdAcoes.querySelector('[data-action="dividir-rota"]');
+                if (linkDividir) {
+                    linkDividir.addEventListener('click', function (ev) {
+                        ev.preventDefault();
+                        dividirRotaItinerario(rota);
+                    });
+                }
+
+                var linkMotorista = tdAcoes.querySelector('[data-action="associar-motorista"]');
+                if (linkMotorista) {
+                    linkMotorista.addEventListener('click', function (ev) {
+                        ev.preventDefault();
+                        stAbrirModalAssociarMotorista(rota);
+                    });
+                }
+
+                var linkMonitor = tdAcoes.querySelector('[data-action="associar-monitor"]');
+                if (linkMonitor) {
+                    linkMonitor.addEventListener('click', function (ev) {
+                        ev.preventDefault();
+                        stAbrirModalAssociarMonitor(rota);
+                    });
+                }
+
+                var linkExcluir = tdAcoes.querySelector('[data-action="excluir-rota"]');
+                if (linkExcluir) {
+                    linkExcluir.addEventListener('click', function (ev) {
+                        ev.preventDefault();
+                        excluirRotaItinerario(rota);
+                    });
+                }
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarResumoRotasItinerario();
+        }
+
+        function carregarRotasItinerario(itinerarioId) {
+            var url = apiBaseItinerarios + '/' + itinerarioId + '/rotas';
+
+            apiFetch(url)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar rotas do itinerário');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    rotasItinerario = data || [];
+                    renderizarTabelaRotasItinerario();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    rotasItinerario = [];
+                    renderizarTabelaRotasItinerario();
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar as rotas deste itinerário.');
+                });
+        }
+
+        // Alias para manter compatibilidade com chamadas antigas
+        function carregarRotasDoItinerario(itinerarioId) {
+            return carregarRotasItinerario(itinerarioId);
+        }
+
+        function abrirModalRotasItinerario(id) {
+            itinerarioIdAtualNoModalRotas = id;
+            $('#rotas-itinerario-id').text('#' + id);
+            $('#btn-gerar-rotas-itinerario').data('itinerario-id', id);
+            rotasItinerario = [];
+            renderizarTabelaRotasItinerario();
+            $('#modal-itinerario-rotas').modal('show');
+            carregarRotasItinerario(id);
+        }
+
+        // -------- DETALHE: ALUNOS POR ROTA E TURNO + MAPA GOOGLE --------
+
+        function turnoLabel(turnoChave) {
+            switch (turnoChave) {
+                case 'manha': return 'Manhã';
+                case 'tarde': return 'Tarde';
+                case 'noite': return 'Noite';
+                case 'integral': return 'Integral';
+                default: return 'Não informado';
+            }
+        }
+
+        function initMapaRotaAlunos() {
+            if (typeof google === 'undefined') {
+                console.warn('Google Maps não carregado. Verifique a chave da API.');
+                return;
+            }
+            if (!document.getElementById('mapa-rota-alunos')) return;
+
+            if (!directionsService) {
+                directionsService = new google.maps.DirectionsService();
+            }
+
+            if (!mapaRotaAlunos) {
+                mapaRotaAlunos = new google.maps.Map(document.getElementById('mapa-rota-alunos'), {
+                    center: { lat: -5.365, lng: -49.165 }, // Canaã como default
+                    zoom: 11
+                });
+            }
+        }
+
+        // Regras do sistema
+        var MAX_PARADAS_POR_ROTA = 20;      // máx. de pontos de parada (stops) por rota
+        var MAX_DURACAO_ROTA_MIN = 80;      // máx. de duração estimada por rota (min)
+        var MAX_DURACAO_ROTA_SEG = MAX_DURACAO_ROTA_MIN * 60;
+
+        // Limite imposto pelo Google: 25 waypoints + origem + destino
+        var MAX_GOOGLE_WAYPOINTS = 25;
+
+        // Estado de desenho no mapa (para limpar e evitar “bagunça”)
+        var rotaDrawSeq = 0;
+        var rotaPolylines = [];
+        var rotaMarkers = [];
+
+        function limparMapaRotaAlunos() {
+            if (Array.isArray(rotaPolylines) && rotaPolylines.length) {
+                rotaPolylines.forEach(function (pl) {
+                    try { pl.setMap(null); } catch (e) { /* noop */ }
+                });
+            }
+            rotaPolylines = [];
+
+            if (Array.isArray(rotaMarkers) && rotaMarkers.length) {
+                rotaMarkers.forEach(function (m) {
+                    try { m.setMap(null); } catch (e) { /* noop */ }
+                });
+            }
+            rotaMarkers = [];
+        }
+
+        function routeAsync(request) {
+            return new Promise(function (resolve, reject) {
+                directionsService.route(request, function (result, status) {
+                    if (status === google.maps.DirectionsStatus.OK) return resolve(result);
+                    reject(new Error(String(status || 'UNKNOWN_STATUS')));
+                });
+            });
+        }
+
+        function somarDistDur(result) {
+            var route = result && result.routes && result.routes[0];
+            if (!route || !Array.isArray(route.legs)) return { metros: 0, segundos: 0 };
+
+            var metros = 0;
+            var segundos = 0;
+            route.legs.forEach(function (leg) {
+                if (leg.distance && leg.distance.value) metros += leg.distance.value;
+                if (leg.duration && leg.duration.value) segundos += leg.duration.value;
+            });
+            return { metros: metros, segundos: segundos };
+        }
+
+        function extrairPathDetalhado(result) {
+            var route = result && result.routes && result.routes[0];
+            if (!route || !Array.isArray(route.legs)) return [];
+
+            var path = [];
+            route.legs.forEach(function (leg) {
+                (leg.steps || []).forEach(function (step) {
+                    (step.path || []).forEach(function (latLng) {
+                        path.push({ lat: latLng.lat(), lng: latLng.lng() });
+                    });
+                });
+            });
+            return path;
+        }
+
+        function splitEmDois(arr) {
+            var mid = Math.ceil(arr.length / 2);
+            return [arr.slice(0, mid), arr.slice(mid)];
+        }
+
+        function iconFactory(tipo) {
+            // Ícones padronizados (PNG) - mesmos usados na página de consultar rotas
+            // Caminhos conforme estrutura do frontend (ajuste se seu deploy usar outro prefixo)
+            var ICONS = {
+                garagem: '../../assets/icons/garage-marker.png',
+                ponto: '../../assets/icons/ponto-ativo.png',
+                escola: '../../assets/icons/school-marker.png'
+            };
+
+            var url = ICONS.escola;
+            if (tipo === 'origem' || tipo === 'garagem') url = ICONS.garagem;
+            if (tipo === 'parada' || tipo === 'ponto') url = ICONS.ponto;
+
+            return {
+                url: url,
+                scaledSize: new google.maps.Size(40, 40),
+                anchor: new google.maps.Point(20, 40)
+            };
+        }
+
+        function colocarMarker(pos, opts) {
+            // Cria e registra um marcador no mapa do modal (trajeto), mantendo uma lista
+            // para limpeza posterior ao trocar de rota.
+            if (!pos || typeof google === 'undefined' || !mapaRotaAlunos) return null;
+
+            var o = opts || {};
+            var m = new google.maps.Marker({
+                position: pos,
+                map: mapaRotaAlunos,
+                title: o.title || '',
+                label: o.label || undefined,
+                icon: o.icon || undefined,
+                zIndex: o.zIndex || undefined
+            });
+            rotaMarkers.push(m);
+            return m;
+        }
+
+        async function estimarRota(origin, destination, stops) {
+            var waypointsStops = (Array.isArray(stops) ? stops.slice() : []).slice(0, MAX_GOOGLE_WAYPOINTS);
+            var waypoints = waypointsStops.map(function (p) {
+                return { location: { lat: p.lat, lng: p.lng }, stopover: true };
+            });
+
+            var request = {
+                origin: origin,
+                destination: destination,
+                travelMode: google.maps.TravelMode.DRIVING,
+                optimizeWaypoints: true,
+                waypoints: waypoints
+            };
+
+            var result = await routeAsync(request);
+            var soma = somarDistDur(result);
+            return { result: result, metros: soma.metros, segundos: soma.segundos };
+        }
+
+        async function planejarSubRotas(origin, escolaCoord, stops) {
+            // Gera um conjunto de “sub-rotas” (cada uma indo para a escola),
+            // respeitando <=20 paradas e tentando manter <=80 min por sub-rota.
+            var fila = Array.isArray(stops) ? stops.slice() : [];
+            var subRotas = [];
+
+            while (fila.length) {
+                var bloco = fila.slice(0, MAX_PARADAS_POR_ROTA);
+
+                // se estourar duração, divide recursivamente
+                var pendentes = [bloco];
+                while (pendentes.length) {
+                    var parte = pendentes.shift();
+                    if (!parte.length) continue;
+
+                    var est = await estimarRota(origin, escolaCoord, parte);
+
+                    if (est.segundos > MAX_DURACAO_ROTA_SEG && parte.length >= 2) {
+                        var two = splitEmDois(parte);
+                        pendentes.unshift(two[1]);
+                        pendentes.unshift(two[0]);
+                        continue;
+                    }
+
+                    subRotas.push({
+                        stops: parte,
+                        result: est.result,
+                        metros: est.metros,
+                        segundos: est.segundos
+                    });
+                }
+
+                fila = fila.slice(bloco.length);
+            }
+
+            if (!subRotas.length) {
+                var est0 = await estimarRota(origin, escolaCoord, []);
+                subRotas.push({
+                    stops: [],
+                    result: est0.result,
+                    metros: est0.metros,
+                    segundos: est0.segundos
+                });
+            }
+
+            return subRotas;
+        }
+
+        function haversineKm(a, b) {
+            if (!a || !b) return Number.POSITIVE_INFINITY;
+            var R = 6371;
+            var toRad = function (x) { return (x * Math.PI) / 180; };
+            var dLat = toRad(b.lat - a.lat);
+            var dLng = toRad(b.lng - a.lng);
+            var lat1 = toRad(a.lat);
+            var lat2 = toRad(b.lat);
+            var s = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            return 2 * R * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
+        }
+
+        function ordenarCoordsNearest(coords, start) {
+            var pend = Array.isArray(coords) ? coords.slice() : [];
+            var out = [];
+            var cur = start;
+            while (pend.length) {
+                var bestIdx = 0;
+                var bestD = Number.POSITIVE_INFINITY;
+                for (var i = 0; i < pend.length; i++) {
+                    var d = haversineKm(cur, pend[i]);
+                    if (d < bestD) { bestD = d; bestIdx = i; }
+                }
+                var next = pend.splice(bestIdx, 1)[0];
+                out.push(next);
+                cur = next;
+            }
+            return out;
+        }
+
+        // Desenha rota no Google. Mantém compatibilidade (1 escola) e, se informado,
+        // também inclui escolasExtras como pontos adicionais (waypoints) no trajeto.
+        async function desenharRotaGoogle(escolaCoord, garagemCoord, pontosRaw, rotaId, turnoChave, escolasExtras) {
+            if (!directionsService || !mapaRotaAlunos || typeof google === 'undefined') return;
+
+            rotaDrawSeq += 1;
+            var seqAtual = rotaDrawSeq;
+
+            limparMapaRotaAlunos();
+
+            var pontos = Array.isArray(pontosRaw) ? pontosRaw.slice() : [];
+            if (!escolaCoord && !garagemCoord && (!pontos || !pontos.length)) {
+                console.warn('Sem coordenadas suficientes para traçar rota.');
+                return;
+            }
+
+            var origin = garagemCoord || (pontos[0] ? { lat: pontos[0].lat, lng: pontos[0].lng } : escolaCoord);
+            var destination = escolaCoord || origin;
+
+            var stops = pontos
+                .map(function (p) { return { lat: parseFloat(p.lat), lng: parseFloat(p.lng) }; })
+                .filter(function (p) { return Number.isFinite(p.lat) && Number.isFinite(p.lng); });
+
+            // Se houver múltiplas escolas, inclui como paradas extras ao final.
+            // (Mantém a lógica antiga intacta quando não informado.)
+            var extras = Array.isArray(escolasExtras) ? escolasExtras : [];
+            extras = extras
+                .map(function (p) { return { lat: parseFloat(p.lat), lng: parseFloat(p.lng) }; })
+                .filter(function (p) { return Number.isFinite(p.lat) && Number.isFinite(p.lng); });
+
+            // Evita duplicar o destino nas extras
+            if (destination && extras.length) {
+                extras = extras.filter(function (p) {
+                    return !(Math.abs(p.lat - destination.lat) < 1e-9 && Math.abs(p.lng - destination.lng) < 1e-9);
+                });
+            }
+
+            // Escolas no roteiro: inclui a escola principal (destino original) + extras
+            var schoolsAll = [];
+            if (destination && destination.lat != null && destination.lng != null) {
+                schoolsAll.push({ lat: destination.lat, lng: destination.lng });
+            }
+            if (extras.length) {
+                schoolsAll = schoolsAll.concat(extras);
+            }
+
+            // Remove duplicados
+            schoolsAll = schoolsAll.filter(function (p, idx, arr) {
+                return arr.findIndex(function (q) {
+                    return Math.abs(q.lat - p.lat) < 1e-9 && Math.abs(q.lng - p.lng) < 1e-9;
+                }) === idx;
+            });
+
+            // Se houver mais de uma escola, traçamos um circuito otimizado (garagem -> tudo -> garagem),
+            // garantindo que passe por TODAS as escolas com a melhor logística possível.
+            // Escolas no trajeto: SEMPRE depois dos pontos.
+            // Estratégia:
+            // 1) Garagem -> (pontos otimizados) -> primeira escola
+            // 2) Primeira escola -> demais escolas (otimizando por "nearest" entre escolas)
+            // Obs.: Mantemos a separação para garantir que os pontos venham ANTES das escolas.
+            var escolasOrdenadas = [];
+            if (schoolsAll.length) {
+                escolasOrdenadas = ordenarCoordsNearest(schoolsAll, origin);
+            }
+            var multiEscolas = escolasOrdenadas.length > 1;
+
+            try {
+                var subRotas = [];
+
+                if (escolasOrdenadas.length) {
+                    // 1) Garagem -> primeira escola (passando pelos pontos)
+                    var firstSchool = escolasOrdenadas[0];
+                    var leg1 = await planejarSubRotas(origin, firstSchool, stops);
+                    subRotas = subRotas.concat(leg1 || []);
+
+                    // 2) Entre escolas (sem pontos)
+                    for (var i = 0; i < escolasOrdenadas.length - 1; i++) {
+                        var a = escolasOrdenadas[i];
+                        var b = escolasOrdenadas[i + 1];
+                        var leg = await planejarSubRotas(a, b, []);
+                        subRotas = subRotas.concat(leg || []);
+                    }
+                } else {
+                    // Fallback: sem escolas no itinerário (desenha só com pontos)
+                    subRotas = await planejarSubRotas(origin, destination, stops);
+                }
+
+                if (rotaDrawSeq !== seqAtual) return;
+
+                var totalMetros = 0;
+                var totalSegundos = 0;
+                var bounds = new google.maps.LatLngBounds();
+
+                // Marcadores personalizados (suppressMarkers no DirectionsRenderer; usamos PNGs)
+                if (origin) {
+                    colocarMarker(origin, { title: 'Garagem', icon: iconFactory('origem'), zIndex: 1000 });
+                }
+
+                if (escolasOrdenadas.length) {
+                    escolasOrdenadas.forEach(function (p, i) {
+                        colocarMarker({ lat: p.lat, lng: p.lng }, {
+                            title: 'Escola #' + (i + 1),
+                            icon: iconFactory('escola'),
+                            zIndex: 900
+                        });
+                    });
+                } else if (destination) {
+                    colocarMarker(destination, { title: 'Destino', icon: iconFactory('escola'), zIndex: 900 });
+                }
+
+                var pathsParaSalvar = [];
+
+
+
+                subRotas.forEach(function (sr, idx) {
+                    totalMetros += (sr.metros || 0);
+                    totalSegundos += (sr.segundos || 0);
+
+                    var path = extrairPathDetalhado(sr.result);
+                    if (path.length < 2) {
+                        path = [];
+                        if (origin) path.push({ lat: origin.lat, lng: origin.lng });
+                        if (destination) path.push({ lat: destination.lat, lng: destination.lng });
+                    }
+                    pathsParaSalvar.push(path);
+
+                    var polyPoints = path.map(function (p) { return new google.maps.LatLng(p.lat, p.lng); });
+                    polyPoints.forEach(function (p) { bounds.extend(p); });
+
+                    var pl = new google.maps.Polyline({
+                        map: mapaRotaAlunos,
+                        path: polyPoints,
+                        strokeOpacity: 0.9,
+                        strokeWeight: 4
+                    });
+                    rotaPolylines.push(pl);
+
+                    (sr.stops || []).forEach(function (p, i) {
+                        colocarMarker({ lat: p.lat, lng: p.lng }, {
+                            title: 'Parada ' + (i + 1) + ' (Sub-rota ' + (idx + 1) + ')',
+                            icon: iconFactory('parada')
+                        });
+                    });
+                });
+
+                mapaRotaAlunos.fitBounds(bounds);
+
+                var DISTANCIA_EXIBICAO_FATOR = (window.DISTANCIA_EXIBICAO_FATOR || 1.4);
+
+                var kmReal = (totalMetros / 1000);
+                var km = (kmReal * DISTANCIA_EXIBICAO_FATOR).toFixed(1);
+                var minutos = Math.round(totalSegundos / 60);
+
+                if (subRotas.length > 1) {
+                    var linhas = subRotas.map(function (sr, idx) {
+                        var kmSrReal = ((sr.metros || 0) / 1000);
+                        var kmSr = (kmSrReal * DISTANCIA_EXIBICAO_FATOR).toFixed(1);
+                        var minSr = Math.round((sr.segundos || 0) / 60);
+                        return 'Rota ' + (idx + 1) + ': ' + kmSr + ' km • ' + minSr + ' min';
+                    });
+                    $('#rota-alunos-distancia').text(km + ' km');
+                    $('#rota-alunos-duracao').html('<strong>Dividido:</strong> <small class="text-muted">' + linhas.join(' | ') + '</small><br><small class="text-muted">Total: ' + minutos + ' min</small>');
+                } else {
+                    $('#rota-alunos-distancia').text(km + ' km');
+                    $('#rota-alunos-duracao').text(minutos + ' min');
+                }
+
+                // Mantém compatibilidade com seu endpoint atual (1 percurso por rota)
+                var pathCompleto = [];
+                pathsParaSalvar.forEach(function (p) { pathCompleto = pathCompleto.concat(p); });
+
+                ultimaRotaCalculada = {
+                    rotaId: rotaId,
+                    turno: turnoChave,
+                    origem: origin,
+                    destino: destination,
+                    pontos: pathCompleto,
+                    distancia_m: Math.round(totalMetros),
+                    duracao_seg: Math.round(totalSegundos)
+                };
+
+                // Autosave removido (evita custos e chamadas excessivas ao Google). Use o botão "Salvar trajeto".
+                // salvarPercursoRotaAtual({ silencioso: true });
+
+            } catch (err) {
+                console.warn('Erro ao traçar rota no Google:', err && err.message ? err.message : err);
+                ultimaRotaCalculada = null;
+            }
+        }
+
+
+
+
+
+        var alunosSelecionadosIds = [];
+        var alunosDaRotaAtualTurno = [];
+
+        function getAlunoIdNormalizado(aluno) {
+            return Number(aluno && (aluno.id || aluno.aluno_id) || 0);
+        }
+
+        function atualizarResumoSelecaoAlunos() {
+            var total = Array.isArray(alunosDaRotaAtualTurno) ? alunosDaRotaAtualTurno.length : 0;
+            var sel = Array.isArray(alunosSelecionadosIds) ? alunosSelecionadosIds.length : 0;
+            $('#resumo-selecao-alunos').text(sel ? (sel + ' aluno(s) selecionado(s) de ' + total + '.') : 'Nenhum aluno selecionado.');
+            $('#btn-transferir-selecionados').prop('disabled', sel === 0);
+            $('#btn-limpar-selecao-alunos').prop('disabled', sel === 0);
+            $('#check-todos-alunos-turno').prop('checked', total > 0 && sel === total);
+        }
+
+        function limparSelecaoAlunosTurno() {
+            alunosSelecionadosIds = [];
+            $('#lista-rota-alunos-body .check-aluno-turno').prop('checked', false);
+            $('#check-todos-alunos-turno').prop('checked', false);
+            atualizarResumoSelecaoAlunos();
+        }
+
+        function obterAlunosSelecionadosAtual() {
+            var mapa = new Map((alunosDaRotaAtualTurno || []).map(function (a) { return [getAlunoIdNormalizado(a), a]; }));
+            return (alunosSelecionadosIds || []).map(function (id) { return mapa.get(Number(id)); }).filter(Boolean);
+        }
+
+        function preencherListaAlunosDetalhe(alunos) {
+            var tbody = document.getElementById('lista-rota-alunos-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            alunosDaRotaAtualTurno = Array.isArray(alunos) ? alunos.slice() : [];
+            alunosSelecionadosIds = (alunosSelecionadosIds || []).filter(function (id) {
+                return alunosDaRotaAtualTurno.some(function (a) { return getAlunoIdNormalizado(a) === Number(id); });
+            });
+
+            if (!alunos || !alunos.length) {
+                var tr = document.createElement('tr');
+                var td = document.createElement('td');
+                td.colSpan = 8;
+                td.className = 'text-center text-muted';
+                td.textContent = 'Nenhum aluno associado a esta rota neste turno.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+
+            alunos.forEach(function (aluno) {
+                var tr = document.createElement('tr');
+                var alunoIdAtual = getAlunoIdNormalizado(aluno);
+
+                var tdCheck = document.createElement('td');
+                var inputCheck = document.createElement('input');
+                inputCheck.type = 'checkbox';
+                inputCheck.className = 'check-aluno-turno';
+                inputCheck.value = alunoIdAtual;
+                inputCheck.checked = alunosSelecionadosIds.indexOf(alunoIdAtual) >= 0;
+                inputCheck.addEventListener('change', function () {
+                    var idNum = Number(this.value);
+                    if (this.checked) {
+                        if (alunosSelecionadosIds.indexOf(idNum) === -1) alunosSelecionadosIds.push(idNum);
+                    } else {
+                        alunosSelecionadosIds = alunosSelecionadosIds.filter(function (id) { return Number(id) !== idNum; });
+                    }
+                    atualizarResumoSelecaoAlunos();
+                });
+                tdCheck.appendChild(inputCheck);
+                tr.appendChild(tdCheck);
+
+                var tdId = document.createElement('td');
+                tdId.textContent = aluno.id || aluno.aluno_id || '';
+                tr.appendChild(tdId);
+
+                var tdNome = document.createElement('td');
+                tdNome.textContent = aluno.pessoa_nome || aluno.nome || 'Aluno sem nome';
+                tr.appendChild(tdNome);
+
+
+                // Telefone (junta todos os telefones disponíveis)
+                var tdTelefone = document.createElement('td');
+                var telefones = [];
+
+                // Preferido: backend já manda aluno.telefones (array)
+                if (Array.isArray(aluno.telefones)) {
+                    telefones = aluno.telefones;
+                } else {
+                    // fallback: tenta alguns nomes comuns de campos
+                    [
+                        aluno.telefone,
+                        aluno.telefone_aluno,
+                        aluno.filiacao1_telefone,
+                        aluno.telefone_filiacao1,
+                        aluno.filiacao2_telefone,
+                        aluno.telefone_filiacao2,
+                        aluno.responsavel_telefone,
+                        aluno.telefone_responsavel,
+                        aluno.telefone_pai,
+                        aluno.telefone_mae,
+                        aluno.whatsapp
+                    ].forEach(function (t) {
+                        if (t != null) {
+                            var s = String(t).trim();
+                            if (s) telefones.push(s);
+                        }
+                    });
+                }
+
+                // remove duplicados
+                telefones = telefones.filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+                if (telefones.length) {
+                    tdTelefone.textContent = telefones.join(' / ');
+                } else {
+                    tdTelefone.innerHTML = '<span class="text-muted">—</span>';
+                }
+                tr.appendChild(tdTelefone);
+
+                var tdPonto = document.createElement('td');
+                var pontoInfo =
+                    aluno.ponto_bairro ||
+                    aluno.ponto_logradouro ||
+                    aluno.bairro ||
+                    aluno.logradouro ||
+                    '';
+                if (pontoInfo) {
+                    tdPonto.textContent = pontoInfo;
+                } else {
+                    tdPonto.innerHTML = '<span class="text-muted">Sem ponto</span>';
+                }
+                tr.appendChild(tdPonto);
+
+                var tdEscola = document.createElement('td');
+                tdEscola.textContent = aluno.escola_nome || aluno.escola || '—';
+                tr.appendChild(tdEscola);
+
+                var tdDef = document.createElement('td');
+                var defTxt = (aluno.deficiencia != null ? String(aluno.deficiencia).trim() : '');
+                var precisaAdaptado = !!aluno.carro_adaptado;
+                if (defTxt || precisaAdaptado) {
+                    tdDef.innerHTML = '';
+                    if (defTxt) {
+                        tdDef.appendChild(document.createTextNode(defTxt + ' '));
+                    }
+                    if (precisaAdaptado) {
+                        var badgeAdapt = document.createElement('span');
+                        badgeAdapt.className = 'badge badge-warning';
+                        badgeAdapt.textContent = 'Veículo adaptado';
+                        tdDef.appendChild(badgeAdapt);
+                    }
+                } else {
+                    tdDef.innerHTML = '<span class="text-muted">—</span>';
+                }
+                tr.appendChild(tdDef);
+
+
+                var tdAcoes = document.createElement('td');
+                tdAcoes.className = 'text-right';
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-outline-primary';
+                btn.textContent = 'Transferir';
+                btn.setAttribute('data-action', 'transferir-aluno');
+                btn.addEventListener('click', function () { abrirModalTransferirAluno(aluno); });
+                tdAcoes.appendChild(btn);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarResumoSelecaoAlunos();
+        }
+
+        // GET /api/rotas-exclusivas/:rotaId/alunos?turno=...
+        function carregarAlunosRotaTurno(rotaId, turnoChave) {
+            var url = apiBaseRotas + '/' + rotaId + '/alunos?turno=' + encodeURIComponent(turnoChave);
+
+            // Reset de UI
+            $('#rota-alunos-distancia').text('–');
+            $('#rota-alunos-duracao').text('–');
+            $('#rota-alunos-escola').text('–');
+            $('#rota-alunos-fornecedor').text('–');
+            preencherListaAlunosDetalhe([]);
+            ultimaRotaCalculada = null;
+
+            // Limpa rota anterior do mapa (evita acumular desenhos no modal)
+            if (typeof limparMapaRotaAlunos === 'function') limparMapaRotaAlunos();
+
+            apiFetch(url)
+                .then(async function (resp) {
+                    var data = null;
+                    try { data = await resp.json(); } catch (e) { data = null; }
+
+                    if (!resp.ok) {
+                        var msg = (data && (data.error || data.message)) ? (data.error || data.message) : 'Erro ao buscar alunos da rota';
+                        throw new Error(msg);
+                    }
+                    return data;
+                })
+                .then(function (data) {
+                    var rota = data.rota || {};
+                    var escola = data.escola || {};
+                    var fornecedor = data.fornecedor || {};
+                    var alunos = data.alunos || [];
+
+                    // Ajusta título / labels
+                    var nomeRota = rota.nome || rota.descricao || ('Rota #' + (rota.id || rotaId));
+                    $('#detalhe-rota-nome').text(nomeRota);
+                    $('#detalhe-rota-turno').text(turnoLabel(turnoChave));
+
+                    // Escolas: prefere as selecionadas no itinerário aberto (evita exibir escolas fora da seleção).
+                    var escolasSel = obterEscolasSelecionadasDoItinerario(detalhesRotaAtual.itinerarioId);
+                    if (escolasSel && escolasSel.length) {
+                        var nomes = escolasSel.map(function (e) { return e.nome || ('Escola #' + e.id); });
+                        $('#rota-alunos-escola').text(nomes.join(' / '));
+                    } else if (escola.nome) {
+                        // fallback (compatibilidade)
+                        $('#rota-alunos-escola').text(escola.nome);
+                    }
+                    var fornecedorNome = fornecedor.nome_fantasia || fornecedor.razao_social || '';
+                    if (fornecedorNome) {
+                        $('#rota-alunos-fornecedor').text(fornecedorNome);
+                    }
+
+                    preencherListaAlunosDetalhe(alunos);
+
+                    // Monta coordenadas para o mapa
+                    // Destino: última escola selecionada no itinerário (se existir coordenada)
+                    var escolaCoord = null;
+                    var escolasExtrasCoords = [];
+
+                    if (escolasSel && escolasSel.length) {
+                        var coordsValidas = escolasSel
+                            .map(function (e) {
+                                if (e && e.lat != null && e.lng != null) return { id: e.id, nome: e.nome, lat: e.lat, lng: e.lng };
+                                return null;
+                            })
+                            .filter(function (c) { return c !== null; });
+
+                        if (coordsValidas.length) {
+                            var last = coordsValidas[coordsValidas.length - 1];
+                            escolaCoord = { lat: last.lat, lng: last.lng };
+                            escolasExtrasCoords = coordsValidas
+                                .slice(0, -1)
+                                .map(function (c) { return { lat: c.lat, lng: c.lng }; });
+                        }
+                    }
+
+
+                    // fallback 2: se não houver escolas selecionadas no itinerário (ex: modal aberto sem contexto),
+                    // usa a lista completa retornada pelo backend (`data.escolas`), mantendo multi-escolas.
+                    if (!escolaCoord && data && Array.isArray(data.escolas) && data.escolas.length) {
+                        var coordsValidas2 = data.escolas
+                            .map(function (e) {
+                                if (e && e.lat != null && e.lng != null) return { id: e.id, nome: e.nome, lat: e.lat, lng: e.lng };
+                                return null;
+                            })
+                            .filter(function (c) { return c !== null; });
+
+                        if (coordsValidas2.length) {
+                            var last2 = coordsValidas2[coordsValidas2.length - 1];
+                            escolaCoord = { lat: last2.lat, lng: last2.lng };
+                            escolasExtrasCoords = coordsValidas2
+                                .slice(0, -1)
+                                .map(function (c) { return { lat: c.lat, lng: c.lng }; });
+                        }
+                    }
+
+                    // fallback: escola única retornada pelo backend
+                    if (!escolaCoord && escola.lat != null && escola.lng != null) {
+                        escolaCoord = { lat: escola.lat, lng: escola.lng };
+                    }
+
+                    var garagemCoord = null;
+                    if (fornecedor.garagem_lat != null && fornecedor.garagem_lng != null) {
+                        garagemCoord = { lat: fornecedor.garagem_lat, lng: fornecedor.garagem_lng };
+                    } else if (fornecedor.garagem && fornecedor.garagem.lat != null && fornecedor.garagem.lng != null) {
+                        garagemCoord = { lat: fornecedor.garagem.lat, lng: fornecedor.garagem.lng };
+                    } else if (fornecedor.garagem && fornecedor.garagem.garagem_lat != null && fornecedor.garagem.garagem_lng != null) {
+                        garagemCoord = { lat: fornecedor.garagem.garagem_lat, lng: fornecedor.garagem.garagem_lng };
+                    }
+                    var pontos = (alunos || [])
+                        .map(function (a) {
+                            if (a.ponto_lat != null && a.ponto_lng != null) {
+                                return {
+                                    lat: a.ponto_lat,
+                                    lng: a.ponto_lng
+                                };
+                            }
+                            return null;
+                        })
+                        .filter(function (p) { return p !== null; });
+
+                    initMapaRotaAlunos();
+                    desenharRotaGoogle(
+                        escolaCoord,
+                        garagemCoord,
+                        pontos,
+                        rota.id || rotaId,
+                        data.turno || turnoChave,
+                        escolasExtrasCoords
+                    );
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar alunos para esta rota e turno.');
+                });
+        }
+
+        function abrirModalAlunosRota(rotaId, turnoChave) {
+            detalhesRotaAtual.rotaId = rotaId;
+            detalhesRotaAtual.turno = turnoChave;
+            detalhesRotaAtual.itinerarioId = itinerarioIdAtualNoModalRotas;
+            ultimaRotaCalculada = null;
+
+            var rota = rotasItinerario.find(function (r) { return r.id === rotaId; });
+            var nomeRota = rota
+                ? (rota.nome || rota.descricao || ('Rota #' + rota.id))
+                : ('Rota #' + rotaId);
+
+            $('#detalhe-rota-nome').text(nomeRota);
+            $('#detalhe-rota-turno').text(turnoLabel(turnoChave));
+            $('#lista-rota-alunos-body').empty();
+            $('#rota-alunos-distancia').text('–');
+            $('#rota-alunos-duracao').text('–');
+            $('#rota-alunos-escola').text('–');
+            $('#rota-alunos-fornecedor').text('–');
+
+            // Garante que o mapa exista e sempre reinicia o renderer
+            initMapaRotaAlunos();
+            if (directionsRenderer) {
+                directionsRenderer.set('directions', null);
+            }
+
+            $('#modal-rota-alunos').modal('show');
+
+            carregarAlunosRotaTurno(rotaId, turnoChave);
+        }
+
+        // Opcionalmente recebe { silencioso: true } para não abrir modal de mensagem
+        async function salvarPercursoRotaAtual(opcoes) {
+            opcoes = opcoes || {};
+            var silencioso = opcoes.silencioso === true;
+
+            // 1) Precisa ter um trajeto calculado
+            if (!ultimaRotaCalculada) {
+                if (!silencioso) {
+                    mostrarMensagemSistema(
+                        'Aviso',
+                        'Nenhum trajeto foi calculado ainda. Abra o mapa da rota e aguarde o cálculo.'
+                    );
+                } else {
+                    console.warn('[percurso] Nenhum trajeto calculado para salvar.');
+                }
+                return;
+            }
+
+            // 2) Normaliza o ID da rota (só checamos ID, não turno)
+            var rotaIdUlt = Number(ultimaRotaCalculada.rotaId);
+            var rotaIdAtual = Number(detalhesRotaAtual.rotaId);
+
+            if (!rotaIdUlt || !rotaIdAtual || rotaIdUlt !== rotaIdAtual) {
+                if (!silencioso) {
+                    mostrarMensagemSistema(
+                        'Aviso',
+                        'O trajeto calculado não corresponde à rota atual. Reabra o mapa desta rota e aguarde o cálculo novamente.'
+                    );
+                } else {
+                    console.warn('[percurso] Rota calculada (' + rotaIdUlt + ') diferente da rota atual (' + rotaIdAtual + ').');
+                }
+                return;
+            }
+
+
+            // 3) Gera e salva o percurso pelo Google (backend)
+            //    Isso garante que o trajeto fique “alinhado com as ruas” e padroniza o salvamento por rota.
+            var turnoChave = detalhesRotaAtual.turno || ultimaRotaCalculada.turno || null;
+
+            var url = apiBaseRotas
+                + '/' + rotaIdAtual
+                + '/percurso/google'
+                + (turnoChave ? ('?turno=' + encodeURIComponent(turnoChave) + '&force=1') : '?force=1');
+
+            try {
+                var resp = await apiFetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}) // reservamos para evoluções futuras
+                });
+
+                var data = await resp.json().catch(function () { return null; });
+
+                if (!resp.ok) {
+                    var msg = (data && (data.error || data.message)) ? (data.error || data.message) : 'Erro ao salvar o trajeto desta rota.';
+                    throw new Error(msg);
+                }
+
+                // Atualiza UI (distância/duração) quando vierem do backend
+                if (data && data.percurso) {
+                    if (data.percurso.distancia_m != null) {
+                        var km = (data.percurso.distancia_m / 1000).toFixed(1);
+                        $('#rota-alunos-distancia').text(km + ' km');
+                    }
+                    if (data.percurso.duracao_seg != null) {
+                        var minutos = Math.round(data.percurso.duracao_seg / 60);
+                        $('#rota-alunos-duracao').text(minutos + ' min');
+                    }
+                }
+
+                if (!silencioso) {
+                    mostrarMensagemSistema('Sucesso', 'Trajeto gerado pelo Google e salvo com sucesso para esta rota.');
+                }
+
+            } catch (err) {
+                console.error('Erro ao salvar percurso via Google:', err);
+                if (!silencioso) {
+                    mostrarMensagemSistema('Erro', err && err.message ? err.message : 'Erro ao salvar o trajeto desta rota.');
+                }
+            }
+        }
+
+
+        function dividirRotaItinerario(rota) {
+            var rotaId = Number(rota && rota.id || 0);
+            if (!rotaId) return;
+            apiFetch(apiBaseRotas + '/' + rotaId + '/dividir', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+                .then(function (resp) {
+                    return resp.json().catch(function () { return null; }).then(function (data) {
+                        if (!resp.ok) throw new Error(data && (data.error || data.message) || 'Erro ao dividir rota.');
+                        return data;
+                    });
+                })
+                .then(function (data) {
+                    mostrarMensagemSistema('Sucesso', data.message || 'Rota dividida com sucesso.');
+                    var itinerarioId = Number($('#btn-gerar-rotas-itinerario').data('itinerario-id') || 0);
+                    if (itinerarioId) carregarRotasItinerario(itinerarioId);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err && err.message ? err.message : 'Não foi possível dividir a rota.');
+                });
+        }
+
+
+        function excluirRotaItinerario(rota) {
+            var rotaId = Number(rota && rota.id || 0);
+            if (!rotaId) return;
+            var nome = rota && rota.nome ? rota.nome : ('#' + rotaId);
+            if (!window.confirm('Deseja realmente excluir a rota ' + nome + '? Essa ação não poderá ser desfeita.')) return;
+            apiFetch(apiBaseRotas + '/' + rotaId, {
+                method: 'DELETE'
+            })
+                .then(function (resp) {
+                    return resp.json().catch(function () { return null; }).then(function (data) {
+                        if (!resp.ok) throw new Error(data && (data.error || data.message) || 'Erro ao excluir rota.');
+                        return data;
+                    });
+                })
+                .then(function (data) {
+                    mostrarMensagemSistema('Sucesso', data && data.message ? data.message : 'Rota excluída com sucesso.');
+                    var itinerarioId = Number($('#btn-gerar-rotas-itinerario').data('itinerario-id') || 0);
+                    if (itinerarioId) carregarRotasItinerario(itinerarioId);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err && err.message ? err.message : 'Não foi possível excluir a rota.');
+                });
+        }
+
+        function renderizarResumoPreviewGeracao(resumo) {
+            var $wrap = $('#preview-geracao-resumo');
+            $wrap.empty();
+            var itens = [
+                { label: 'Elegíveis', valor: resumo && resumo.total_alunos_elegiveis || 0 },
+                { label: 'Novos', valor: resumo && resumo.total_alunos_novos || 0 },
+                { label: 'Rotas existentes', valor: resumo && resumo.total_rotas_existentes || 0 },
+                { label: 'Adaptados', valor: resumo && resumo.total_adaptados || 0 }
+            ];
+            itens.forEach(function (item) {
+                var col = $('<div class="col-md-3 mb-2"><div class="border rounded p-2 h-100"><div class="small text-muted"></div><div class="h5 mb-0"></div></div></div>');
+                col.find('.small').text(item.label);
+                col.find('.h5').text(item.valor);
+                $wrap.append(col);
+            });
+        }
+
+        function renderizarPreviewGeracaoRotas(data) {
+            previewGeracaoRotas = data || null;
+            renderizarResumoPreviewGeracao(data && data.resumo ? data.resumo : {});
+            var tbody = document.getElementById('tbody-preview-geracao-rotas');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            var alunos = Array.isArray(data && data.alunos_preview) ? data.alunos_preview : [];
+            if (!alunos.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nenhum novo aluno para revisar.</td></tr>';
+                return;
+            }
+            alunos.forEach(function (aluno) {
+                var tr = document.createElement('tr');
+                var tdNome = document.createElement('td');
+                tdNome.innerHTML = '<strong>' + (aluno.pessoa_nome || ('Aluno #' + aluno.aluno_id)) + '</strong>';
+                if (aluno.deficiencia) tdNome.innerHTML += '<br><small class="text-muted">' + aluno.deficiencia + '</small>';
+                tr.appendChild(tdNome);
+                var tdTurno = document.createElement('td');
+                tdTurno.textContent = aluno.turno || '—';
+                tr.appendChild(tdTurno);
+                var tdNec = document.createElement('td');
+                tdNec.innerHTML = aluno.carro_adaptado ? '<span class="badge badge-warning">Adaptado</span>' : '<span class="text-muted">Padrão</span>';
+                tr.appendChild(tdNec);
+                var tdSel = document.createElement('td');
+                var select = document.createElement('select');
+                select.className = 'form-control form-control-sm preview-geracao-destino';
+                select.setAttribute('data-aluno-id', aluno.aluno_id);
+                var opts = aluno.opcoes_rotas || [];
+                var optVazio = document.createElement('option');
+                optVazio.value = '__nova__';
+                optVazio.textContent = 'Criar nova rota';
+                select.appendChild(optVazio);
+                opts.forEach(function (rota) {
+                    var opt = document.createElement('option');
+                    opt.value = rota.id;
+                    opt.textContent = rota.nome + ' • vagas no turno: ' + rota.vagas_turno + (rota.veiculo_adaptado ? ' • adaptado' : '');
+                    select.appendChild(opt);
+                });
+                if (aluno.rota_sugerida_id) select.value = String(aluno.rota_sugerida_id);
+                tdSel.appendChild(select);
+                tr.appendChild(tdSel);
+                tbody.appendChild(tr);
+            });
+
+            atualizarResumoSelecaoAlunos();
+        }
+
+        function coletarAlocacoesPreview() {
+            var out = [];
+            $('#tbody-preview-geracao-rotas .preview-geracao-destino').each(function () {
+                var alunoId = Number(this.getAttribute('data-aluno-id') || 0);
+                var val = String(this.value || '__nova__');
+                out.push({
+                    aluno_id: alunoId,
+                    rota_id: val === '__nova__' ? null : Number(val),
+                    criar_nova_rota: val === '__nova__'
+                });
+            });
+            return out;
+        }
+
+        // -------- BINDINGS DOCUMENT READY --------
+
+
+
+        // CONTEXTO DO USUÁRIO (para bloquear criação/edição para FORNECEDOR_ESCOLAR)
+        var __ME_CACHE = null;
+
+        function obterMeUsuario() {
+            if (__ME_CACHE) return Promise.resolve(__ME_CACHE);
+            if (window.__ME) { __ME_CACHE = window.__ME; return Promise.resolve(__ME_CACHE); }
+            return fetch('/api/me', { credentials: 'include' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (me) { __ME_CACHE = me; if (me) window.__ME = me; return me; })
+                .catch(function () { return null; });
+        }
+
+        function bloquearAcoesFornecedorEscolar() {
+            // Criar itinerário
+            $('#btn-novo-itinerario').prop('disabled', true).hide();
+
+            // Gerar rotas / salvar itinerário / salvar trajeto
+            $('#btn-gerar-rotas-itinerario').prop('disabled', true).addClass('disabled');
+            $('#btn-salvar-trajeto-rota').prop('disabled', true).hide();
+
+            // Impede submit do formulário de itinerário
+            $('#form-itinerario').off('submit');
+            $('#form-itinerario :input').prop('disabled', true);
+            $('#form-itinerario button[type="submit"]').prop('disabled', true).hide();
+
+            // Esconde ações de edição/exclusão dentro das tabelas (se existirem)
+            $('[data-action="editar-itinerario"], .action-editar-itinerario, .action-excluir-itinerario').hide();
+            $('[data-action="nova-rota"], .action-nova-rota, .btn-nova-rota').hide();
+        }
+
+        $(document).ready(function () {
+            obterMeUsuario().then(function (me) {
+                var cargo = String(me && me.cargo || '').toUpperCase();
+                if (cargo === 'FORNECEDOR_ESCOLAR' || cargo === 'FORNECEDOR') {
+                    bloquearAcoesFornecedorEscolar();
+                }
+            });
+            $('#itinerario-escolas').select2({
+                width: '100%',
+                dropdownParent: $('#modal-itinerario'),
+                placeholder: 'Selecione as escolas'
+            });
+
+            $('#itinerario-zoneamentos').select2({
+                width: '100%',
+                dropdownParent: $('#modal-itinerario'),
+                placeholder: 'Selecione os zoneamentos'
+            });
+
+            carregarEscolas();
+            carregarItinerarios();
+
+            $('#search-itinerarios').on('input', function () {
+                paginaAtualItinerarios = 1;
+                renderizarTabelaItinerarios();
+            });
+
+            $('#btn-novo-itinerario').on('click', function () {
+                abrirModalNovoItinerario();
+            });
+
+            $('#form-itinerario').on('submit', salvarItinerario);
+
+            $('#itinerario-escolas').on('change', function () {
+                atualizarZoneamentosParaEscolasSelecionadas();
+            });
+
+            $('#tbody-itinerarios').on('click', '.action-editar-itinerario', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    abrirModalEditarItinerario(id);
+                }
+            });
+
+            $('#tbody-itinerarios').on('click', '.action-excluir-itinerario', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    excluirItinerario(id);
+                }
+            });
+
+            $('#tbody-itinerarios').on('click', '.action-rotas-itinerario', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    abrirModalRotasItinerario(id);
+                }
+            });
+
+
+            // Geração automática de rotas do itinerário (com escolha de modo)
+            $('#btn-gerar-rotas-itinerario').on('click', function () {
+                var itinerarioId = parseInt($(this).data('itinerario-id'), 10);
+                if (!itinerarioId) return;
+
+                // guarda o itinerário no modal e abre a escolha
+                var $m = $('#modal-gerar-rotas-modo');
+                $m.data('itinerario-id', itinerarioId);
+
+                // reset de botões/estado
+                $('#btn-confirmar-gerar-rotas').prop('disabled', false).text('Gerar');
+                $('#btn-gerar-rotas-itinerario').prop('disabled', false).text('Gerar rotas para este itinerário');
+
+                $m.modal('show');
+            });
+
+            $('#btn-confirmar-gerar-rotas').off('click').on('click', function () {
+                var $m = $('#modal-gerar-rotas-modo');
+                var itinerarioId = parseInt($m.data('itinerario-id'), 10);
+                if (!itinerarioId) return;
+
+                var modo = $('input[name="modo-alocacao"]:checked').val() || 'distribuir';
+
+                var $btnConfirm = $('#btn-confirmar-gerar-rotas');
+                var $btnOrig = $('#btn-gerar-rotas-itinerario');
+
+                $btnConfirm.prop('disabled', true).text('Analisando...');
+                $btnOrig.prop('disabled', true).text('Analisando rotas...');
+
+                apiFetch(apiBaseItinerarios + '/' + itinerarioId + '/gerar-rotas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ modo_alocacao: modo, preview_only: true })
+                })
+                    .then(function (resp) {
+                        return resp.json().catch(function () { return null; }).then(function (data) {
+                            if (!resp.ok) throw new Error(data && (data.error || data.message) || 'Erro ao gerar rotas');
+                            return data;
+                        });
+                    })
+                    .then(function (data) {
+                        if (data && data.modo === 'preview') {
+                            $m.modal('hide');
+                            renderizarPreviewGeracaoRotas(data);
+                            $('#modal-preview-geracao-rotas').data('itinerario-id', itinerarioId).data('modo-alocacao', modo).modal('show');
+                            return;
+                        }
+
+                        $m.modal('hide');
+                        var msg = data.message || 'Rotas geradas com sucesso.';
+                        mostrarMensagemSistema('Geração de rotas', msg);
+
+                        if (Array.isArray(data.rotas)) {
+                            rotasItinerario = data.rotas;
+                            renderizarTabelaRotasItinerario();
+                        } else {
+                            carregarRotasItinerario(itinerarioId);
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', err && err.message ? err.message : 'Erro ao gerar rotas para o itinerário.');
+                    })
+                    .finally(function () {
+                        $btnConfirm.prop('disabled', false).text('Gerar');
+                        $btnOrig.prop('disabled', false).text('Gerar rotas para este itinerário');
+                    });
+            });
+
+            $('#btn-aplicar-geracao-rotas').off('click').on('click', function () {
+                var $modal = $('#modal-preview-geracao-rotas');
+                var itinerarioId = parseInt($modal.data('itinerario-id'), 10);
+                var modo = String($modal.data('modo-alocacao') || 'distribuir');
+                if (!itinerarioId) return;
+                var $btn = $('#btn-aplicar-geracao-rotas');
+                $btn.prop('disabled', true).text('Aplicando...');
+                apiFetch(apiBaseItinerarios + '/' + itinerarioId + '/gerar-rotas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        modo_alocacao: modo,
+                        alocacoes_manuais: coletarAlocacoesPreview()
+                    })
+                })
+                    .then(function (resp) {
+                        return resp.json().catch(function () { return null; }).then(function (data) {
+                            if (!resp.ok) throw new Error(data && (data.error || data.message) || 'Erro ao aplicar geração');
+                            return data;
+                        });
+                    })
+                    .then(function (data) {
+                        $('#modal-preview-geracao-rotas').modal('hide');
+                        mostrarMensagemSistema('Geração de rotas', data.message || 'Rotas geradas com sucesso.');
+                        carregarRotasItinerario(itinerarioId);
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', err && err.message ? err.message : 'Erro ao aplicar a geração de rotas.');
+                    })
+                    .finally(function () {
+                        $btn.prop('disabled', false).text('Aplicar geração');
+                    });
+            });
+
+            // Clique nos números de alunos (Manhã / Tarde / Noite / Integral)
+            $('#tabela-itinerario-rotas').on('click', '.link-rota-turno', function (e) {
+                e.preventDefault();
+                var rotaId = parseInt($(this).data('rota-id'), 10);
+                var turno = $(this).data('turno');
+                if (!rotaId || !turno) return;
+                abrirModalAlunosRota(rotaId, turno);
+            });
+
+            // Quando o modal lateral é exibido, garante que o mapa esteja inicializado
+            $('#modal-rota-alunos').on('shown.bs.modal', function () {
+                initMapaRotaAlunos();
+            });
+
+            // Botão para salvar o trajeto atual da rota manualmente (opcional)
+            $('#btn-salvar-trajeto-rota').on('click', function () {
+                salvarPercursoRotaAtual();
+            });
+
+        });
+    </script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+
+        // ===== Transferência manual de aluno entre rotas =====
+        var stTransferAluno = {
+            modo: 'single',
+            alunos: [],
+            aluno: null,
+            rotaOrigemId: null,
+            rotaDestinoId: null,
+            turno: null
+        };
+
+        function stGetRotaPorId(rotaId) {
+            rotaId = Number(rotaId);
+            return (rotasItinerario || []).find(function (r) { return Number(r.id) === rotaId; }) || null;
+        }
+
+        function stCapacidadeRota(rota) {
+            if (!rota) return null;
+            var cap = rota.capacidade || rota.capacidade_veiculo || rota.lotacao || null;
+            cap = cap != null && cap !== '' ? Number(cap) : null;
+            return (Number.isFinite(cap) && cap > 0) ? cap : null;
+        }
+
+        function stQtdRotaTurno(rota, turnoChave) {
+            if (!rota) return 0;
+            var campo = 'qtd_alunos_' + turnoChave;
+            return Number(rota[campo] || 0);
+        }
+
+        function stFormatarOpcaoRotaDestino(rota, turnoChave) {
+            var nome = rota.nome || rota.descricao || ('Rota #' + rota.id);
+            var cap = stCapacidadeRota(rota);
+            var qtd = stQtdRotaTurno(rota, turnoChave);
+            var sufixo = cap ? (' (' + qtd + '/' + cap + ')') : (' (' + qtd + ')');
+            return nome + sufixo;
+        }
+
+        async function abrirModalTransferirAluno(aluno) {
+            if (!aluno) return;
+            var alunoId = Number(aluno.id || aluno.aluno_id);
+            if (!alunoId) return;
+
+            var rotaOrigemId = Number(detalhesRotaAtual.rotaId);
+            var turno = String(detalhesRotaAtual.turno || '');
+
+            stTransferAluno.aluno = aluno;
+            stTransferAluno.rotaOrigemId = rotaOrigemId;
+            stTransferAluno.rotaDestinoId = null;
+            stTransferAluno.turno = turno;
+
+            // UI
+            $('#transfer-aluno-nome').text(aluno.pessoa_nome || aluno.nome || ('Aluno #' + alunoId));
+            var rOrigem = stGetRotaPorId(rotaOrigemId);
+            $('#transfer-rota-origem').text(rOrigem ? (rOrigem.nome || rOrigem.descricao || ('Rota #' + rOrigem.id)) : ('Rota #' + rotaOrigemId));
+            $('#transfer-turno').text(turnoLabel(turno));
+
+            // preenche rotas destino
+            var $sel = $('#transfer-rota-destino');
+            $sel.empty();
+            $sel.append('<option value="">Carregando...</option>');
+
+            var rotasDestino = await stCarregarRotasDestinoTransferencia(alunoId, rotaOrigemId);
+
+            $sel.empty();
+            $sel.append('<option value="">Selecione...</option>');
+
+            (rotasDestino || []).forEach(function (r) {
+                if (!r || !r.id) return;
+                if (Number(r.id) === rotaOrigemId) return;
+
+                var opt = document.createElement('option');
+                opt.value = r.id;
+
+                var prefixo = '';
+                if (r.itinerario_id) {
+                    prefixo = '[Itin ' + r.itinerario_id + '] ';
+                }
+                opt.textContent = prefixo + stFormatarOpcaoRotaDestino(r, turno);
+
+                $sel.append(opt);
+            });
+
+            if (!(rotasDestino || []).length) {
+                $sel.empty();
+                $sel.append('<option value="">Nenhuma rota compatível com a escola do aluno.</option>');
+            }
+
+            // reset seção de troca
+            $('#transfer-swap-section').addClass('d-none');
+            $('#transfer-aluno-troca').empty();
+
+            $('#btn-confirmar-transferencia').prop('disabled', false).text('Transferir');
+            $('#modal-transferir-aluno').modal('show');
+        }
+
+
+
+        async function abrirModalTransferirAlunosSelecionados() {
+            var selecionados = obterAlunosSelecionadosAtual();
+            if (!selecionados.length) {
+                mostrarMensagemSistema('Aviso', 'Selecione pelo menos um aluno para transferir.');
+                return;
+            }
+
+            var rotaOrigemId = Number(detalhesRotaAtual && detalhesRotaAtual.rotaId);
+            var rotaOrigemNome = detalhesRotaAtual && detalhesRotaAtual.nomeRota ? detalhesRotaAtual.nomeRota : ('Rota #' + rotaOrigemId);
+            var turno = selecionados[0] && selecionados[0].turno ? String(selecionados[0].turno) : String(detalhesRotaAtual && detalhesRotaAtual.turno || '');
+            var nomes = selecionados.slice(0, 3).map(function (a) { return a.pessoa_nome || a.nome || ('Aluno #' + getAlunoIdNormalizado(a)); });
+            var resumo = selecionados.length === 1 ? nomes[0] : (selecionados.length + ' alunos selecionados');
+            if (selecionados.length > 1 && nomes.length) {
+                resumo += ' (' + nomes.join(', ') + (selecionados.length > 3 ? ', ...' : '') + ')';
+            }
+
+            stTransferAluno.modo = 'bulk';
+            stTransferAluno.aluno = null;
+            stTransferAluno.alunos = selecionados.slice();
+            stTransferAluno.rotaOrigemId = rotaOrigemId;
+            stTransferAluno.turno = turno;
+
+            $('#transfer-aluno-nome').text(resumo);
+            $('#transfer-rota-origem').text(rotaOrigemNome || '—');
+            $('#transfer-turno').text(turno || '—');
+            $('#transfer-ajuda').text('Na transferência em lote, todos os alunos selecionados precisam ser compatíveis com a rota destino e haver vagas suficientes.');
+            $('#transfer-swap-section').addClass('d-none');
+            $('#transfer-aluno-troca').empty();
+            $('#btn-confirmar-transferencia').prop('disabled', false).text('Transferir selecionados');
+
+            var $sel = $('#transfer-rota-destino');
+            $sel.empty();
+            $sel.append('<option value="">Carregando...</option>');
+
+            var primeiroAlunoId = getAlunoIdNormalizado(selecionados[0]);
+            var rotasDestino = await stCarregarRotasDestinoTransferencia(primeiroAlunoId, rotaOrigemId);
+
+            $sel.empty();
+            $sel.append('<option value="">Selecione...</option>');
+            (rotasDestino || []).forEach(function (r) {
+                if (!r || !r.id) return;
+                if (Number(r.id) === rotaOrigemId) return;
+                var opt = document.createElement('option');
+                opt.value = r.id;
+                var prefixo = r.itinerario_id ? ('[Itin ' + r.itinerario_id + '] ') : '';
+                opt.textContent = prefixo + stFormatarOpcaoRotaDestino(r, turno);
+                $sel.append(opt);
+            });
+            if (!(rotasDestino || []).length) {
+                $sel.empty();
+                $sel.append('<option value="">Nenhuma rota compatível com a escola do(s) aluno(s).</option>');
+            }
+            $('#modal-transferir-aluno').modal('show');
+        }
+
+        async function stCarregarRotasDestinoTransferencia(alunoId, rotaOrigemId) {
+            alunoId = Number(alunoId);
+            rotaOrigemId = Number(rotaOrigemId);
+            if (!alunoId || !rotaOrigemId) return [];
+
+            try {
+                var url = apiBaseRotas + '/rotas-destino-transferencia?aluno_id=' + encodeURIComponent(alunoId) +
+                    '&rota_origem_id=' + encodeURIComponent(rotaOrigemId);
+                var resp = await apiFetch(url, { method: 'GET' });
+                if (!resp.ok) return [];
+                var data = await resp.json();
+                return Array.isArray(data) ? data : [];
+            } catch (e) {
+                console.error('Erro ao carregar rotas destino para transferência:', e);
+                return [];
+            }
+        }
+
+        function stPostTransferencia(payload) {
+            var base = apiBaseRotas;
+            return apiFetch(base + '/transferir-aluno', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+
+
+        function stPostTransferenciaLote(payload) {
+            var base = apiBaseRotas;
+            return apiFetch(base + '/transferir-alunos-lote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        }
+
+        async function stTentarTransferirAluno() {
+            var modo = stTransferAluno.modo || 'single';
+            var alunoId = Number(stTransferAluno.aluno && (stTransferAluno.aluno.id || stTransferAluno.aluno.aluno_id));
+            var alunoIds = Array.isArray(stTransferAluno.alunos) ? stTransferAluno.alunos.map(function (a) { return getAlunoIdNormalizado(a); }).filter(Boolean) : [];
+            var rotaOrigemId = Number(stTransferAluno.rotaOrigemId);
+            var turno = String(stTransferAluno.turno || '');
+            var rotaDestinoId = Number($('#transfer-rota-destino').val() || 0);
+
+            if ((modo === 'single' && (!alunoId || !rotaOrigemId || !turno)) || (modo === 'bulk' && (!alunoIds.length || !rotaOrigemId || !turno))) {
+                mostrarMensagemSistema('Aviso', 'Dados insuficientes para transferir.');
+                return;
+            }
+            if (!rotaDestinoId) {
+                mostrarMensagemSistema('Aviso', 'Selecione a rota destino.');
+                return;
+            }
+
+            var $btn = $('#btn-confirmar-transferencia');
+            $btn.prop('disabled', true).text('Processando...');
+
+            try {
+                // Se seção de troca estiver visível, envia aluno_troca_id
+                var alunoTrocaId = null;
+                if (!$('#transfer-swap-section').hasClass('d-none')) {
+                    var v = $('#transfer-aluno-troca').val();
+                    alunoTrocaId = v ? Number(v) : null;
+                    if (!alunoTrocaId) {
+                        throw new Error('Selecione um aluno da rota destino para trocar.');
+                    }
+                }
+
+                var resp = null;
+                if (modo === 'bulk') {
+                    resp = await stPostTransferenciaLote({
+                        aluno_ids: alunoIds,
+                        rota_origem_id: rotaOrigemId,
+                        rota_destino_id: rotaDestinoId
+                    });
+                } else {
+                    resp = await stPostTransferencia({
+                        aluno_id: alunoId,
+                        rota_origem_id: rotaOrigemId,
+                        rota_destino_id: rotaDestinoId,
+                        aluno_troca_id: alunoTrocaId
+                    });
+                }
+
+                var data = null;
+                try { data = await resp.json(); } catch (e) { data = null; }
+
+                if (resp.ok) {
+                    $('#modal-transferir-aluno').modal('hide');
+                    mostrarMensagemSistema('Sucesso', modo === 'bulk' ? 'Transferência em lote realizada com sucesso.' : 'Transferência realizada com sucesso.');
+                    if (modo === 'bulk') limparSelecaoAlunosTurno();
+                    // Recarrega lista da rota atual (origem) e tabela geral (para refletir contagens)
+                    carregarRotasItinerario(detalhesRotaAtual.itinerarioId);
+                    carregarAlunosRotaTurno(rotaOrigemId, turno);
+                    return;
+                }
+
+                // Se rota destino lotada, backend devolve alunos para troca (somente individual)
+                if (modo !== 'bulk' && resp.status === 409 && data && data.require_troca && Array.isArray(data.alunos_destino)) {
+                    var $selTroca = $('#transfer-aluno-troca');
+                    $selTroca.empty();
+                    $selTroca.append('<option value="">Selecione...</option>');
+                    data.alunos_destino.forEach(function (a) {
+                        if (!a) return;
+                        var opt = document.createElement('option');
+                        opt.value = a.id || a.aluno_id;
+                        opt.textContent = (a.pessoa_nome || a.nome || ('Aluno #' + (a.id || a.aluno_id))) + (a.escola_nome ? (' - ' + a.escola_nome) : '');
+                        $selTroca.append(opt);
+                    });
+                    $('#transfer-swap-section').removeClass('d-none');
+                    $btn.prop('disabled', false).text('Trocar');
+                    return;
+                }
+
+                if (modo === 'bulk' && data && Array.isArray(data.detalhes) && data.detalhes.length) {
+                    var detalhesMsg = data.detalhes.slice(0, 5).map(function (d) { return 'Aluno #' + d.aluno_id + ': ' + d.error; }).join('\n');
+                    throw new Error(((data.error || data.message) || 'Erro ao transferir alunos.') + '\n' + detalhesMsg);
+                }
+
+                throw new Error((data && (data.error || data.message)) ? (data.error || data.message) : 'Erro ao transferir aluno.');
+            } catch (err) {
+                mostrarMensagemSistema('Erro', err.message || 'Erro ao transferir aluno.');
+            } finally {
+                var $btn2 = $('#btn-confirmar-transferencia');
+                if ($btn2.text() === 'Processando...') $btn2.text(modo === 'bulk' ? 'Transferir selecionados' : 'Transferir');
+                $btn2.prop('disabled', false);
+            }
+        }
+
+        $(document).ready(function () {
+            $('#btn-confirmar-transferencia').on('click', stTentarTransferirAluno);
+            $('#btn-transferir-selecionados').on('click', abrirModalTransferirAlunosSelecionados);
+            $('#btn-limpar-selecao-alunos').on('click', limparSelecaoAlunosTurno);
+            $('#check-todos-alunos-turno').on('change', function () {
+                var checked = !!this.checked;
+                $('#lista-rota-alunos-body .check-aluno-turno').each(function () {
+                    $(this).prop('checked', checked).trigger('change');
+                });
+            });
+        });
+        // ===== fim transferência =====
+
+    </script>
+</body>
+
+</html>

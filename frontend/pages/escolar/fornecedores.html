@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Fornecedores</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        #map-fornecedores,
+        #mapa-fornecedor-garagem {
+            width: 100%;
+            height: 420px;
+            border-radius: .25rem;
+            overflow: hidden;
+        }
+
+        #mapa-fornecedor-garagem {
+            height: 400px;
+        }
+
+        .leaflet-container {
+            font: inherit;
+        }
+
+        .small-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: .03em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <!-- TOPNAV -->
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <!-- MAIN -->
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Fornecedores de transporte</h2>
+                                <p class="text-muted mb-0">
+                                    Cadastre os fornecedores de transporte escolar e a localização da garagem no mapa.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- MAPA DE FORNECEDORES -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div>
+                                            <h2 class="h5 mb-0">Mapa de garagens</h2>
+                                            <small class="text-muted">
+                                                Cada ponto representa a garagem principal de um fornecedor.
+                                            </small>
+                                        </div>
+                                        <div class="ml-auto">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                id="btn-atualizar-mapa-fornecedores">
+                                                <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar mapa
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="map-fornecedores"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE FORNECEDORES -->
+                        <div class="row">
+                            <div class="col-md-12 my-4">
+                                <div class="d-flex mb-2 align-items-center">
+                                    <div>
+                                        <h2 class="h4 mb-1">Fornecedores cadastrados</h2>
+                                        <p class="mb-0 text-muted">
+                                            Lista de fornecedores com CNPJ, contatos e localização da garagem.
+                                        </p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <button class="btn btn-primary" type="button" id="btn-abrir-novo-fornecedor">
+                                            Novo fornecedor +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col-md-6">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-fornecedores"
+                                                                class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control"
+                                                                id="search-fornecedores"
+                                                                placeholder="Pesquisar por nome, razão social ou CNPJ">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                                                <div class="form-inline justify-content-md-end">
+                                                    <span class="small-label mr-2">Operações em lote</span>
+                                                    <button class="btn btn-outline-danger btn-sm"
+                                                        id="btn-excluir-fornecedores-selecionados">
+                                                        Excluir selecionados
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0"
+                                                id="tabela-fornecedores">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width: 40px;">
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                    id="check-all-fornecedores">
+                                                                <label class="custom-control-label"
+                                                                    for="check-all-fornecedores"></label>
+                                                            </div>
+                                                        </th>
+                                                        <th style="width: 70px;">ID</th>
+                                                        <th>Razão social / Nome fantasia</th>
+                                                        <th style="width: 180px;">CNPJ</th>
+                                                        <th style="width: 220px;">Contato</th>
+                                                        <th style="width: 180px;">Garagem (bairro / cidade)</th>
+                                                        <th style="width: 100px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-fornecedores"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de fornecedores" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-fornecedores">
+                                                <!-- paginado via JS -->
+                                            </ul>
+                                        </nav>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL NOVO / EDITAR FORNECEDOR -->
+            <div class="modal fade" id="modal-novo-fornecedor" tabindex="-1" role="dialog"
+                aria-labelledby="modalNovoFornecedorLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-fornecedor" novalidate>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalNovoFornecedorLabel">Novo fornecedor</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <input type="hidden" id="fornecedor-id" name="id">
+                                <input type="hidden" id="fornecedor-garagem-lat" name="garagem_lat">
+                                <input type="hidden" id="fornecedor-garagem-lng" name="garagem_lng">
+
+                                <!-- DADOS BÁSICOS -->
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="fornecedor-razao-social">Razão social</label>
+                                        <input type="text" class="form-control" id="fornecedor-razao-social"
+                                            name="razao_social" required
+                                            placeholder="Ex.: Transporte Escolar Canaã LTDA">
+                                        <div class="invalid-feedback">Informe a razão social.</div>
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="fornecedor-nome-fantasia">Nome fantasia</label>
+                                        <input type="text" class="form-control" id="fornecedor-nome-fantasia"
+                                            name="nome_fantasia" placeholder="Ex.: TransCanaã">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="fornecedor-cnpj">CNPJ</label>
+                                        <input type="text" class="form-control input-cnpj" id="fornecedor-cnpj"
+                                            name="cnpj" required placeholder="__.___.___/____-__">
+                                        <div class="invalid-feedback">Informe o CNPJ.</div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="fornecedor-telefone">Telefone</label>
+                                        <input type="text" class="form-control input-phone" id="fornecedor-telefone"
+                                            name="telefone" placeholder="(__) _____-____">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="fornecedor-email">E-mail</label>
+                                        <input type="email" class="form-control" id="fornecedor-email" name="email"
+                                            placeholder="contato@fornecedor.com.br">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="fornecedor-responsavel">Responsável</label>
+                                        <input type="text" class="form-control" id="fornecedor-responsavel"
+                                            name="responsavel" placeholder="Nome do responsável">
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label for="fornecedor-status">Status</label>
+                                        <select id="fornecedor-status" name="status" class="form-control">
+                                            <option value="ativo" selected>Ativo</option>
+                                            <option value="inativo">Inativo</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label for="fornecedor-inscricao-municipal">Inscrição municipal</label>
+                                        <input type="text" class="form-control" id="fornecedor-inscricao-municipal"
+                                            name="inscricao_municipal" placeholder="Opcional">
+                                    </div>
+                                </div>
+
+                                <!-- LOCALIZAÇÃO DA GARAGEM NO MAPA -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small font-weight-bold text-uppercase">
+                                            Localização da garagem no mapa
+                                        </span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="mapa-fornecedor-garagem"></div>
+                                    </div>
+                                    <div class="card-footer small text-muted">
+                                        Clique no mapa para marcar a garagem principal do fornecedor. Você pode arrastar
+                                        o marcador para ajustar a posição.
+                                    </div>
+                                </div>
+
+                                <!-- ENDEREÇO DA GARAGEM -->
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="fornecedor-logradouro">Logradouro (garagem)</label>
+                                        <input type="text" class="form-control" id="fornecedor-logradouro"
+                                            name="logradouro_garagem" placeholder="Rua, avenida, travessa..." required>
+                                        <div class="invalid-feedback">Informe o logradouro da garagem.</div>
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label for="fornecedor-numero">Número</label>
+                                        <input type="text" class="form-control" id="fornecedor-numero"
+                                            name="numero_garagem" placeholder="Número" required>
+                                        <div class="invalid-feedback">Informe o número.</div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="fornecedor-complemento">Complemento</label>
+                                        <input type="text" class="form-control" id="fornecedor-complemento"
+                                            name="complemento_garagem" placeholder="Galpão, quadra, sala...">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="fornecedor-bairro">Bairro</label>
+                                        <input type="text" class="form-control" id="fornecedor-bairro"
+                                            name="bairro_garagem" placeholder="Bairro" required>
+                                        <div class="invalid-feedback">Informe o bairro.</div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="fornecedor-cidade">Cidade</label>
+                                        <input type="text" class="form-control" id="fornecedor-cidade"
+                                            name="cidade_garagem" placeholder="Cidade" required>
+                                        <div class="invalid-feedback">Informe a cidade.</div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="fornecedor-cep">CEP</label>
+                                        <input type="text" class="form-control input-zip" id="fornecedor-cep"
+                                            name="cep_garagem" placeholder="____-___" required>
+                                        <div class="invalid-feedback">Informe o CEP.</div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="fornecedor-referencia">Ponto de referência</label>
+                                    <input type="text" class="form-control" id="fornecedor-referencia"
+                                        name="referencia_garagem"
+                                        placeholder="Ex.: Próximo ao posto de combustível X, galpão amarelo, etc.">
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar fornecedor</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modais padrão de notificações/atalhos -->
+            <div class="modal fade modal-notif modal-slide" tabindex="-1" role="dialog"
+                aria-labelledby="defaultModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-sm" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="defaultModalLabel">Notifications</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- conteúdo padrão -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal">Clear
+                                All</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade modal-shortcut modal-slide" tabindex="-1" role="dialog"
+                aria-labelledby="defaultModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <!-- conteúdo padrão -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: MENSAGEM DO SISTEMA -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo">
+                            <!-- mensagem aqui -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: CONFIRMAÇÃO DO SISTEMA -->
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo">
+                            <!-- texto de confirmação aqui -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SCRIPTS BASE -->
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+
+    <script>
+        // Inicializações genéricas (máscaras, select2, etc.)
+        $('.select2').select2({ theme: 'bootstrap4' });
+        $('.select2-multi').select2({ multiple: true, theme: 'bootstrap4' });
+
+        $('.input-zip').mask('00000-000', { placeholder: "____-___" });
+        $('.input-cnpj').mask('00.000.000/0000-00', { reverse: true });
+        $('.input-phone').mask('(00) 00000-0000');
+
+        (function () {
+            'use strict';
+            window.addEventListener('load', function () {
+                var forms = document.getElementsByClassName('needs-validation');
+                Array.prototype.filter.call(forms, function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+
+    <script>
+        // --- LÓGICA DE FORNECEDORES ---
+        var apiBaseFornecedores = '/api/fornecedores';
+
+        var mapFornecedores;
+        var mapFornecedorGaragem;
+        var defaultCenter = [-6.530070, -49.851620];
+        var defaultZoom = 12;
+
+        var iconeGaragem = L.icon({
+            iconUrl: '../../assets/icons/garage-marker.png', // ajuste para o ícone real
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -28]
+        });
+
+        var fornecedores = [];
+        var fornecedorMarkers = {};
+        var markerFornecedorEdicao = null;
+
+        // Paginação
+        var paginaAtualFornecedores = 1;
+        var totalPaginasFornecedores = 1;
+        var tamanhoPaginaFornecedores = 20;
+
+        function criarMapaBase(divId) {
+            var googleHybrid = L.tileLayer(
+                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                {
+                    maxZoom: 20,
+                    attribution: '&copy; Google'
+                }
+            );
+
+            var osm = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }
+            );
+
+            var map = L.map(divId, {
+                zoomControl: true,
+                center: defaultCenter,
+                zoom: defaultZoom,
+                layers: [googleHybrid]
+            });
+
+            var baseLayers = {
+                'Google Hybrid': googleHybrid,
+                'OpenStreetMap': osm
+            };
+
+            L.control.layers(baseLayers, null, {
+                position: 'topright'
+            }).addTo(map);
+
+            return map;
+        }
+
+        function initMapFornecedores() {
+            mapFornecedores = criarMapaBase('map-fornecedores');
+        }
+
+        function initMapFornecedorGaragem() {
+            mapFornecedorGaragem = criarMapaBase('mapa-fornecedor-garagem');
+
+            mapFornecedorGaragem.on('click', function (e) {
+                definirMarkerFornecedor(e.latlng.lat, e.latlng.lng, true);
+            });
+        }
+
+        function definirMarkerFornecedor(lat, lng, moverMapa) {
+            if (!mapFornecedorGaragem) return;
+            var latNum = parseFloat(lat);
+            var lngNum = parseFloat(lng);
+            if (isNaN(latNum) || isNaN(lngNum)) return;
+
+            if (markerFornecedorEdicao) {
+                mapFornecedorGaragem.removeLayer(markerFornecedorEdicao);
+            }
+            markerFornecedorEdicao = L.marker([latNum, lngNum], {
+                icon: iconeGaragem,
+                draggable: true
+            }).addTo(mapFornecedorGaragem);
+
+            $('#fornecedor-garagem-lat').val(latNum);
+            $('#fornecedor-garagem-lng').val(lngNum);
+
+            markerFornecedorEdicao.on('dragend', function (ev) {
+                var ll = ev.target.getLatLng();
+                $('#fornecedor-garagem-lat').val(ll.lat);
+                $('#fornecedor-garagem-lng').val(ll.lng);
+            });
+
+            if (moverMapa) {
+                mapFornecedorGaragem.setView([latNum, lngNum], 16);
+            }
+        }
+
+        function limparMarkerFornecedor() {
+            if (markerFornecedorEdicao && mapFornecedorGaragem) {
+                mapFornecedorGaragem.removeLayer(markerFornecedorEdicao);
+            }
+            markerFornecedorEdicao = null;
+            $('#fornecedor-garagem-lat').val('');
+            $('#fornecedor-garagem-lng').val('');
+        }
+
+        function limparMapaFornecedores() {
+            if (!mapFornecedores) return;
+            Object.keys(fornecedorMarkers).forEach(function (id) {
+                var m = fornecedorMarkers[id];
+                if (m && mapFornecedores.hasLayer(m)) {
+                    mapFornecedores.removeLayer(m);
+                }
+            });
+            fornecedorMarkers = {};
+        }
+
+        function adicionarFornecedorNoMapa(f) {
+            if (!mapFornecedores) return;
+
+            var lat = null, lng = null;
+            if (f.garagem_localizacao && f.garagem_localizacao.type === 'Point' && Array.isArray(f.garagem_localizacao.coordinates)) {
+                lng = f.garagem_localizacao.coordinates[0];
+                lat = f.garagem_localizacao.coordinates[1];
+            } else if (f.garagem_lat && f.garagem_lng) {
+                lat = f.garagem_lat;
+                lng = f.garagem_lng;
+            }
+
+            if (lat == null || lng == null) return;
+
+            var marker = L.marker([lat, lng], { icon: iconeGaragem }).addTo(mapFornecedores);
+            var popupHtml =
+                '<strong>' + (f.nome_fantasia || f.razao_social || 'Fornecedor') + '</strong><br>' +
+                (f.cnpj ? 'CNPJ: ' + f.cnpj + '<br>' : '') +
+                (f.telefone ? 'Tel.: ' + f.telefone + '<br>' : '') +
+                (f.bairro_garagem ? 'Bairro: ' + f.bairro_garagem + '<br>' : '');
+
+            marker.on('click', function () {
+                mapFornecedores.setView(marker.getLatLng(), 16);
+            });
+
+            marker.bindPopup(popupHtml);
+            fornecedorMarkers[f.id] = marker;
+        }
+
+        function atualizarMapaFornecedores() {
+            if (!mapFornecedores) return;
+
+            limparMapaFornecedores();
+            var bounds = null;
+
+            fornecedores.forEach(function (f) {
+                adicionarFornecedorNoMapa(f);
+                var m = fornecedorMarkers[f.id];
+                if (m) {
+                    var ll = m.getLatLng();
+                    if (!bounds) {
+                        bounds = L.latLngBounds(ll, ll);
+                    } else {
+                        bounds.extend(ll);
+                    }
+                }
+            });
+
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                mapFornecedores.fitBounds(bounds.pad(0.2));
+            } else {
+                mapFornecedores.setView(defaultCenter, defaultZoom);
+            }
+        }
+
+        function carregarFornecedores() {
+            return fetch(apiBaseFornecedores)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar fornecedores');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    fornecedores = data || [];
+                    paginaAtualFornecedores = 1;
+                    renderizarTabelaFornecedores();
+                    atualizarMapaFornecedores();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de fornecedores.');
+                });
+        }
+
+        function atualizarPaginacaoFornecedores(totalFiltrados) {
+            var ul = document.getElementById('paginacao-fornecedores');
+            if (!ul) return;
+
+            ul.innerHTML = '';
+            totalPaginasFornecedores = Math.max(1, Math.ceil(totalFiltrados / tamanhoPaginaFornecedores));
+
+            var liPrev = document.createElement('li');
+            liPrev.className = 'page-item' + (paginaAtualFornecedores <= 1 ? ' disabled' : '');
+            var aPrev = document.createElement('a');
+            aPrev.className = 'page-link';
+            aPrev.href = '#';
+            aPrev.textContent = 'Anterior';
+            aPrev.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualFornecedores > 1) {
+                    paginaAtualFornecedores--;
+                    renderizarTabelaFornecedores();
+                }
+            });
+            liPrev.appendChild(aPrev);
+            ul.appendChild(liPrev);
+
+            var liInfo = document.createElement('li');
+            liInfo.className = 'page-item disabled';
+            var aInfo = document.createElement('a');
+            aInfo.className = 'page-link';
+            aInfo.href = '#';
+            aInfo.textContent = paginaAtualFornecedores + ' / ' + totalPaginasFornecedores;
+            liInfo.appendChild(aInfo);
+            ul.appendChild(liInfo);
+
+            var liNext = document.createElement('li');
+            liNext.className = 'page-item' + (paginaAtualFornecedores >= totalPaginasFornecedores ? ' disabled' : '');
+            var aNext = document.createElement('a');
+            aNext.className = 'page-link';
+            aNext.href = '#';
+            aNext.textContent = 'Próxima';
+            aNext.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualFornecedores < totalPaginasFornecedores) {
+                    paginaAtualFornecedores++;
+                    renderizarTabelaFornecedores();
+                }
+            });
+            liNext.appendChild(aNext);
+            ul.appendChild(liNext);
+        }
+
+        function obterResumoContatoFornecedor(f) {
+            var partes = [];
+            if (f.responsavel) partes.push('Resp.: ' + f.responsavel);
+            if (f.telefone) partes.push('Tel.: ' + f.telefone);
+            if (f.email) partes.push(f.email);
+            return partes.join(' | ');
+        }
+
+        function renderizarTabelaFornecedores() {
+            var tbody = document.getElementById('tbody-fornecedores');
+            if (!tbody) return;
+
+            var termo = ($('#search-fornecedores').val() || '').toLowerCase();
+
+            var filtrados = fornecedores.filter(function (f) {
+                var texto = [
+                    f.razao_social || '',
+                    f.nome_fantasia || '',
+                    f.cnpj || ''
+                ].join(' ').toLowerCase();
+                if (termo && texto.indexOf(termo) === -1) return false;
+                return true;
+            });
+
+            if (paginaAtualFornecedores < 1) paginaAtualFornecedores = 1;
+            atualizarPaginacaoFornecedores(filtrados.length);
+            if (paginaAtualFornecedores > totalPaginasFornecedores) {
+                paginaAtualFornecedores = totalPaginasFornecedores;
+            }
+
+            var inicio = (paginaAtualFornecedores - 1) * tamanhoPaginaFornecedores;
+            var fim = inicio + tamanhoPaginaFornecedores;
+            var paginaItens = filtrados.slice(inicio, fim);
+
+            tbody.innerHTML = '';
+
+            paginaItens.forEach(function (f) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', f.id);
+
+                // checkbox
+                var tdCheck = document.createElement('td');
+                var divCheck = document.createElement('div');
+                divCheck.className = 'custom-control custom-checkbox';
+                var inputCheck = document.createElement('input');
+                inputCheck.type = 'checkbox';
+                inputCheck.className = 'custom-control-input';
+                inputCheck.id = 'fornecedor-check-' + f.id;
+                var labelCheck = document.createElement('label');
+                labelCheck.className = 'custom-control-label';
+                labelCheck.setAttribute('for', inputCheck.id);
+                divCheck.appendChild(inputCheck);
+                divCheck.appendChild(labelCheck);
+                tdCheck.appendChild(divCheck);
+                tr.appendChild(tdCheck);
+
+                // ID
+                var tdId = document.createElement('td');
+                tdId.textContent = f.id;
+                tr.appendChild(tdId);
+
+                // Razão/Nome Fantasia
+                var tdNome = document.createElement('td');
+                var htmlNome = '';
+                if (f.nome_fantasia) {
+                    htmlNome += '<strong>' + f.nome_fantasia + '</strong><br>';
+                }
+                htmlNome += '<small class="text-muted">' + (f.razao_social || '') + '</small>';
+                tdNome.innerHTML = htmlNome;
+                tr.appendChild(tdNome);
+
+                // CNPJ
+                var tdCnpj = document.createElement('td');
+                tdCnpj.textContent = f.cnpj || '';
+                tr.appendChild(tdCnpj);
+
+                // Contato
+                var tdContato = document.createElement('td');
+                tdContato.textContent = obterResumoContatoFornecedor(f);
+                tr.appendChild(tdContato);
+
+                // Garagem
+                var tdGaragem = document.createElement('td');
+                var textoGaragem = '';
+                if (f.bairro_garagem) textoGaragem += f.bairro_garagem;
+                if (f.cidade_garagem) {
+                    textoGaragem += textoGaragem ? ' - ' + f.cidade_garagem : f.cidade_garagem;
+                }
+                if (!textoGaragem) textoGaragem = 'Não informado';
+                tdGaragem.textContent = textoGaragem;
+                tr.appendChild(tdGaragem);
+
+                // Ações
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+                btnDrop.appendChild(spanSr);
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-fornecedor';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', f.id);
+                aEditar.textContent = 'Ver / editar';
+
+                var aMapa = document.createElement('a');
+                aMapa.className = 'dropdown-item action-ver-mapa-fornecedor';
+                aMapa.href = '#';
+                aMapa.setAttribute('data-id', f.id);
+                aMapa.textContent = 'Visualizar no mapa';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-fornecedor';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', f.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aEditar);
+                menu.appendChild(aMapa);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function centralizarFornecedorNoMapa(id) {
+            var marker = fornecedorMarkers[id];
+            if (!marker || !mapFornecedores) return;
+            mapFornecedores.setView(marker.getLatLng(), 16);
+            marker.openPopup();
+        }
+
+        function limparFormFornecedor() {
+            $('#fornecedor-id').val('');
+            $('#fornecedor-razao-social').val('');
+            $('#fornecedor-nome-fantasia').val('');
+            $('#fornecedor-cnpj').val('');
+            $('#fornecedor-telefone').val('');
+            $('#fornecedor-email').val('');
+            $('#fornecedor-responsavel').val('');
+            $('#fornecedor-status').val('ativo');
+            $('#fornecedor-inscricao-municipal').val('');
+
+            $('#fornecedor-logradouro').val('');
+            $('#fornecedor-numero').val('');
+            $('#fornecedor-complemento').val('');
+            $('#fornecedor-bairro').val('');
+            $('#fornecedor-cidade').val('');
+            $('#fornecedor-cep').val('');
+            $('#fornecedor-referencia').val('');
+
+            limparMarkerFornecedor();
+
+            var form = document.getElementById('form-fornecedor');
+            if (form) form.classList.remove('was-validated');
+        }
+
+        function preencherFormFornecedor(f) {
+            $('#fornecedor-id').val(f.id || '');
+            $('#fornecedor-razao-social').val(f.razao_social || '');
+            $('#fornecedor-nome-fantasia').val(f.nome_fantasia || '');
+            $('#fornecedor-cnpj').val(f.cnpj || '');
+            $('#fornecedor-telefone').val(f.telefone || '');
+            $('#fornecedor-email').val(f.email || '');
+            $('#fornecedor-responsavel').val(f.responsavel || '');
+            $('#fornecedor-status').val(f.status || 'ativo');
+            $('#fornecedor-inscricao-municipal').val(f.inscricao_municipal || '');
+
+            $('#fornecedor-logradouro').val(f.logradouro_garagem || '');
+            $('#fornecedor-numero').val(f.numero_garagem || '');
+            $('#fornecedor-complemento').val(f.complemento_garagem || '');
+            $('#fornecedor-bairro').val(f.bairro_garagem || '');
+            $('#fornecedor-cidade').val(f.cidade_garagem || '');
+            $('#fornecedor-cep').val(f.cep_garagem || '');
+            $('#fornecedor-referencia').val(f.referencia_garagem || '');
+
+            var lat = null, lng = null;
+            if (f.garagem_localizacao && f.garagem_localizacao.type === 'Point' && Array.isArray(f.garagem_localizacao.coordinates)) {
+                lng = f.garagem_localizacao.coordinates[0];
+                lat = f.garagem_localizacao.coordinates[1];
+            } else if (f.garagem_lat && f.garagem_lng) {
+                lat = f.garagem_lat;
+                lng = f.garagem_lng;
+            }
+            if (lat != null && lng != null) {
+                definirMarkerFornecedor(lat, lng, false);
+            } else {
+                limparMarkerFornecedor();
+            }
+
+            var form = document.getElementById('form-fornecedor');
+            if (form) form.classList.remove('was-validated');
+        }
+
+        function abrirModalNovoFornecedor() {
+            $('#modalNovoFornecedorLabel').text('Novo fornecedor');
+            limparFormFornecedor();
+            $('#modal-novo-fornecedor').modal('show');
+
+            setTimeout(function () {
+                if (mapFornecedorGaragem) {
+                    mapFornecedorGaragem.invalidateSize();
+                    mapFornecedorGaragem.setView(defaultCenter, defaultZoom);
+                }
+            }, 150);
+        }
+
+        function abrirModalEditarFornecedor(id) {
+            var f = fornecedores.find(function (item) { return String(item.id) === String(id); });
+            if (!f) return;
+
+            $('#modalNovoFornecedorLabel').text('Editar fornecedor');
+            limparFormFornecedor();
+            preencherFormFornecedor(f);
+            $('#modal-novo-fornecedor').modal('show');
+
+            setTimeout(function () {
+                if (mapFornecedorGaragem) {
+                    mapFornecedorGaragem.invalidateSize();
+                    var lat = $('#fornecedor-garagem-lat').val();
+                    var lng = $('#fornecedor-garagem-lng').val();
+                    if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+                        mapFornecedorGaragem.setView([parseFloat(lat), parseFloat(lng)], 16);
+                    } else {
+                        mapFornecedorGaragem.setView(defaultCenter, defaultZoom);
+                    }
+                }
+            }, 150);
+        }
+
+        function salvarFornecedor(event) {
+            event.preventDefault();
+            var form = document.getElementById('form-fornecedor');
+            if (!form.checkValidity()) {
+                event.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+
+            var latStr = $('#fornecedor-garagem-lat').val();
+            var lngStr = $('#fornecedor-garagem-lng').val();
+            if (!latStr || !lngStr) {
+                mostrarMensagemSistema(
+                    'Localização da garagem',
+                    'Marque a garagem no mapa antes de salvar o fornecedor.'
+                );
+                return;
+            }
+
+            var lat = parseFloat(latStr);
+            var lng = parseFloat(lngStr);
+            if (isNaN(lat) || isNaN(lng)) {
+                mostrarMensagemSistema(
+                    'Localização inválida',
+                    'As coordenadas da garagem são inválidas. Clique novamente no mapa para definir o ponto.'
+                );
+                return;
+            }
+
+            var id = $('#fornecedor-id').val() || null;
+
+            var payload = {
+                razao_social: $('#fornecedor-razao-social').val(),
+                nome_fantasia: $('#fornecedor-nome-fantasia').val() || null,
+                cnpj: $('#fornecedor-cnpj').val(),
+                telefone: $('#fornecedor-telefone').val() || null,
+                email: $('#fornecedor-email').val() || null,
+                responsavel: $('#fornecedor-responsavel').val() || null,
+                status: $('#fornecedor-status').val(),
+                inscricao_municipal: $('#fornecedor-inscricao-municipal').val() || null,
+
+                logradouro_garagem: $('#fornecedor-logradouro').val(),
+                numero_garagem: $('#fornecedor-numero').val(),
+                complemento_garagem: $('#fornecedor-complemento').val() || null,
+                bairro_garagem: $('#fornecedor-bairro').val(),
+                cidade_garagem: $('#fornecedor-cidade').val(),
+                cep_garagem: $('#fornecedor-cep').val(),
+                referencia_garagem: $('#fornecedor-referencia').val() || null,
+
+                garagem_localizacao: {
+                    type: 'Point',
+                    coordinates: [lng, lat]
+                }
+            };
+
+            var url = apiBaseFornecedores;
+            var method = 'POST';
+            if (id) {
+                url = apiBaseFornecedores + '/' + id;
+                method = 'PUT';
+            }
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().then(function (err) {
+                            throw err;
+                        }).catch(function () {
+                            throw new Error('Erro ao salvar fornecedor');
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-novo-fornecedor').modal('hide');
+                    return carregarFornecedores();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar fornecedor.');
+                });
+        }
+
+        function excluirFornecedor(id) {
+            confirmarAcaoSistema(
+                'Excluir fornecedor',
+                'Deseja realmente excluir este fornecedor?',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                fetch(apiBaseFornecedores + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao excluir fornecedor');
+                        return resp.json();
+                    })
+                    .then(function () {
+                        return carregarFornecedores();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir fornecedor.');
+                    });
+            });
+        }
+
+        function obterIdsFornecedoresSelecionados() {
+            var ids = [];
+            fornecedores.forEach(function (f) {
+                var chk = document.getElementById('fornecedor-check-' + f.id);
+                if (chk && chk.checked) {
+                    ids.push(f.id);
+                }
+            });
+            return ids;
+        }
+
+        $(document).ready(function () {
+            initMapFornecedores();
+            initMapFornecedorGaragem();
+            carregarFornecedores();
+
+            $('#btn-atualizar-mapa-fornecedores').on('click', function () {
+                carregarFornecedores();
+            });
+
+            $('#search-fornecedores').on('input', function () {
+                paginaAtualFornecedores = 1;
+                renderizarTabelaFornecedores();
+            });
+
+            $('#check-all-fornecedores').on('change', function () {
+                var checked = this.checked;
+                fornecedores.forEach(function (f) {
+                    var chk = document.getElementById('fornecedor-check-' + f.id);
+                    if (chk) chk.checked = checked;
+                });
+            });
+
+            $('#btn-abrir-novo-fornecedor').on('click', function () {
+                abrirModalNovoFornecedor();
+            });
+
+            $('#modal-novo-fornecedor').on('shown.bs.modal', function () {
+                if (mapFornecedorGaragem) {
+                    setTimeout(function () {
+                        mapFornecedorGaragem.invalidateSize();
+                        var lat = $('#fornecedor-garagem-lat').val();
+                        var lng = $('#fornecedor-garagem-lng').val();
+                        if (lat && lng && !isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
+                            mapFornecedorGaragem.setView([parseFloat(lat), parseFloat(lng)], 16);
+                        } else {
+                            mapFornecedorGaragem.setView(defaultCenter, defaultZoom);
+                        }
+                    }, 150);
+                }
+            });
+
+            $('#form-fornecedor').on('submit', salvarFornecedor);
+
+            $('#tbody-fornecedores').on('click', '.action-editar-fornecedor', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                abrirModalEditarFornecedor(id);
+            });
+
+            $('#tbody-fornecedores').on('click', '.action-ver-mapa-fornecedor', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                centralizarFornecedorNoMapa(id);
+            });
+
+            $('#tbody-fornecedores').on('click', '.action-excluir-fornecedor', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                excluirFornecedor(id);
+            });
+
+            $('#btn-excluir-fornecedores-selecionados').on('click', function (e) {
+                e.preventDefault();
+                var ids = obterIdsFornecedoresSelecionados();
+                if (!ids.length) {
+                    mostrarMensagemSistema('Atenção', 'Selecione ao menos um fornecedor.');
+                    return;
+                }
+
+                confirmarAcaoSistema(
+                    'Excluir fornecedores',
+                    'Deseja realmente excluir os fornecedores selecionados?',
+                    'Excluir'
+                ).then(function (confirmado) {
+                    if (!confirmado) return;
+
+                    Promise.all(ids.map(function (id) {
+                        return fetch(apiBaseFornecedores + '/' + id, { method: 'DELETE' });
+                    })).then(function () {
+                        carregarFornecedores();
+                    }).catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir fornecedores selecionados.');
+                    });
+                });
+            });
+
+        });
+    </script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+
+</body>
+
+</html>

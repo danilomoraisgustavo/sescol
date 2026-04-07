@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte">
+  <meta name="author" content="PyDen Technologies">
+  <link rel="icon" href="../../assets/favicon.ico">
+  <title>SETRANE EXPRESS – Veículos (Interno)</title>
+
+  <link rel="stylesheet" href="../../css/simplebar.css">
+  <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../../css/feather.css">
+  <link rel="stylesheet" href="../../css/select2.css">
+  <link rel="stylesheet" href="../../css/dropzone.css">
+  <link rel="stylesheet" href="../../css/uppy.min.css">
+  <link rel="stylesheet" href="../../css/jquery.steps.css">
+  <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+  <link rel="stylesheet" href="../../css/quill.snow.css">
+  <link rel="stylesheet" href="../../css/daterangepicker.css">
+  <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+  <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+  <style>
+    .small-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: .03em;
+      color: #6c757d;
+    }
+
+    #modal-veiculo-interno .modal-body {
+      max-height: calc(80vh - 120px);
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body class="vertical dark">
+  <div class="wrapper">
+    <!-- TOP HEADER (mesmo padrão das outras telas) -->
+    <nav class="topnav navbar navbar-light">
+      <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+        <i class="fe fe-menu navbar-toggler-icon"></i>
+      </button>
+      <form class="form-inline mr-auto searchform text-muted">
+        <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+          placeholder="Buscar..." aria-label="Search">
+      </form>
+      <ul class="nav">
+        <li class="nav-item">
+          <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+            <i class="fe fe-sun fe-16"></i>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+            <span class="fe fe-grid fe-16"></span>
+          </a>
+        </li>
+        <li class="nav-item nav-notif">
+          <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+            <span class="fe fe-bell fe-16"></span>
+            <span class="dot dot-md bg-success"></span>
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink" role="button"
+            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="avatar avatar-sm mt-2">
+              <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+            </span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+            <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+            <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+            <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- SIDEBAR (mantém o mesmo padrão do sistema; substitua pelo seu aside global se preferir) -->
+    <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+      <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+        <i class="fe fe-x"><span class="sr-only"></span></i>
+      </a>
+
+      <nav class="vertnav navbar navbar-light">
+        <div class="w-100 mb-4 d-flex">
+          <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+            <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+          </a>
+        </div>
+
+        <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+        <ul class="navbar-nav flex-fill w-100 mb-2">
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">
+              <i class="fe fe-home fe-16"></i>
+              <span class="ml-3 item-text">Painel</span>
+            </a>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
+              <i class="fe fe-layers fe-16"></i>
+              <span class="ml-3 item-text">Cadastros</span>
+            </a>
+            <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+              <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span class="ml-1 item-text">Zoneamentos</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span class="ml-1 item-text">Escolas</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span class="ml-1 item-text">Alunos</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span class="ml-1 item-text">Pontos de parada</span></a></li>
+
+              <li class="nav-item dropdown">
+                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                  class="dropdown-toggle nav-link pl-3">
+                  <span class="ml-1 item-text">Rotas escolares</span>
+                </a>
+                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                  <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span class="ml-1 item-text">Rotas Municipais</span></a></li>
+                  <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                  <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
+              <i class="fe fe-truck fe-16"></i>
+              <span class="ml-3 item-text">Operação</span>
+            </a>
+            <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+              <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span class="ml-1 item-text">Motoristas</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span class="ml-1 item-text">Monitores</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span class="ml-1 item-text">Veículos</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span class="ml-1 item-text">Fornecedores</span></a></li>
+            </ul>
+          </li>
+        </ul>
+
+        <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+        <ul class="navbar-nav flex-fill w-100 mb-2">
+          <li class="nav-item">
+            <a class="nav-link" href="/interno/motoristas">
+              <i class="fe fe-user-check fe-16"></i>
+              <span class="ml-3 item-text">Motoristas Internos</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/interno/veiculos">
+              <i class="fe fe-truck fe-16"></i>
+              <span class="ml-3 item-text">Veículos Internos</span>
+            </a>
+          </li>
+        </ul>
+
+        <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+        <ul class="navbar-nav flex-fill w-100 mb-2">
+          <li class="nav-item">
+            <a class="nav-link" href="/sistema/configuracoes">
+              <i class="fe fe-settings fe-16"></i>
+              <span class="ml-3 item-text">Configurações</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/auth-logout.html">
+              <i class="fe fe-log-out fe-16"></i>
+              <span class="ml-3 item-text">Sair</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main role="main" class="main-content">
+      <div class="container-fluid">
+        <div class="row justify-content-center">
+          <div class="col-12">
+
+            <div class="row mb-3">
+              <div class="col">
+                <h2 class="h4 mb-1">Veículos (demanda interna)</h2>
+                <p class="text-muted mb-0">
+                  Cadastre, gerencie e acompanhe veículos usados nas demandas internas, incluindo CRLV, fotos e anexos.
+                </p>
+              </div>
+            </div>
+
+            <!-- RESUMO RÁPIDO -->
+            <div class="row mb-4">
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">Total de veículos</span>
+                    <h3 class="mb-0" id="resumo-total">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">Ativos</span>
+                    <h3 class="mb-0" id="resumo-ativos">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">Com CRLV</span>
+                    <h3 class="mb-0" id="resumo-com-crlv">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">CRLV pendente</span>
+                    <h3 class="mb-0" id="resumo-crlv-pendente">0</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LISTA -->
+            <div class="row">
+              <div class="col-12 my-4">
+                <div class="d-flex mb-2 align-items-center">
+                  <div>
+                    <h2 class="h4 mb-1">Veículos cadastrados</h2>
+                    <p class="mb-0 text-muted">Lista com status, dados principais e anexos.</p>
+                  </div>
+                  <div class="ml-auto">
+                    <button class="btn btn-primary" type="button" id="btn-novo">
+                      Novo veículo +
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card shadow">
+                  <div class="card-body">
+                    <div class="toolbar row mb-3">
+                      <div class="col-md-6">
+                        <form class="form-inline">
+                          <div class="form-row">
+                            <div class="form-group col-auto">
+                              <label for="search" class="sr-only">Pesquisar</label>
+                              <input type="text" class="form-control" id="search"
+                                placeholder="Pesquisar por placa, marca, modelo, RENAVAM, chassi...">
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                        <div class="form-inline justify-content-md-end">
+                          <div class="form-group mr-2">
+                            <label class="mr-1 small-label" for="filtro-status">Status</label>
+                            <select id="filtro-status" class="form-control form-control-sm">
+                              <option value="">Todos</option>
+                              <option value="ativo" selected>Ativo</option>
+                              <option value="inativo">Inativo</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="mr-1 small-label" for="filtro-tipo">Tipo</label>
+                            <input type="text" class="form-control form-control-sm" id="filtro-tipo"
+                              placeholder="VAN, ÔNIBUS, CARRO...">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="table-responsive">
+                      <table class="table table-bordered table-hover mb-0" id="tabela">
+                        <thead class="thead-light">
+                          <tr role="row">
+                            <th style="width:80px;">ID</th>
+                            <th style="width:120px;">Placa</th>
+                            <th>Marca / Modelo</th>
+                            <th style="width:120px;">Ano</th>
+                            <th style="width:110px;">Cap.</th>
+                            <th style="width:120px;">CRLV</th>
+                            <th style="width:110px;">Status</th>
+                            <th style="width:120px;">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                      </table>
+                    </div>
+
+                    <nav aria-label="Paginação" class="mt-3 mb-0 text-muted">
+                      <ul class="pagination justify-content-end mb-0" id="paginacao"></ul>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL CADASTRO/EDIÇÃO -->
+      <div class="modal fade" id="modal-veiculo-interno" tabindex="-1" role="dialog"
+        aria-labelledby="modalVeiculoInternoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+          <div class="modal-content">
+            <form class="needs-validation" id="form-veiculo" novalidate>
+              <input type="hidden" id="veiculo-id">
+
+              <div class="modal-header">
+                <h5 class="modal-title" id="modalVeiculoInternoLabel">Novo veículo</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+
+              <div class="modal-body">
+
+                <!-- DADOS DO VEÍCULO -->
+                <div class="card border mb-3">
+                  <div class="card-header py-2">
+                    <span class="small-label">Dados do veículo</span>
+                  </div>
+                  <div class="card-body">
+
+                    <div class="form-row">
+                      <div class="form-group col-md-3">
+                        <label for="placa">Placa *</label>
+                        <input type="text" class="form-control" id="placa" required placeholder="ABC1D23">
+                      </div>
+                      <div class="form-group col-md-4">
+                        <label for="tipo">Tipo</label>
+                        <input type="text" class="form-control" id="tipo" placeholder="VAN, ÔNIBUS, CARRO...">
+                      </div>
+                      <div class="form-group col-md-5">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status" required>
+                          <option value="ativo" selected>Ativo</option>
+                          <option value="inativo">Inativo</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-4">
+                        <label for="marca">Marca</label>
+                        <input type="text" class="form-control" id="marca">
+                      </div>
+                      <div class="form-group col-md-4">
+                        <label for="modelo">Modelo</label>
+                        <input type="text" class="form-control" id="modelo">
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label for="ano_fabricacao">Ano Fab.</label>
+                        <input type="number" class="form-control" id="ano_fabricacao" min="1900" max="2100">
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label for="ano_modelo">Ano Mod.</label>
+                        <input type="number" class="form-control" id="ano_modelo" min="1900" max="2100">
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-4">
+                        <label for="renavam">RENAVAM</label>
+                        <input type="text" class="form-control" id="renavam">
+                      </div>
+                      <div class="form-group col-md-4">
+                        <label for="chassi">Chassi</label>
+                        <input type="text" class="form-control" id="chassi">
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label for="cor">Cor</label>
+                        <input type="text" class="form-control" id="cor">
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label for="capacidade">Capacidade</label>
+                        <input type="number" class="form-control" id="capacidade" min="0" max="999">
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-4">
+                        <label for="combustivel">Combustível</label>
+                        <input type="text" class="form-control" id="combustivel" placeholder="Diesel, Gasolina...">
+                      </div>
+                      <div class="form-group col-md-8">
+                        <label for="observacoes">Observações</label>
+                        <input type="text" class="form-control" id="observacoes">
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- ANEXOS -->
+                <div class="card border mb-0">
+                  <div class="card-header py-2">
+                    <span class="small-label">Anexos</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                        <label for="arquivo-crlv">CRLV (PDF/Imagem)</label>
+                        <input type="file" class="form-control-file" id="arquivo-crlv" accept="image/*,.pdf">
+                        <small class="form-text text-muted">Envie um arquivo nítido e completo.</small>
+                        <div id="crlv-arquivo-atual" class="small text-muted mt-1"></div>
+                      </div>
+                      <div class="form-group col-md-6">
+                        <label for="arquivo-foto">Fotos (até 5)</label>
+                        <input type="file" class="form-control-file" id="arquivo-foto" accept="image/*" multiple>
+                        <small class="form-text text-muted">Fotos externas e internas (opcional).</small>
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-12">
+                        <label for="arquivo-outro">Outros anexos (até 5)</label>
+                        <input type="file" class="form-control-file" id="arquivo-outro" multiple>
+                        <small class="form-text text-muted">Qualquer documento adicional.</small>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar veículo</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAIS GLOBAIS -->
+      <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+        aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="modalSistemaMensagemCorpo"></div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+        aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="modalSistemaConfirmacaoCorpo"></div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                data-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/popper.min.js"></script>
+  <script src="../../js/moment.min.js"></script>
+  <script src="../../js/bootstrap.min.js"></script>
+  <script src="../../js/simplebar.min.js"></script>
+  <script src="../../js/daterangepicker.js"></script>
+  <script src="../../js/jquery.stickOnScroll.js"></script>
+  <script src="../../js/tinycolor-min.js"></script>
+  <script src="../../js/config.js"></script>
+  <script src="../../js/d3.min.js"></script>
+  <script src="../../js/topojson.min.js"></script>
+  <script src="../../js/datamaps.all.min.js"></script>
+  <script src="../../js/datamaps-zoomto.js"></script>
+  <script src="../../js/datamaps.custom.js"></script>
+  <script src="../../js/Chart.min.js"></script>
+  <script>
+    Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+    Chart.defaults.global.defaultFontColor = colors.mutedColor;
+  </script>
+  <script src="../../js/gauge.min.js"></script>
+  <script src="../../js/jquery.sparkline.min.js"></script>
+  <script src="../../js/apexcharts.min.js"></script>
+  <script src="../../js/apexcharts.custom.js"></script>
+  <script src="../../js/jquery.mask.min.js"></script>
+  <script src="../../js/select2.min.js"></script>
+  <script src="../../js/jquery.steps.min.js"></script>
+  <script src="../../js/jquery.validate.min.js"></script>
+  <script src="../../js/jquery.timepicker.js"></script>
+  <script src="../../js/dropzone.min.js"></script>
+  <script src="../../js/uppy.min.js"></script>
+  <script src="../../js/quill.min.js"></script>
+  <script src="../../js/apps.js"></script>
+  <script src="../../js/sidebar-permissoes.js"></script>
+
+  <script>
+    function mostrarMensagemSistema(titulo, mensagem) {
+      $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+      $('#modalSistemaMensagemCorpo').html(mensagem || '');
+      $('#modal-sistema-mensagem').modal('show');
+    }
+
+    function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+      return new Promise(function (resolve) {
+        var resolvido = false;
+        $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+        $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+        $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+        var $modal = $('#modal-sistema-confirmacao');
+
+        function finalizar(valor) {
+          if (resolvido) return;
+          resolvido = true;
+          resolve(valor);
+        }
+
+        $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+          $modal.modal('hide');
+          finalizar(true);
+        });
+
+        $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+          $modal.modal('hide');
+          finalizar(false);
+        });
+
+        $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+          finalizar(false);
+        });
+
+        $modal.modal('show');
+      });
+    }
+  </script>
+
+  <script>
+    // API
+    var apiBase = '/api/interno/veiculos';
+
+    var itens = [];
+    var paginaAtual = 1;
+    var totalPaginas = 1;
+    var tamanhoPagina = 20;
+
+    function atualizarResumo() {
+      var total = itens.length;
+      var ativos = itens.filter(function (v) { return v.status === 'ativo'; }).length;
+      var comCrlv = itens.filter(function (v) { return !!v.arquivo_crlv_url; }).length;
+      var pend = total - comCrlv;
+
+      $('#resumo-total').text(total);
+      $('#resumo-ativos').text(ativos);
+      $('#resumo-com-crlv').text(comCrlv);
+      $('#resumo-crlv-pendente').text(pend);
+    }
+
+    function atualizarPaginacao() {
+      var ul = document.getElementById('paginacao');
+      if (!ul) return;
+
+      ul.innerHTML = '';
+
+      var liPrev = document.createElement('li');
+      liPrev.className = 'page-item' + (paginaAtual <= 1 ? ' disabled' : '');
+      var aPrev = document.createElement('a');
+      aPrev.className = 'page-link';
+      aPrev.href = '#';
+      aPrev.textContent = 'Anterior';
+      aPrev.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (paginaAtual > 1) { paginaAtual -= 1; renderizarTabela(); }
+      });
+      liPrev.appendChild(aPrev);
+      ul.appendChild(liPrev);
+
+      var liInfo = document.createElement('li');
+      liInfo.className = 'page-item disabled';
+      var aInfo = document.createElement('a');
+      aInfo.className = 'page-link';
+      aInfo.href = '#';
+      aInfo.textContent = paginaAtual + ' / ' + totalPaginas;
+      liInfo.appendChild(aInfo);
+      ul.appendChild(liInfo);
+
+      var liNext = document.createElement('li');
+      liNext.className = 'page-item' + (paginaAtual >= totalPaginas ? ' disabled' : '');
+      var aNext = document.createElement('a');
+      aNext.className = 'page-link';
+      aNext.href = '#';
+      aNext.textContent = 'Próxima';
+      aNext.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (paginaAtual < totalPaginas) { paginaAtual += 1; renderizarTabela(); }
+      });
+      liNext.appendChild(aNext);
+      ul.appendChild(liNext);
+    }
+
+    function badgeStatus(status) {
+      return status === 'ativo'
+        ? '<span class="badge badge-success">Ativo</span>'
+        : '<span class="badge badge-secondary">Inativo</span>';
+    }
+
+    function carregar() {
+      return fetch(apiBase)
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao buscar veículos internos');
+          return resp.json();
+        })
+        .then(function (data) {
+          itens = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+          paginaAtual = 1;
+          renderizarTabela();
+          atualizarResumo();
+        })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de veículos internos.');
+        });
+    }
+
+    function renderizarTabela() {
+      var tbody = document.getElementById('tbody');
+      if (!tbody) return;
+
+      var termo = ($('#search').val() || '').toLowerCase();
+      var filtroStatus = $('#filtro-status').val();
+      var filtroTipo = ($('#filtro-tipo').val() || '').toLowerCase();
+
+      var filtrados = itens.filter(function (v) {
+        var textoBusca = [
+          v.placa || '',
+          v.marca || '',
+          v.modelo || '',
+          v.renavam || '',
+          v.chassi || ''
+        ].join(' ').toLowerCase();
+
+        if (termo && textoBusca.indexOf(termo) === -1) return false;
+        if (filtroStatus && v.status !== filtroStatus) return false;
+        if (filtroTipo && String(v.tipo || '').toLowerCase().indexOf(filtroTipo) === -1) return false;
+        return true;
+      });
+
+      totalPaginas = Math.max(1, Math.ceil(filtrados.length / tamanhoPagina));
+      if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+      if (paginaAtual < 1) paginaAtual = 1;
+
+      var inicio = (paginaAtual - 1) * tamanhoPagina;
+      var fim = inicio + tamanhoPagina;
+      var paginaItens = filtrados.slice(inicio, fim);
+
+      tbody.innerHTML = '';
+
+      paginaItens.forEach(function (v) {
+        var tr = document.createElement('tr');
+        tr.setAttribute('data-id', v.id);
+
+        var marcaModelo = [v.marca, v.modelo].filter(Boolean).join(' / ') || '—';
+        var ano = [v.ano_fabricacao, v.ano_modelo].filter(Boolean).join('/') || '—';
+        var cap = (v.capacidade !== null && v.capacidade !== undefined && String(v.capacidade) !== '') ? v.capacidade : '—';
+
+        var crlvBtn = v.arquivo_crlv_url
+          ? '<a href="' + v.arquivo_crlv_url + '" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>'
+          : '<span class="text-muted">–</span>';
+
+        tr.innerHTML = `
+          <td>${v.id || ''}</td>
+          <td><strong>${v.placa || ''}</strong></td>
+          <td>
+            <strong>${marcaModelo}</strong>
+            ${v.tipo ? `<br><small class="text-muted">${v.tipo}</small>` : ''}
+          </td>
+          <td>${ano}</td>
+          <td>${cap}</td>
+          <td>${crlvBtn}</td>
+          <td>${badgeStatus(v.status)}</td>
+          <td>
+            <div class="dropdown">
+              <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="text-muted sr-only">Ação</span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item action-editar" href="#" data-id="${v.id}">Ver / editar</a>
+                <a class="dropdown-item text-warning action-toggle-status" href="#" data-id="${v.id}">
+                  ${v.status === 'ativo' ? 'Desativar' : 'Ativar'}
+                </a>
+                <a class="dropdown-item text-danger action-excluir" href="#" data-id="${v.id}">Excluir</a>
+              </div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      atualizarPaginacao();
+    }
+
+    function limparForm() {
+      $('#veiculo-id').val('');
+      $('#modalVeiculoInternoLabel').text('Novo veículo');
+
+      $('#placa').val('');
+      $('#tipo').val('');
+      $('#status').val('ativo');
+      $('#marca').val('');
+      $('#modelo').val('');
+      $('#ano_fabricacao').val('');
+      $('#ano_modelo').val('');
+      $('#renavam').val('');
+      $('#chassi').val('');
+      $('#cor').val('');
+      $('#capacidade').val('');
+      $('#combustivel').val('');
+      $('#observacoes').val('');
+
+      $('#arquivo-crlv').val('');
+      $('#arquivo-foto').val('');
+      $('#arquivo-outro').val('');
+      $('#crlv-arquivo-atual').empty();
+    }
+
+    function preencherForm(d) {
+      d = d || {};
+      $('#veiculo-id').val(d.id || '');
+      $('#modalVeiculoInternoLabel').text('Editar veículo #' + (d.id || ''));
+
+      $('#placa').val(d.placa || '');
+      $('#tipo').val(d.tipo || '');
+      $('#status').val(d.status || 'ativo');
+      $('#marca').val(d.marca || '');
+      $('#modelo').val(d.modelo || '');
+      $('#ano_fabricacao').val(d.ano_fabricacao || '');
+      $('#ano_modelo').val(d.ano_modelo || '');
+      $('#renavam').val(d.renavam || '');
+      $('#chassi').val(d.chassi || '');
+      $('#cor').val(d.cor || '');
+      $('#capacidade').val((d.capacidade === null || d.capacidade === undefined) ? '' : d.capacidade);
+      $('#combustivel').val(d.combustivel || '');
+      $('#observacoes').val(d.observacoes || '');
+
+      $('#arquivo-crlv').val('');
+      $('#arquivo-foto').val('');
+      $('#arquivo-outro').val('');
+
+      if (d.arquivo_crlv_url) $('#crlv-arquivo-atual').html('Arquivo atual: <a href="' + d.arquivo_crlv_url + '" target="_blank">ver CRLV</a>');
+      else $('#crlv-arquivo-atual').empty();
+    }
+
+    function abrirModalNovo() {
+      limparForm();
+      $('#modal-veiculo-interno').modal('show');
+    }
+
+    function abrirModalEditar(id) {
+      fetch(apiBase + '/' + id)
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao buscar veículo');
+          return resp.json();
+        })
+        .then(function (dados) {
+          limparForm();
+          preencherForm(dados || {});
+          $('#modal-veiculo-interno').modal('show');
+        })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Não foi possível carregar os dados do veículo.');
+        });
+    }
+
+    function salvarVeiculo(e) {
+      e.preventDefault();
+
+      var placa = ($('#placa').val() || '').trim().toUpperCase();
+      if (!placa) {
+        mostrarMensagemSistema('Dados incompletos', 'Preencha pelo menos a placa.');
+        return;
+      }
+
+      var id = $('#veiculo-id').val() || null;
+
+      var payload = {
+        placa: placa,
+        tipo: ($('#tipo').val() || '').trim() || null,
+        status: $('#status').val() || 'ativo',
+        marca: ($('#marca').val() || '').trim() || null,
+        modelo: ($('#modelo').val() || '').trim() || null,
+        ano_fabricacao: $('#ano_fabricacao').val() ? Number($('#ano_fabricacao').val()) : null,
+        ano_modelo: $('#ano_modelo').val() ? Number($('#ano_modelo').val()) : null,
+        renavam: ($('#renavam').val() || '').trim() || null,
+        chassi: ($('#chassi').val() || '').trim() || null,
+        cor: ($('#cor').val() || '').trim() || null,
+        capacidade: $('#capacidade').val() ? Number($('#capacidade').val()) : null,
+        combustivel: ($('#combustivel').val() || '').trim() || null,
+        observacoes: ($('#observacoes').val() || '').trim() || null
+      };
+
+      var formData = new FormData();
+      formData.append('dados', JSON.stringify(payload));
+
+      var fCrlv = document.getElementById('arquivo-crlv');
+      if (fCrlv && fCrlv.files && fCrlv.files[0]) formData.append('arquivo_crlv', fCrlv.files[0]);
+
+      var fFotos = document.getElementById('arquivo-foto');
+      if (fFotos && fFotos.files) {
+        for (var i = 0; i < fFotos.files.length; i++) formData.append('arquivo_foto', fFotos.files[i]);
+      }
+
+      var fOutros = document.getElementById('arquivo-outro');
+      if (fOutros && fOutros.files) {
+        for (var j = 0; j < fOutros.files.length; j++) formData.append('arquivo_outro', fOutros.files[j]);
+      }
+
+      var method = id ? 'PUT' : 'POST';
+      var url = apiBase + (id ? '/' + id : '');
+
+      fetch(url, { method: method, body: formData })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao salvar veículo');
+          return resp.json().catch(function () { return {}; });
+        })
+        .then(function () {
+          $('#modal-veiculo-interno').modal('hide');
+          return carregar();
+        })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Erro ao salvar os dados do veículo.');
+        });
+    }
+
+    function alterarStatus(id, novoStatus) {
+      fetch(apiBase + '/' + id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: novoStatus })
+      })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao alterar status');
+          return resp.json().catch(function () { return {}; });
+        })
+        .then(function () { carregar(); })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Erro ao alterar status do veículo.');
+        });
+    }
+
+    function excluir(id) {
+      confirmarAcaoSistema('Excluir veículo', 'Deseja realmente excluir este veículo? Esta ação não poderá ser desfeita.', 'Excluir')
+        .then(function (confirmado) {
+          if (!confirmado) return;
+          fetch(apiBase + '/' + id, { method: 'DELETE' })
+            .then(function (resp) {
+              if (!resp.ok) throw new Error('Erro ao excluir veículo');
+              return resp.json().catch(function () { return {}; });
+            })
+            .then(function () { carregar(); })
+            .catch(function (err) {
+              console.error(err);
+              mostrarMensagemSistema('Erro', 'Erro ao excluir o veículo.');
+            });
+        });
+    }
+
+    $(document).ready(function () {
+      carregar();
+
+      $('#search').on('input', function () { paginaAtual = 1; renderizarTabela(); });
+      $('#filtro-status').on('change', function () { paginaAtual = 1; renderizarTabela(); });
+      $('#filtro-tipo').on('input', function () { paginaAtual = 1; renderizarTabela(); });
+
+      $('#btn-novo').on('click', abrirModalNovo);
+      $('#form-veiculo').on('submit', salvarVeiculo);
+
+      $('#tbody').on('click', '.action-editar', function (e) {
+        e.preventDefault();
+        var id = parseInt($(this).data('id'), 10);
+        if (id) abrirModalEditar(id);
+      });
+
+      $('#tbody').on('click', '.action-toggle-status', function (e) {
+        e.preventDefault();
+        var id = parseInt($(this).data('id'), 10);
+        if (!id) return;
+        var item = itens.find(function (x) { return x.id === id; });
+        if (!item) return;
+
+        var novoStatus = item.status === 'ativo' ? 'inativo' : 'ativo';
+        var msg = novoStatus === 'inativo'
+          ? 'O veículo será marcado como inativo e não poderá ser usado em novas demandas internas. Deseja continuar?'
+          : 'O veículo será reativado. Deseja continuar?';
+
+        confirmarAcaoSistema('Alterar status do veículo', msg, (novoStatus === 'inativo' ? 'Desativar' : 'Ativar'))
+          .then(function (ok) {
+            if (!ok) return;
+            alterarStatus(id, novoStatus);
+          });
+      });
+
+      $('#tbody').on('click', '.action-excluir', function (e) {
+        e.preventDefault();
+        var id = parseInt($(this).data('id'), 10);
+        if (id) excluir(id);
+      });
+    });
+  </script>
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-56159088-1');
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,711 @@
+/* =================================================================
+   CSS DA PÁGINA DE LOGIN/CADASTRO
+   Paleta: STRANE Express (Azul + Cobre)
+   ================================================================= */
+
+:root {
+  /* ---------- Paleta STRANE Express (Azul + Cobre) ---------- */
+  /* Azuis (fundo e textos) */
+  --navy-900: #081a24;
+  --navy-800: #0b2230;
+  --navy-700: #0f2d3a;
+  /* base do texto escuro */
+  --navy-600: #0e2a38;
+  /* fundo mais profundo */
+  --navy-500: #15384a;
+  --navy-300: #2c4c60;
+  /* bordas/realces frios */
+
+  /* Cobres (destaques e CTAs) */
+  --copper-800: #824f38;
+  /* muito escuro */
+  --copper-700: #9c6446;
+  /* hover/press forte */
+  --copper-600: #b87356;
+  /* primário */
+  --copper-550: #c58161;
+  /* mid */
+  --copper-500: #d69b73;
+  /* claro (ícones/linhas) */
+  --copper-400: #e3ad84;
+  /* realce claro */
+  --copper-300: #f1c08f;
+  /* sutil (hover leve) */
+
+  /* Gradiente institucional: COBRE metálico (invertido) */
+  --brand-gradient: linear-gradient(-45deg,
+      #824f38 0%,
+      #b87356 22%,
+      #e3ad84 48%,
+      #b87356 74%,
+      #9c6446 100%);
+
+  /* Sheen metálico (realce especular sutil) */
+  --metal-sheen-alpha: 0.14;
+  /* ↑ para aumentar o brilho */
+  --metal-sheen:
+    linear-gradient(115deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, var(--metal-sheen-alpha)) 12%,
+      rgba(255, 255, 255, 0) 24%,
+      rgba(255, 255, 255, var(--metal-sheen-alpha)) 38%,
+      rgba(255, 255, 255, 0) 52%);
+
+  /* ---------- Tokens de interface ---------- */
+  --bg-color: var(--navy-600);
+  /* azul escuro no fundo da página */
+  --bg-round-a: var(--copper-700);
+  /* cobre na onda */
+  --bg-round-b: var(--copper-500);
+
+  --panel-color: #ffffff;
+  --title: #ffffff;
+
+  /* Campos */
+  --bg-input: #e6ecf1;
+  /* cinza-azulado suave */
+  --input-icon: var(--copper-600);
+  --input: #0f2d3a;
+  --input-hover: #203b49;
+
+  /* Botões */
+  --btn-text: #ffffff;
+  --btn-solid: var(--copper-600);
+  /* fallback sólido */
+  --btn-solid-hover: var(--copper-700);
+  --btn-gradient:
+    linear-gradient(135deg, #9c6446 0%, #b87356 40%, #e3ad84 100%);
+
+  /* Social / pequenos */
+  --social-text: #dbe3e9;
+  --social-icon: var(--copper-500);
+  --icon-color: #ffffff;
+
+  /* Links e avisos */
+  --check-text: #dfe7ec;
+  --check-hover: #ffffff;
+  --check-link: var(--copper-400);
+  --pass-color: #ffffff;
+  --key-color: #000000;
+  --pass-hover-color: var(--copper-400);
+
+  /* Teclado / detalhes */
+  --keyboard-color: #eef3f6;
+  --key-letter: #203b49;
+
+  /* Efeitos */
+  --ring: 0 0 0 3px rgba(184, 115, 86, .28);
+  --shadow: 0 10px 28px rgba(8, 26, 36, .28);
+  --border-soft: 1px solid rgba(44, 76, 96, .38);
+}
+
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif
+}
+
+/* -------- Estrutura -------- */
+.container {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+  overflow: hidden;
+  color: #eaf1f5;
+}
+
+/* Onda/halo com COBRE metálico sobreposto de sheen */
+.container:before {
+  content: "";
+  position: absolute;
+  width: 2000px;
+  height: 2000px;
+  border-radius: 50%;
+  background-image: var(--brand-gradient), var(--metal-sheen);
+  background-blend-mode: screen, normal;
+  top: -10%;
+  right: 48%;
+  transform: translateY(-50%);
+  z-index: 6;
+  transition: 1.8s ease-in-out;
+}
+
+.forms-container {
+  position: absolute;
+  width: 100%;
+  height: 90%;
+  top: 0;
+  left: 0
+}
+
+.signin-signup {
+  position: absolute;
+  top: 50%;
+  left: 75%;
+  transform: translate(-50%, -50%);
+  width: 40%;
+  display: grid;
+  grid-template-columns: 1fr;
+  z-index: 5;
+  transition: 1s .7s ease-in-out;
+}
+
+form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 0 2rem;
+  overflow: hidden;
+  grid-column: 1/2;
+  grid-row: 1/2;
+  transition: .2s .7s ease-in-out;
+}
+
+form.sign-in-form {
+  z-index: 2
+}
+
+form.sign-up-form {
+  z-index: 1;
+  opacity: 0
+}
+
+.form-logo {
+  height: 100px;
+  margin-bottom: 10px; /* Adicionado para espaçamento */
+}
+
+.title {
+  font-size: 1.8rem;
+  color: var(--title);
+  margin-bottom: 10px;
+  letter-spacing: .2px
+}
+
+/* -------- Campos -------- */
+.input-field {
+  width: 85%;
+  height: 45px;
+  background-color: var(--bg-input);
+  margin: 8px 0;
+  border-radius: 45px;
+  display: grid;
+  grid-template-columns: 15% 70% 15%; /* Perfeito para [icon] [input] [icon] */
+  padding: 0 .4rem;
+  border: var(--border-soft);
+  transition: box-shadow .15s ease, border-color .15s ease, background-color .15s ease;
+}
+
+.input-field:focus-within {
+  background-color: #f7fbfe;
+  border-color: rgba(184, 115, 86, .6);
+  box-shadow: var(--ring);
+}
+
+.input-field i {
+  text-align: center;
+  line-height: 45px;
+  color: var(--input-icon);
+  font-size: 1.1rem;
+}
+
+.input-field input {
+  background: none;
+  outline: none;
+  border: none;
+  line-height: 1;
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--input);
+  /* Garante que o input ocupe a segunda coluna */
+  grid-column: 2 / 3;
+}
+
+.input-field input::placeholder {
+  color: var(--input-hover);
+  font-weight: 400
+}
+
+.input-field select {
+  background: none;
+  outline: none;
+  border: none;
+  line-height: 1;
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--input);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.input-field select::placeholder {
+  color: var(--input-hover);
+  font-weight: 400
+}
+
+/* Oculta ícones desnecessários (ex: select) */
+.input-field select+i,
+.input-field input+i {
+    /* Esta regra foi substituída pelo grid-template-columns, 
+       mas podemos manter para o toggle de senha se ele for o 3º item */
+    line-height: 45px; /* Alinha o ícone do olho verticalmente */
+}
+
+
+/* -------- Botões -------- */
+.btn {
+  width: 130px;
+  height: 45px;
+  border: none;
+  outline: none;
+  border-radius: 45px;
+  cursor: pointer;
+  color: var(--btn-text);
+  text-transform: uppercase;
+  font-weight: 600;
+  margin: 10px 0;
+  transition: background .25s ease, transform .06s ease, filter .2s ease;
+  box-shadow: var(--shadow);
+  background: var(--btn-solid);
+  /* Usando o gradiente por padrão */
+  background-image: var(--btn-gradient), var(--metal-sheen);
+  background-blend-mode: screen, normal;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.05) contrast(1.02);
+}
+
+.btn:active {
+  transform: translateY(0)
+}
+
+.btn:focus-visible {
+  outline: 3px solid rgba(229, 185, 150, .65);
+  outline-offset: 2px
+}
+
+/* -------- Links -------- */
+.pass {
+  margin: 0; /* Removido margin padrão para caber no <p> */
+  color: var(--pass-color);
+  text-decoration: none;
+  border-bottom: none;
+}
+.pass:hover {
+  color: var(--pass-hover-color);
+  text-decoration: underline
+}
+.sep {
+  color: var(--pass-color);
+  margin: 0 0.5em;
+  opacity: 0.6;
+}
+
+/* -------- Social (Não usado no seu HTML, mas parte do tema) -------- */
+.social-media {
+  display: flex;
+  justify-content: center
+}
+
+.icon-mode {
+  height: 32px;
+  width: 32px;
+  border: 1px solid var(--icon-color);
+  margin: 10px 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  color: var(--icon-color);
+  font-size: 1rem;
+  border-radius: 50%;
+  transition: .3s;
+  background: rgba(255, 255, 255, .06);
+}
+
+.icon-mode:hover {
+  color: var(--social-icon);
+  border-color: var(--social-icon)
+}
+
+.text-mode {
+  padding: .5rem 0;
+  font-size: .8rem;
+  font-style: italic;
+  color: var(--social-text)
+}
+
+/* -------- Painéis -------- */
+.panels-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr)
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-around;
+  text-align: center;
+  z-index: 7
+}
+
+.left-panel {
+  pointer-events: all;
+  padding: 0 17% 10rem 12%
+}
+
+.right-panel {
+  pointer-events: none;
+  padding: 0 17% 10rem 12%
+}
+
+.panel .content {
+  color: var(--panel-color);
+  transition: .9s .6s ease-in-out
+}
+
+.panel h3 {
+  font-weight: 600;
+  line-height: 1;
+  font-size: 1.5rem
+}
+
+.panel p {
+  font-size: .95rem;
+  padding: .7rem 0
+}
+
+.btn.transparent {
+  margin: 0;
+  background: none;
+  border: 2px solid rgba(255, 255, 255, .92);
+  width: 130px;
+  height: 41px;
+  font-weight: 600;
+  font-size: .8rem;
+  color: #fff;
+}
+
+.image {
+  width: 90%;
+  margin-top: 10px;
+  transition: 1.1s .4s ease-in-out
+}
+
+.right-panel .content,
+.right-panel .image {
+  transform: translateX(800px)
+}
+
+/* -------- Animação de Transição -------- */
+.container.sign-up-mode:before {
+  transform: translate(100%, -50%);
+  right: 52%
+}
+
+.container.sign-up-mode .left-panel .image,
+.container.sign-up-mode .left-panel .content {
+  transform: translateX(-800px)
+}
+
+.container.sign-up-mode .right-panel .content,
+.container.sign-up-mode .right-panel .image {
+  transform: translateX(0)
+}
+
+.container.sign-up-mode .left-panel {
+  pointer-events: none
+}
+
+.container.sign-up-mode .right-panel {
+  pointer-events: all
+}
+
+.container.sign-up-mode .signin-signup {
+  left: 25%
+}
+
+.container.sign-up-mode form.sign-in-form {
+  z-index: 1;
+  opacity: 0
+}
+
+.container.sign-up-mode form.sign-up-form {
+  z-index: 2;
+  opacity: 1
+}
+
+/* -------- Responsivo -------- */
+@media (max-width:870px) {
+  .container {
+    min-height: 800px;
+    height: 100vh
+  }
+
+  .container::before {
+    width: 1500px;
+    height: 1500px;
+    left: 30%;
+    bottom: 68%;
+    transform: translateX(-50%);
+    right: initial;
+    top: initial;
+    transition: 2s ease-in-out
+  }
+
+  .signin-signup {
+    width: 100%;
+    left: 50%;
+    top: 95%;
+    transform: translate(-50%, -100%);
+    transition: 1s .8s ease-in-out
+  }
+
+  .panels-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 2fr 1fr
+  }
+
+  .panel {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 2.5rem 8%
+  }
+
+  .panel .content {
+    padding-right: 15%;
+    transition: .9s .8s ease-in-out
+  }
+
+  .panel h3 {
+    font-size: 1.2rem
+  }
+
+  .panel p {
+    font-size: .7rem;
+    padding: .5rem 0
+  }
+
+  .btn.transparent {
+    width: 110px;
+    height: 35px;
+    font-size: .7rem
+  }
+
+  .image {
+    display: none
+  }
+
+  .left-panel {
+    grid-row: 1/2
+  }
+
+  .right-panel {
+    grid-row: 3/4
+  }
+
+  .right-panel .content,
+  .right-panel .image {
+    transform: translateY(300px)
+  }
+
+  .container.sign-up-mode:before {
+    transform: translate(-50%, 100%);
+    bottom: 32%;
+    right: initial
+  }
+
+  .container.sign-up-mode .left-panel .image,
+  .container.sign-up-mode .left-panel .content {
+    transform: translateY(-300px)
+  }
+
+  .container.sign-up-mode .signin-signup {
+    top: 5%;
+    transform: translate(-50%, 0);
+    left: 50%
+  }
+}
+
+@media (max-width:570px) {
+  form {
+    padding: 0 1.5rem
+  }
+  
+  /* Ajuste para telas muito pequenas */
+  .input-field {
+    width: 100%;
+  }
+  form.sign-in-form {
+    padding: 0 1rem;
+  }
+  form.sign-up-form {
+    padding: 0 1rem;
+  }
+  /* Fim ajuste */
+
+  .panel .content {
+    padding: .5rem 1rem
+  }
+
+  .panel p {
+    opacity: 0
+  }
+
+  .container:before {
+    bottom: 75%;
+    left: 50%
+  }
+
+  .container.sign-up-mode:before {
+    bottom: 24%;
+    left: 50%
+  }
+}
+
+/* Media queries legadas do seu CSS original */
+@media (max-width:385px) {
+  .field-icon {
+    float: right;
+    margin-left: 260px;
+    margin-top: -55px;
+    position: relative;
+    z-index: 1
+  }
+}
+
+@media (max-width:350px) {
+  .field-icon {
+    float: right;
+    margin-left: 200px;
+    margin-top: -55px;
+    position: relative;
+    z-index: 1
+  }
+}
+
+
+/* utilitário para links limpos */
+a,
+a:focus,
+a:hover {
+  text-decoration: none;
+  border-bottom: none;
+}
+
+/* -------- Header e rodapé (Seu CSS original) -------- */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  padding: 10px 20px;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 8
+}
+
+.logo {
+  color: var(--title);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: .3px
+}
+
+.menu {
+  list-style: none;
+  display: flex;
+  margin: 0;
+  padding: 0
+}
+
+.menu li {
+  margin: 0 15px
+}
+
+.menu a {
+  text-decoration: none;
+  color: var(--title);
+  font-weight: 600
+}
+
+.menu a:hover {
+  color: var(--copper-300)
+}
+
+.login-button {
+  background: var(--btn-gradient), var(--metal-sheen);
+  background-blend-mode: screen, normal;
+  color: var(--btn-text);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+
+.footer {
+  background-color: var(--bg-color);
+  color: var(--title);
+  padding: 20px 0;
+  text-align: center;
+  font-size: .9rem;
+  border-top: 1px solid rgba(255, 255, 255, .14)
+}
+
+.footer .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap
+}
+
+.footer .container .row {
+  width: 100%
+}
+
+.footer .container .credits {
+  margin-top: 10px
+}
+
+.footer .container .links {
+  margin-top: 10px
+}
+
+.footer .container .links a {
+  color: var(--title);
+  text-decoration: none;
+  margin: 0 10px
+}
+
+.footer .container .links a:hover {
+  text-decoration: underline
+}
+
+
+/* -------- CLASSE DE ACESSIBILIDADE (Adicionada) -------- */
+/* Esconde visualmente, mas mantém para leitores de tela */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

@@ -1,0 +1,1518 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Configurações do sistema">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Configurações</title>
+
+    <!-- CSS base do template -->
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <style>
+        .small-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: .03em;
+            color: #6c757d;
+        }
+
+        .config-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: #6c757d;
+            margin-bottom: .5rem;
+        }
+
+        .config-help {
+            font-size: 0.8rem;
+            color: #868e96;
+        }
+
+        .config-logo-preview {
+            max-height: 90px;
+            max-width: 190px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
+        }
+
+        .card-config {
+            border-radius: .5rem;
+        }
+
+        .tab-content-card {
+            border-top-left-radius: 0;
+            border-top-right-radius: 0;
+        }
+
+        .nav-tabs-config .nav-link {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .config-upload-box {
+            border-radius: .5rem;
+            border: 1px dashed rgba(255, 255, 255, .15);
+            padding: .75rem .75rem .5rem .75rem;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .config-upload-actions {
+            margin-top: .35rem;
+        }
+
+        .config-upload-actions .btn {
+            padding: .1rem .4rem;
+            font-size: 0.75rem;
+        }
+
+        .config-preview-wrapper {
+            min-width: 200px;
+        }
+
+        .config-block-title {
+            font-weight: 500;
+        }
+
+        .config-divider {
+            border-top: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .config-pill {
+            display: inline-block;
+            padding: 0.1rem .4rem;
+            font-size: 0.7rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: #adb5bd;
+            margin-left: .25rem;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <!-- TOP NAV -->
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="../sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="configuracoes.html">Configurações</a>
+                        <a class="dropdown-item" href="../sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="../../auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <!-- MAIN CONTENT -->
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-lg-10 col-xl-9">
+                        <div class="d-flex align-items-center mb-3">
+                            <div>
+                                <h2 class="h4 mb-1">Configurações do sistema</h2>
+                                <p class="text-muted mb-0">
+                                    Defina a identidade visual básica, parâmetros de documentos e carteirinhas do
+                                    SETRANE EXPRESS.
+                                </p>
+                            </div>
+                            <div class="ml-auto">
+                                <button class="btn btn-sm btn-outline-secondary mr-1" type="button"
+                                    id="btn-recarregar-config">
+                                    <span class="fe fe-rotate-ccw"></span> Recarregar
+                                </button>
+                                <button class="btn btn-primary" type="button" id="btn-salvar-config">
+                                    <span class="fe fe-save"></span> Salvar alterações
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="card shadow-sm card-config">
+                            <div class="card-header bg-transparent border-bottom-0 pb-0">
+                                <ul class="nav nav-tabs nav-tabs-config" id="tabs-configuracoes" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" id="tab-identidade-tab" data-toggle="tab"
+                                            href="#tab-identidade" role="tab" aria-controls="tab-identidade"
+                                            aria-selected="true">
+                                            Identidade visual
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-documentos-tab" data-toggle="tab"
+                                            href="#tab-documentos" role="tab" aria-controls="tab-documentos"
+                                            aria-selected="false">
+                                            Documentos
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-carteirinhas-tab" data-toggle="tab"
+                                            href="#tab-carteirinhas" role="tab" aria-controls="tab-carteirinhas"
+                                            aria-selected="false">
+                                            Carteirinhas
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="card-body tab-content tab-content-card">
+                                <!-- TAB 1: IDENTIDADE VISUAL -->
+                                <div class="tab-pane fade show active" id="tab-identidade" role="tabpanel"
+                                    aria-labelledby="tab-identidade-tab">
+                                    <form id="form-config-identidade">
+                                        <!-- INFORMAÇÕES GERAIS -->
+                                        <div class="config-section-title">Informações gerais</div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="cfg-nome-sistema">Nome do sistema</label>
+                                                <input type="text" class="form-control" id="cfg-nome-sistema"
+                                                    placeholder="SETRANE EXPRESS">
+                                                <small class="config-help">
+                                                    Exibido em títulos, cabeçalhos e outras áreas do sistema.
+                                                </small>
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="cfg-telefone-contato">Telefone</label>
+                                                <input type="text" class="form-control input-phone"
+                                                    id="cfg-telefone-contato" placeholder="(94) 00000-0000">
+                                                <small class="config-help">
+                                                    Telefone de contato institucional.
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="cfg-email-contato">E-mail</label>
+                                                <input type="email" class="form-control" id="cfg-email-contato"
+                                                    placeholder="semed@exemplo.pa.gov.br">
+                                                <small class="config-help">
+                                                    E-mail institucional exibido em rodapés ou telas do sistema.
+                                                </small>
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="cfg-site-oficial">Site oficial</label>
+                                                <input type="text" class="form-control" id="cfg-site-oficial"
+                                                    placeholder="https://www.canaa.pa.gov.br">
+                                                <small class="config-help">
+                                                    URL do site institucional ou página oficial da Secretaria /
+                                                    Prefeitura.
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <hr class="my-4 config-divider">
+
+                                        <!-- LOGOS -->
+                                        <div class="config-section-title d-flex align-items-center">
+                                            Logos
+                                            <span class="config-pill">Identidade visual</span>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <!-- Logo Principal -->
+                                            <div class="form-group col-md-4">
+                                                <label class="config-block-title" for="cfg-logo-principal">
+                                                    Logo principal
+                                                </label>
+                                                <div class="config-upload-box d-flex align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <input type="file" class="form-control-file"
+                                                            id="cfg-logo-principal" accept="image/*">
+                                                        <small class="config-help d-block">
+                                                            Logo padrão do sistema. Pode ser usada em cabeçalhos, login
+                                                            e PDFs.
+                                                        </small>
+                                                        <div class="config-upload-actions">
+                                                            <button type="button"
+                                                                class="btn btn-outline-secondary btn-sm btn-preview-clear"
+                                                                data-field="logo_principal" data-action="preview">
+                                                                Pré-visualizar selecionada
+                                                            </button>
+                                                            <button type="button"
+                                                                class="btn btn-outline-danger btn-sm btn-clear-image"
+                                                                data-field="logo_principal">
+                                                                Limpar imagem atual
+                                                            </button>
+                                                            <input type="hidden" id="cfg-remove-logo-principal"
+                                                                value="0">
+                                                        </div>
+                                                    </div>
+                                                    <div class="ml-3 text-center config-preview-wrapper"
+                                                        id="preview-logo-principal-wrapper" style="display:none;">
+                                                        <span class="small-label d-block mb-1">Atual:</span>
+                                                        <img id="preview-logo-principal" class="config-logo-preview"
+                                                            alt="Logo principal atual">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Logo Secundária -->
+                                            <div class="form-group col-md-4">
+                                                <label class="config-block-title" for="cfg-logo-secundaria">
+                                                    Logo secundária
+                                                </label>
+                                                <div class="config-upload-box d-flex align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <input type="file" class="form-control-file"
+                                                            id="cfg-logo-secundaria" accept="image/*">
+                                                        <small class="config-help d-block">
+                                                            Logo alternativa, por exemplo, brasão da Prefeitura ou da
+                                                            SEMED.
+                                                        </small>
+                                                        <div class="config-upload-actions">
+                                                            <button type="button"
+                                                                class="btn btn-outline-secondary btn-sm btn-preview-clear"
+                                                                data-field="logo_secundaria" data-action="preview">
+                                                                Pré-visualizar selecionada
+                                                            </button>
+                                                            <button type="button"
+                                                                class="btn btn-outline-danger btn-sm btn-clear-image"
+                                                                data-field="logo_secundaria">
+                                                                Limpar imagem atual
+                                                            </button>
+                                                            <input type="hidden" id="cfg-remove-logo-secundaria"
+                                                                value="0">
+                                                        </div>
+                                                    </div>
+                                                    <div class="ml-3 text-center config-preview-wrapper"
+                                                        id="preview-logo-secundaria-wrapper" style="display:none;">
+                                                        <span class="small-label d-block mb-1">Atual:</span>
+                                                        <img id="preview-logo-secundaria" class="config-logo-preview"
+                                                            alt="Logo secundária atual">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Logo Extra -->
+                                            <div class="form-group col-md-4">
+                                                <label class="config-block-title" for="cfg-logo-extra">
+                                                    Logo extra
+                                                </label>
+                                                <div class="config-upload-box d-flex align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <input type="file" class="form-control-file" id="cfg-logo-extra"
+                                                            accept="image/*">
+                                                        <small class="config-help d-block">
+                                                            Imagem complementar (por exemplo, selo de programa, brasão
+                                                            adicional etc.).
+                                                        </small>
+                                                        <div class="config-upload-actions">
+                                                            <button type="button"
+                                                                class="btn btn-outline-secondary btn-sm btn-preview-clear"
+                                                                data-field="logo_extra" data-action="preview">
+                                                                Pré-visualizar selecionada
+                                                            </button>
+                                                            <button type="button"
+                                                                class="btn btn-outline-danger btn-sm btn-clear-image"
+                                                                data-field="logo_extra">
+                                                                Limpar imagem atual
+                                                            </button>
+                                                            <input type="hidden" id="cfg-remove-logo-extra" value="0">
+                                                        </div>
+                                                    </div>
+                                                    <div class="ml-3 text-center config-preview-wrapper"
+                                                        id="preview-logo-extra-wrapper" style="display:none;">
+                                                        <span class="small-label d-block mb-1">Atual:</span>
+                                                        <img id="preview-logo-extra" class="config-logo-preview"
+                                                            alt="Logo extra atual">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <!-- /TAB IDENTIDADE -->
+
+                                <!-- TAB 2: DOCUMENTOS -->
+                                <div class="tab-pane fade" id="tab-documentos" role="tabpanel"
+                                    aria-labelledby="tab-documentos-tab">
+                                    <form id="form-config-documentos">
+                                        <!-- SEÇÃO OFÍCIOS -->
+                                        <div class="config-section-title">Ofícios – Cabeçalho</div>
+                                        <p class="config-help mb-2">
+                                            Defina o cabeçalho padrão dos ofícios gerados pelo sistema.
+                                        </p>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="cfg-oficio-cabecalho-linha1">Linha 1</label>
+                                                <input type="text" class="form-control" id="cfg-oficio-cabecalho-linha1"
+                                                    placeholder="ESTADO DO PARÁ">
+                                                <small class="config-help">
+                                                    Exemplo: ESTADO DO PARÁ
+                                                </small>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="cfg-oficio-cabecalho-linha2">Linha 2</label>
+                                                <input type="text" class="form-control" id="cfg-oficio-cabecalho-linha2"
+                                                    placeholder="PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS">
+                                                <small class="config-help">
+                                                    Exemplo: PREFEITURA MUNICIPAL DE CANAÃ DOS CARAJÁS
+                                                </small>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="cfg-oficio-cabecalho-linha3">Linha 3</label>
+                                                <input type="text" class="form-control" id="cfg-oficio-cabecalho-linha3"
+                                                    placeholder="SECRETARIA MUNICIPAL DE EDUCAÇÃO">
+                                                <small class="config-help">
+                                                    Exemplo: SECRETARIA MUNICIPAL DE EDUCAÇÃO
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <hr class="my-4 config-divider">
+
+                                        <div class="config-section-title">Layout do cabeçalho dos ofícios</div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="cfg-oficio-alinhamento">Alinhamento do texto</label>
+                                                <select class="form-control" id="cfg-oficio-alinhamento">
+                                                    <option value="center">Centralizado</option>
+                                                    <option value="left">Alinhado à esquerda</option>
+                                                    <option value="right">Alinhado à direita</option>
+                                                </select>
+                                                <small class="config-help">
+                                                    Define a posição das três linhas do cabeçalho no PDF.
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group col-md-8">
+                                                <label>Imagens do cabeçalho dos ofícios</label>
+
+                                                <!-- Switch: imagem esquerda -->
+                                                <div class="mb-3">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-oficio-usar-imagem-esquerda">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-oficio-usar-imagem-esquerda">
+                                                            Usar imagem à esquerda
+                                                        </label>
+                                                    </div>
+                                                    <select class="form-control form-control-sm mt-2"
+                                                        id="cfg-oficio-logo-esquerda-tipo">
+                                                        <option value="principal">Logo principal</option>
+                                                        <option value="secundaria">Logo secundária</option>
+                                                        <option value="extra">Logo extra</option>
+                                                    </select>
+                                                    <small class="config-help d-block mt-1">
+                                                        Ao alinhar o texto <strong>à direita</strong>, esta será a única
+                                                        imagem exibida.
+                                                        Ao alinhar <strong>à esquerda</strong>, esta imagem será
+                                                        desabilitada.
+                                                    </small>
+                                                </div>
+
+                                                <!-- Switch: imagem direita -->
+                                                <div class="mb-1">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-oficio-usar-imagem-direita">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-oficio-usar-imagem-direita">
+                                                            Usar imagem à direita
+                                                        </label>
+                                                    </div>
+                                                    <select class="form-control form-control-sm mt-2"
+                                                        id="cfg-oficio-logo-direita-tipo">
+                                                        <option value="principal">Logo principal</option>
+                                                        <option value="secundaria">Logo secundária</option>
+                                                        <option value="extra">Logo extra</option>
+                                                    </select>
+                                                    <small class="config-help d-block mt-1">
+                                                        Ao alinhar o texto <strong>à esquerda</strong>, esta será a
+                                                        única imagem exibida.
+                                                        Ao alinhar <strong>à direita</strong>, esta imagem será
+                                                        desabilitada.
+                                                    </small>
+                                                </div>
+
+                                                <small class="config-help d-block mt-2">
+                                                    Comportamento:
+                                                    <br>
+                                                    • <strong>Esquerda</strong>: texto à esquerda, apenas imagem à
+                                                    direita (imagem esquerda desabilitada).<br>
+                                                    • <strong>Centralizado</strong>: pode usar imagem à esquerda, à
+                                                    direita ou ambas, conforme os switches.<br>
+                                                    • <strong>Direita</strong>: texto à direita, apenas imagem à
+                                                    esquerda (imagem direita desabilitada).
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <hr class="my-4 config-divider">
+
+                                        <!-- NOVA SEÇÃO: SEPARADOR DOS DOCUMENTOS -->
+                                        <div class="config-section-title">
+                                            Separador dos documentos (cabeçalho e rodapé)
+                                        </div>
+                                        <p class="config-help mb-2">
+                                            Defina um separador padrão para ser usado logo abaixo do cabeçalho e acima
+                                            do rodapé de todos os documentos (ofícios, termos etc.).
+                                        </p>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label class="config-block-title d-block" for="cfg-doc-separador-ativo">
+                                                    Exibição do separador
+                                                </label>
+                                                <div class="custom-control custom-switch">
+                                                    <input type="checkbox" class="custom-control-input"
+                                                        id="cfg-doc-separador-ativo">
+                                                    <label class="custom-control-label" for="cfg-doc-separador-ativo">
+                                                        Exibir separador no cabeçalho e no rodapé
+                                                    </label>
+                                                </div>
+                                                <small class="config-help d-block mt-2">
+                                                    Quando desativado, nenhum separador será desenhado.
+                                                    Quando ativado, o sistema usará a imagem abaixo (se houver) ou uma
+                                                    linha padrão.
+                                                </small>
+                                            </div>
+
+                                            <div class="form-group col-md-8">
+                                                <label class="config-block-title" for="cfg-doc-separador-imagem">
+                                                    Imagem de separador (opcional)
+                                                </label>
+                                                <div class="config-upload-box d-flex align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <input type="file" class="form-control-file"
+                                                            id="cfg-doc-separador-imagem" accept="image/*">
+                                                        <small class="config-help d-block">
+                                                            Imagem horizontal que será usada como separador.
+                                                            Recomenda-se uma imagem larga e baixa (ex.: faixa com
+                                                            gradiente ou padrão).
+                                                        </small>
+                                                        <div class="config-upload-actions">
+                                                            <button type="button"
+                                                                class="btn btn-outline-secondary btn-sm btn-preview-clear"
+                                                                data-field="doc_separador_imagem" data-action="preview">
+                                                                Pré-visualizar selecionada
+                                                            </button>
+                                                            <button type="button"
+                                                                class="btn btn-outline-danger btn-sm btn-clear-image"
+                                                                data-field="doc_separador_imagem">
+                                                                Limpar imagem atual
+                                                            </button>
+                                                            <input type="hidden" id="cfg-remove-separador-imagem"
+                                                                value="0">
+                                                        </div>
+                                                    </div>
+                                                    <div class="ml-3 text-center config-preview-wrapper"
+                                                        id="preview-doc-separador-wrapper" style="display:none;">
+                                                        <span class="small-label d-block mb-1">Atual:</span>
+                                                        <img id="preview-doc-separador" class="config-logo-preview"
+                                                            alt="Imagem de separador atual">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <hr class="my-4 config-divider">
+
+                                        <!-- RODAPÉ DOS OFÍCIOS -->
+                                        <div class="config-section-title">Ofícios – Rodapé</div>
+                                        <p class="config-help mb-2">
+                                            Configure o rodapé padrão dos documentos (imagens e texto).
+                                        </p>
+
+                                        <div class="form-row">
+                                            <!-- Imagens do rodapé -->
+                                            <div class="form-group col-md-6">
+                                                <label>Imagens do rodapé dos ofícios</label>
+
+                                                <!-- Imagem rodapé esquerda -->
+                                                <div class="mb-3">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-oficio-rodape-usar-imagem-esquerda">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-oficio-rodape-usar-imagem-esquerda">
+                                                            Exibir imagem à esquerda
+                                                        </label>
+                                                    </div>
+                                                    <select class="form-control form-control-sm mt-2"
+                                                        id="cfg-oficio-rodape-logo-esquerda-tipo">
+                                                        <option value="principal">Logo principal</option>
+                                                        <option value="secundaria">Logo secundária</option>
+                                                        <option value="extra">Logo extra</option>
+                                                    </select>
+                                                    <small class="config-help d-block mt-1">
+                                                        Escolha qual logo será exibida na posição esquerda do rodapé.
+                                                    </small>
+                                                </div>
+
+                                                <!-- Imagem rodapé centro -->
+                                                <div class="mb-3">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-oficio-rodape-usar-imagem-centro">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-oficio-rodape-usar-imagem-centro">
+                                                            Exibir imagem ao centro
+                                                        </label>
+                                                    </div>
+                                                    <select class="form-control form-control-sm mt-2"
+                                                        id="cfg-oficio-rodape-logo-centro-tipo">
+                                                        <option value="principal">Logo principal</option>
+                                                        <option value="secundaria">Logo secundária</option>
+                                                        <option value="extra">Logo extra</option>
+                                                    </select>
+                                                    <small class="config-help d-block mt-1">
+                                                        Escolha qual logo será exibida na posição central do rodapé.
+                                                    </small>
+                                                </div>
+
+                                                <!-- Imagem rodapé direita -->
+                                                <div class="mb-1">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-oficio-rodape-usar-imagem-direita">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-oficio-rodape-usar-imagem-direita">
+                                                            Exibir imagem à direita
+                                                        </label>
+                                                    </div>
+                                                    <select class="form-control form-control-sm mt-2"
+                                                        id="cfg-oficio-rodape-logo-direita-tipo">
+                                                        <option value="principal">Logo principal</option>
+                                                        <option value="secundaria">Logo secundária</option>
+                                                        <option value="extra">Logo extra</option>
+                                                    </select>
+                                                    <small class="config-help d-block mt-1">
+                                                        Escolha qual logo será exibida na posição direita do rodapé.
+                                                    </small>
+                                                </div>
+
+                                                <small class="config-help d-block mt-2">
+                                                    Caso o switch esteja desligado, a posição correspondente não exibirá
+                                                    nenhuma imagem no rodapé.
+                                                </small>
+                                            </div>
+
+                                            <!-- Texto do rodapé -->
+                                            <div class="form-group col-md-6">
+                                                <label>Texto do rodapé dos documentos</label>
+
+                                                <div class="mb-3">
+                                                    <label class="small-label d-block" for="cfg-oficio-rodape-linha1">
+                                                        Linha 1
+                                                    </label>
+                                                    <input type="text" class="form-control"
+                                                        id="cfg-oficio-rodape-linha1"
+                                                        placeholder="SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED">
+                                                    <small class="config-help">
+                                                        Exemplo: SECRETARIA MUNICIPAL DE EDUCAÇÃO - SEMED
+                                                    </small>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="small-label d-block" for="cfg-oficio-rodape-linha2">
+                                                        Linha 2
+                                                    </label>
+                                                    <input type="text" class="form-control"
+                                                        id="cfg-oficio-rodape-linha2"
+                                                        placeholder="Rua Itamarati, s/n - Bairro Novo Horizonte - CEP 68.356-103 - Canaã dos Carajás - PA">
+                                                    <small class="config-help">
+                                                        Exemplo: Rua Itamarati, s/n - Bairro Novo Horizonte - CEP
+                                                        68.356-103 - Canaã dos Carajás - PA
+                                                    </small>
+                                                </div>
+
+                                                <div class="mb-1">
+                                                    <label class="small-label d-block" for="cfg-oficio-rodape-linha3">
+                                                        Linha 3
+                                                    </label>
+                                                    <input type="text" class="form-control"
+                                                        id="cfg-oficio-rodape-linha3"
+                                                        placeholder="Telefone: (94) 99293-4500">
+                                                    <small class="config-help">
+                                                        Exemplo: Telefone: (94) 99293-4500
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </form>
+                                </div>
+                                <!-- /TAB DOCUMENTOS -->
+
+                                <!-- TAB 3: CARTEIRINHAS -->
+                                <div class="tab-pane fade" id="tab-carteirinhas" role="tabpanel"
+                                    aria-labelledby="tab-carteirinhas-tab">
+                                    <form id="form-config-carteirinhas">
+                                        <div class="config-section-title d-flex align-items-center">
+                                            Carteirinhas – Identidade visual
+                                            <span class="config-pill">Carteirinhas</span>
+                                        </div>
+                                        <p class="config-help mb-3">
+                                            Defina a identidade visual padrão das carteirinhas emitidas pelo sistema.
+                                        </p>
+
+                                        <div class="form-row">
+                                            <!-- Foto padrão de aluno -->
+                                            <div class="form-group col-md-5">
+                                                <label class="config-block-title" for="cfg-foto-padrao-aluno">
+                                                    Foto padrão de aluno
+                                                </label>
+                                                <div class="config-upload-box d-flex align-items-center">
+                                                    <div class="flex-grow-1">
+                                                        <input type="file" class="form-control-file"
+                                                            id="cfg-foto-padrao-aluno" accept="image/*">
+                                                        <small class="config-help d-block">
+                                                            Caso o aluno não possua foto cadastrada, esta imagem será
+                                                            utilizada na carteirinha.
+                                                        </small>
+                                                        <div class="config-upload-actions">
+                                                            <button type="button"
+                                                                class="btn btn-outline-secondary btn-sm btn-preview-clear"
+                                                                data-field="foto_padrao_aluno" data-action="preview">
+                                                                Pré-visualizar selecionada
+                                                            </button>
+                                                            <button type="button"
+                                                                class="btn btn-outline-danger btn-sm btn-clear-image"
+                                                                data-field="foto_padrao_aluno">
+                                                                Limpar imagem atual
+                                                            </button>
+                                                            <input type="hidden" id="cfg-remove-foto-padrao-aluno"
+                                                                value="0">
+                                                        </div>
+                                                    </div>
+                                                    <div class="ml-3 text-center config-preview-wrapper"
+                                                        id="preview-foto-padrao-aluno-wrapper" style="display:none;">
+                                                        <span class="small-label d-block mb-1">Atual:</span>
+                                                        <img id="preview-foto-padrao-aluno" class="config-logo-preview"
+                                                            alt="Foto padrão de aluno">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Elementos visuais da carteirinha -->
+                                            <div class="form-group col-md-7">
+                                                <label class="config-block-title">
+                                                    Elementos visuais da carteirinha
+                                                </label>
+
+                                                <!-- Imagem esquerda -->
+                                                <div class="mb-3">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-carteirinha-usar-imagem-esquerda">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-carteirinha-usar-imagem-esquerda">
+                                                            Exibir imagem à esquerda
+                                                        </label>
+                                                    </div>
+                                                    <select class="form-control form-control-sm mt-2"
+                                                        id="cfg-carteirinha-logo-esquerda-tipo">
+                                                        <option value="principal">Logo principal</option>
+                                                        <option value="secundaria">Logo secundária</option>
+                                                        <option value="extra">Logo extra</option>
+                                                    </select>
+                                                    <small class="config-help d-block mt-1">
+                                                        Escolha qual logo será utilizada na lateral esquerda da
+                                                        carteirinha.
+                                                    </small>
+                                                </div>
+
+                                                <!-- Imagem direita -->
+                                                <div class="mb-3">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-carteirinha-usar-imagem-direita">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-carteirinha-usar-imagem-direita">
+                                                            Exibir imagem à direita
+                                                        </label>
+                                                    </div>
+                                                    <select class="form-control form-control-sm mt-2"
+                                                        id="cfg-carteirinha-logo-direita-tipo">
+                                                        <option value="principal">Logo principal</option>
+                                                        <option value="secundaria">Logo secundária</option>
+                                                        <option value="extra">Logo extra</option>
+                                                    </select>
+                                                    <small class="config-help d-block mt-1">
+                                                        Escolha qual logo será utilizada na lateral direita da
+                                                        carteirinha.
+                                                    </small>
+                                                </div>
+
+                                                <!-- QR Code no verso -->
+                                                <div class="mb-1">
+                                                    <div class="custom-control custom-switch">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="cfg-carteirinha-exibir-qr-verso">
+                                                        <label class="custom-control-label"
+                                                            for="cfg-carteirinha-exibir-qr-verso">
+                                                            Exibir QR Code no verso
+                                                        </label>
+                                                    </div>
+                                                    <small class="config-help d-block mt-1">
+                                                        Quando ativado, o verso da carteirinha exibirá um QR Code com
+                                                        os dados do aluno; quando desativado, o verso permanecerá em
+                                                        branco.
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                                <!-- /TAB CARTEIRINHAS -->
+                            </div> <!-- /card-body -->
+                        </div> <!-- /card -->
+
+                        <div class="text-right mt-3">
+                            <button class="btn btn-outline-secondary mr-1" type="button" id="btn-descartar-config">
+                                Descartar alterações
+                            </button>
+                            <button class="btn btn-primary" type="button" id="btn-salvar-config-bottom">
+                                <span class="fe fe-save"></span> Salvar configurações
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAIS GLOBAIS -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Mensagem</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary"
+                                id="btnSistemaConfirmacaoConfirmar">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- JS base -->
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script>
+        // Helpers globais para modais
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+
+    <script>
+        var apiBrandingBase = '/api/config/branding';
+        var configAtual = null;
+
+        // Campos de imagem (frontend)
+        var imagemCampos = {
+            logo_principal: {
+                input: '#cfg-logo-principal',
+                previewWrapper: '#preview-logo-principal-wrapper',
+                previewImg: '#preview-logo-principal',
+                removeInput: '#cfg-remove-logo-principal'
+            },
+            logo_secundaria: {
+                input: '#cfg-logo-secundaria',
+                previewWrapper: '#preview-logo-secundaria-wrapper',
+                previewImg: '#preview-logo-secundaria',
+                removeInput: '#cfg-remove-logo-secundaria'
+            },
+            logo_extra: {
+                input: '#cfg-logo-extra',
+                previewWrapper: '#preview-logo-extra-wrapper',
+                previewImg: '#preview-logo-extra',
+                removeInput: '#cfg-remove-logo-extra'
+            },
+            foto_padrao_aluno: {
+                input: '#cfg-foto-padrao-aluno',
+                previewWrapper: '#preview-foto-padrao-aluno-wrapper',
+                previewImg: '#preview-foto-padrao-aluno',
+                removeInput: '#cfg-remove-foto-padrao-aluno'
+            },
+            doc_separador_imagem: {
+                input: '#cfg-doc-separador-imagem',
+                previewWrapper: '#preview-doc-separador-wrapper',
+                previewImg: '#preview-doc-separador',
+                removeInput: '#cfg-remove-separador-imagem'
+            }
+        };
+
+        function setImagemPreviewFromUrl(campo, url) {
+            if (!imagemCampos[campo]) return;
+            var cfgCampo = imagemCampos[campo];
+            if (url) {
+                var finalUrl = url + (url.indexOf('?') === -1 ? '?_=' : '&_=') + Date.now();
+                $(cfgCampo.previewImg).attr('src', finalUrl);
+                $(cfgCampo.previewWrapper).show();
+                if (cfgCampo.removeInput) $(cfgCampo.removeInput).val('0');
+            } else {
+                $(cfgCampo.previewImg).attr('src', '');
+                $(cfgCampo.previewWrapper).hide();
+            }
+        }
+
+        function configurarPreviewLocalUpload() {
+            Object.keys(imagemCampos).forEach(function (campo) {
+                var cfgCampo = imagemCampos[campo];
+                var $input = $(cfgCampo.input);
+                if (!$input.length) return;
+
+                $input.off('change').on('change', function () {
+                    var file = this.files && this.files[0];
+                    if (file) {
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            $(cfgCampo.previewImg).attr('src', e.target.result);
+                            $(cfgCampo.previewWrapper).show();
+                            if (cfgCampo.removeInput) $(cfgCampo.removeInput).val('0');
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+        }
+
+        function configurarBotoesLimparImagem() {
+            $('.btn-clear-image').off('click').on('click', function () {
+                var campo = $(this).data('field');
+                var cfgCampo = imagemCampos[campo];
+                if (!cfgCampo) return;
+
+                var $input = $(cfgCampo.input);
+                var $previewImg = $(cfgCampo.previewImg);
+                var $previewWrapper = $(cfgCampo.previewWrapper);
+                var $removeInput = $(cfgCampo.removeInput);
+
+                if ($input && $input.length) $input.val('');
+                if ($previewImg && $previewImg.length) $previewImg.attr('src', '');
+                if ($previewWrapper && $previewWrapper.length) $previewWrapper.hide();
+                if ($removeInput && $removeInput.length) $removeInput.val('1');
+            });
+
+            // Botões de pré-visualizar upload local
+            $('.btn-preview-clear[data-action="preview"]').off('click').on('click', function () {
+                var campo = $(this).data('field');
+                var cfgCampo = imagemCampos[campo];
+                if (!cfgCampo) return;
+
+                var inputEl = $(cfgCampo.input).get(0);
+                if (inputEl && inputEl.files && inputEl.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $(cfgCampo.previewImg).attr('src', e.target.result);
+                        $(cfgCampo.previewWrapper).show();
+                        if (cfgCampo.removeInput) $(cfgCampo.removeInput).val('0');
+                    };
+                    reader.readAsDataURL(inputEl.files[0]);
+                }
+            });
+        }
+
+        // Regras de alinhamento para ofícios (cabeçalho)
+        function aplicarRegrasAlinhamentoOficio() {
+            var alinhamento = $('#cfg-oficio-alinhamento').val() || 'center';
+
+            var $chkEsq = $('#cfg-oficio-usar-imagem-esquerda');
+            var $chkDir = $('#cfg-oficio-usar-imagem-direita');
+            var $selEsq = $('#cfg-oficio-logo-esquerda-tipo');
+            var $selDir = $('#cfg-oficio-logo-direita-tipo');
+
+            if (!$('#tab-documentos').length) return;
+
+            if (alinhamento === 'left') {
+                // Texto à esquerda, imagem apenas à direita
+                $chkEsq.prop('checked', false).prop('disabled', true);
+                $selEsq.prop('disabled', true);
+
+                $chkDir.prop('disabled', false);
+                $selDir.prop('disabled', !$chkDir.is(':checked'));
+            } else if (alinhamento === 'right') {
+                // Texto à direita, imagem apenas à esquerda
+                $chkDir.prop('checked', false).prop('disabled', true);
+                $selDir.prop('disabled', true);
+
+                $chkEsq.prop('disabled', false);
+                $selEsq.prop('disabled', !$chkEsq.is(':checked'));
+            } else {
+                // Centralizado: pode usar ambas
+                $chkEsq.prop('disabled', false);
+                $chkDir.prop('disabled', false);
+
+                $selEsq.prop('disabled', !$chkEsq.is(':checked'));
+                $selDir.prop('disabled', !$chkDir.is(':checked'));
+            }
+        }
+
+        // Regras de habilitar/desabilitar selects do rodapé
+        function aplicarRegrasRodapeOficio() {
+            var grupos = [
+                {
+                    chk: '#cfg-oficio-rodape-usar-imagem-esquerda',
+                    sel: '#cfg-oficio-rodape-logo-esquerda-tipo'
+                },
+                {
+                    chk: '#cfg-oficio-rodape-usar-imagem-centro',
+                    sel: '#cfg-oficio-rodape-logo-centro-tipo'
+                },
+                {
+                    chk: '#cfg-oficio-rodape-usar-imagem-direita',
+                    sel: '#cfg-oficio-rodape-logo-direita-tipo'
+                }
+            ];
+
+            grupos.forEach(function (g) {
+                var $chk = $(g.chk);
+                var $sel = $(g.sel);
+                if ($chk.length && $sel.length) {
+                    $sel.prop('disabled', !$chk.is(':checked'));
+                }
+            });
+        }
+
+        // Regras para carteirinhas (habilita/desabilita selects conforme switches)
+        function aplicarRegrasCarteirinha() {
+            var $chkEsq = $('#cfg-carteirinha-usar-imagem-esquerda');
+            var $selEsq = $('#cfg-carteirinha-logo-esquerda-tipo');
+            var $chkDir = $('#cfg-carteirinha-usar-imagem-direita');
+            var $selDir = $('#cfg-carteirinha-logo-direita-tipo');
+
+            if ($selEsq.length) {
+                $selEsq.prop('disabled', !$chkEsq.is(':checked'));
+            }
+            if ($selDir.length) {
+                $selDir.prop('disabled', !$chkDir.is(':checked'));
+            }
+        }
+
+        function preencherFormComConfig(cfg) {
+            cfg = cfg || {};
+            configAtual = cfg;
+
+            // Campos básicos
+            $('#cfg-nome-sistema').val(cfg.nome_sistema || '');
+            $('#cfg-telefone-contato').val(cfg.telefone_contato || '');
+            $('#cfg-email-contato').val(cfg.email_contato || '');
+            $('#cfg-site-oficial').val(cfg.site_oficial || '');
+
+            // Imagens (urls vindas do backend)
+            if (cfg.logo_principal_url) setImagemPreviewFromUrl('logo_principal', cfg.logo_principal_url);
+            else setImagemPreviewFromUrl('logo_principal', null);
+
+            if (cfg.logo_secundaria_url) setImagemPreviewFromUrl('logo_secundaria', cfg.logo_secundaria_url);
+            else setImagemPreviewFromUrl('logo_secundaria', null);
+
+            if (cfg.logo_extra_url) setImagemPreviewFromUrl('logo_extra', cfg.logo_extra_url);
+            else setImagemPreviewFromUrl('logo_extra', null);
+
+            if (cfg.foto_padrao_aluno_url) setImagemPreviewFromUrl('foto_padrao_aluno', cfg.foto_padrao_aluno_url);
+            else setImagemPreviewFromUrl('foto_padrao_aluno', null);
+
+            if (cfg.separador_imagem_url) setImagemPreviewFromUrl('doc_separador_imagem', cfg.separador_imagem_url);
+            else setImagemPreviewFromUrl('doc_separador_imagem', null);
+
+            // Reseta flags de remoção
+            $('#cfg-remove-logo-principal').val('0');
+            $('#cfg-remove-logo-secundaria').val('0');
+            $('#cfg-remove-logo-extra').val('0');
+            $('#cfg-remove-foto-padrao-aluno').val('0');
+            $('#cfg-remove-separador-imagem').val('0');
+
+            // Documentos – Ofícios (cabeçalho)
+            $('#cfg-oficio-cabecalho-linha1').val(cfg.oficio_cabecalho_linha1 || '');
+            $('#cfg-oficio-cabecalho-linha2').val(cfg.oficio_cabecalho_linha2 || '');
+            $('#cfg-oficio-cabecalho-linha3').val(cfg.oficio_cabecalho_linha3 || '');
+
+            $('#cfg-oficio-alinhamento').val(cfg.oficio_cabecalho_alinhamento || 'center');
+
+            $('#cfg-oficio-usar-imagem-esquerda').prop('checked', !!cfg.oficio_logo_esquerda_ativo);
+            $('#cfg-oficio-usar-imagem-direita').prop('checked', !!cfg.oficio_logo_direita_ativo);
+
+            $('#cfg-oficio-logo-esquerda-tipo').val(cfg.oficio_logo_esquerda_tipo || 'principal');
+            $('#cfg-oficio-logo-direita-tipo').val(cfg.oficio_logo_direita_tipo || 'secundaria');
+
+            // Separador de documentos
+            $('#cfg-doc-separador-ativo').prop('checked', cfg.separador_ativo !== false);
+
+            // Documentos – Ofícios (rodapé texto)
+            $('#cfg-oficio-rodape-linha1').val(cfg.doc_rodape_linha1 || '');
+            $('#cfg-oficio-rodape-linha2').val(cfg.doc_rodape_linha2 || '');
+            $('#cfg-oficio-rodape-linha3').val(cfg.doc_rodape_linha3 || '');
+
+            // Documentos – Ofícios (rodapé imagens)
+            $('#cfg-oficio-rodape-usar-imagem-esquerda').prop('checked', !!cfg.rodape_logo_esquerda_ativo);
+            $('#cfg-oficio-rodape-usar-imagem-centro').prop('checked', !!cfg.rodape_logo_centro_ativo);
+            $('#cfg-oficio-rodape-usar-imagem-direita').prop('checked', !!cfg.rodape_logo_direita_ativo);
+
+            $('#cfg-oficio-rodape-logo-esquerda-tipo').val(cfg.rodape_logo_esquerda_tipo || 'principal');
+            $('#cfg-oficio-rodape-logo-centro-tipo').val(cfg.rodape_logo_centro_tipo || 'secundaria');
+            $('#cfg-oficio-rodape-logo-direita-tipo').val(cfg.rodape_logo_direita_tipo || 'extra');
+
+            // Carteirinhas – identidade visual
+            $('#cfg-carteirinha-usar-imagem-esquerda').prop('checked', !!cfg.carteirinha_logo_esquerda_ativo);
+            $('#cfg-carteirinha-usar-imagem-direita').prop('checked', !!cfg.carteirinha_logo_direita_ativo);
+
+            $('#cfg-carteirinha-logo-esquerda-tipo').val(cfg.carteirinha_logo_esquerda_tipo || 'principal');
+            $('#cfg-carteirinha-logo-direita-tipo').val(cfg.carteirinha_logo_direita_tipo || 'secundaria');
+
+            $('#cfg-carteirinha-exibir-qr-verso').prop('checked', !!cfg.carteirinha_exibir_qr_verso);
+
+            // Limpa inputs de arquivo
+            Object.keys(imagemCampos).forEach(function (campo) {
+                var cfgCampo = imagemCampos[campo];
+                $(cfgCampo.input).val('');
+            });
+
+            configurarPreviewLocalUpload();
+            configurarBotoesLimparImagem();
+            aplicarRegrasAlinhamentoOficio();
+            aplicarRegrasRodapeOficio();
+            aplicarRegrasCarteirinha();
+        }
+
+        function coletarConfigDoFormulario() {
+            var cfg = {};
+
+            cfg.nome_sistema = ($('#cfg-nome-sistema').val() || '').trim() || null;
+            cfg.telefone_contato = ($('#cfg-telefone-contato').val() || '').trim() || null;
+            cfg.email_contato = ($('#cfg-email-contato').val() || '').trim() || null;
+            cfg.site_oficial = ($('#cfg-site-oficial').val() || '').trim() || null;
+
+            // Flags de remoção
+            cfg.remove_logo_principal = $('#cfg-remove-logo-principal').val() === '1';
+            cfg.remove_logo_secundaria = $('#cfg-remove-logo-secundaria').val() === '1';
+            cfg.remove_logo_extra = $('#cfg-remove-logo-extra').val() === '1';
+            cfg.remove_foto_padrao_aluno = $('#cfg-remove-foto-padrao-aluno').val() === '1';
+            cfg.remove_separador_imagem = $('#cfg-remove-separador-imagem').val() === '1';
+
+            // Ofícios – cabeçalho
+            cfg.oficio_cabecalho_linha1 = ($('#cfg-oficio-cabecalho-linha1').val() || '').trim() || null;
+            cfg.oficio_cabecalho_linha2 = ($('#cfg-oficio-cabecalho-linha2').val() || '').trim() || null;
+            cfg.oficio_cabecalho_linha3 = ($('#cfg-oficio-cabecalho-linha3').val() || '').trim() || null;
+
+            cfg.oficio_cabecalho_alinhamento = $('#cfg-oficio-alinhamento').val() || 'center';
+
+            // Switches + seleção de logos (cabeçalho)
+            var usarImgEsqCab = $('#cfg-oficio-usar-imagem-esquerda').is(':checked');
+            var usarImgDirCab = $('#cfg-oficio-usar-imagem-direita').is(':checked');
+
+            cfg.oficio_logo_esquerda_ativo = usarImgEsqCab;
+            cfg.oficio_logo_direita_ativo = usarImgDirCab;
+
+            cfg.oficio_logo_esquerda_tipo = usarImgEsqCab ? ($('#cfg-oficio-logo-esquerda-tipo').val() || null) : null;
+            cfg.oficio_logo_direita_tipo = usarImgDirCab ? ($('#cfg-oficio-logo-direita-tipo').val() || null) : null;
+
+            // Separador de documentos
+            cfg.doc_separador_ativo = $('#cfg-doc-separador-ativo').is(':checked');
+
+            // Ofícios – rodapé (texto)
+            cfg.doc_rodape_linha1 = ($('#cfg-oficio-rodape-linha1').val() || '').trim() || null;
+            cfg.doc_rodape_linha2 = ($('#cfg-oficio-rodape-linha2').val() || '').trim() || null;
+            cfg.doc_rodape_linha3 = ($('#cfg-oficio-rodape-linha3').val() || '').trim() || null;
+
+            // Ofícios – rodapé (imagens)
+            var rodapeImgEsq = $('#cfg-oficio-rodape-usar-imagem-esquerda').is(':checked');
+            var rodapeImgCentro = $('#cfg-oficio-rodape-usar-imagem-centro').is(':checked');
+            var rodapeImgDir = $('#cfg-oficio-rodape-usar-imagem-direita').is(':checked');
+
+            cfg.rodape_logo_esquerda_ativo = rodapeImgEsq;
+            cfg.rodape_logo_centro_ativo = rodapeImgCentro;
+            cfg.rodape_logo_direita_ativo = rodapeImgDir;
+
+            cfg.rodape_logo_esquerda_tipo = rodapeImgEsq ? ($('#cfg-oficio-rodape-logo-esquerda-tipo').val() || null) : null;
+            cfg.rodape_logo_centro_tipo = rodapeImgCentro ? ($('#cfg-oficio-rodape-logo-centro-tipo').val() || null) : null;
+            cfg.rodape_logo_direita_tipo = rodapeImgDir ? ($('#cfg-oficio-rodape-logo-direita-tipo').val() || null) : null;
+
+            // Carteirinhas – identidade visual
+            var cartImgEsq = $('#cfg-carteirinha-usar-imagem-esquerda').is(':checked');
+            var cartImgDir = $('#cfg-carteirinha-usar-imagem-direita').is(':checked');
+
+            cfg.carteirinha_logo_esquerda_ativo = cartImgEsq;
+            cfg.carteirinha_logo_direita_ativo = cartImgDir;
+
+            cfg.carteirinha_logo_esquerda_tipo = cartImgEsq ? ($('#cfg-carteirinha-logo-esquerda-tipo').val() || null) : null;
+            cfg.carteirinha_logo_direita_tipo = cartImgDir ? ($('#cfg-carteirinha-logo-direita-tipo').val() || null) : null;
+
+            cfg.carteirinha_exibir_qr_verso = $('#cfg-carteirinha-exibir-qr-verso').is(':checked');
+
+            return cfg;
+        }
+
+        function carregarConfiguracoes() {
+            return fetch(apiBrandingBase, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar configurações');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    preencherFormComConfig(data || {});
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema(
+                        'Erro ao carregar configurações',
+                        'Não foi possível carregar as configurações atuais do sistema.'
+                    );
+                });
+        }
+
+        function salvarConfiguracoes() {
+            var cfg = coletarConfigDoFormulario();
+            var formData = new FormData();
+            formData.append('config', JSON.stringify(cfg));
+
+            // Arquivos
+            var logoPrincipalInput = document.getElementById('cfg-logo-principal');
+            if (logoPrincipalInput && logoPrincipalInput.files[0]) {
+                formData.append('logo_principal', logoPrincipalInput.files[0]);
+            }
+
+            var logoSecundariaInput = document.getElementById('cfg-logo-secundaria');
+            if (logoSecundariaInput && logoSecundariaInput.files[0]) {
+                formData.append('logo_secundaria', logoSecundariaInput.files[0]);
+            }
+
+            var logoExtraInput = document.getElementById('cfg-logo-extra');
+            if (logoExtraInput && logoExtraInput.files[0]) {
+                formData.append('logo_extra', logoExtraInput.files[0]);
+            }
+
+            var fotoPadraoInput = document.getElementById('cfg-foto-padrao-aluno');
+            if (fotoPadraoInput && fotoPadraoInput.files[0]) {
+                formData.append('foto_padrao_aluno', fotoPadraoInput.files[0]);
+            }
+
+            var separadorInput = document.getElementById('cfg-doc-separador-imagem');
+            if (separadorInput && separadorInput.files[0]) {
+                formData.append('doc_separador_imagem', separadorInput.files[0]);
+            }
+
+            fetch(apiBrandingBase, {
+                method: 'POST',
+                body: formData
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao salvar configurações');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    preencherFormComConfig(data || cfg);
+                    mostrarMensagemSistema('Configurações salvas',
+                        'As configurações do sistema foram salvas com sucesso.');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema(
+                        'Erro ao salvar configurações',
+                        'Não foi possível salvar as configurações. Tente novamente.'
+                    );
+                });
+        }
+
+        $(document).ready(function () {
+            // Máscara de telefone
+            $('.input-phone').mask('(00) 00000-0000', { placeholder: "(__) _____-____" });
+
+            // Botões
+            $('#btn-recarregar-config').on('click', function () {
+                carregarConfiguracoes();
+            });
+
+            $('#btn-salvar-config, #btn-salvar-config-bottom').on('click', function () {
+                salvarConfiguracoes();
+            });
+
+            $('#btn-descartar-config').on('click', function () {
+                confirmarAcaoSistema(
+                    'Descartar alterações',
+                    'As alterações não salvas serão perdidas. Deseja continuar?',
+                    'Descartar'
+                ).then(function (ok) {
+                    if (!ok) return;
+                    carregarConfiguracoes();
+                });
+            });
+
+            // Eventos da aba documentos – ofícios (cabeçalho)
+            $(document).on('change', '#cfg-oficio-alinhamento', function () {
+                aplicarRegrasAlinhamentoOficio();
+            });
+
+            $(document).on('change', '#cfg-oficio-usar-imagem-esquerda, #cfg-oficio-usar-imagem-direita', function () {
+                aplicarRegrasAlinhamentoOficio();
+            });
+
+            // Eventos da aba documentos – ofícios (rodapé)
+            $(document).on('change',
+                '#cfg-oficio-rodape-usar-imagem-esquerda, #cfg-oficio-rodape-usar-imagem-centro, #cfg-oficio-rodape-usar-imagem-direita',
+                function () {
+                    aplicarRegrasRodapeOficio();
+                });
+
+            // Eventos da aba carteirinhas
+            $(document).on('change',
+                '#cfg-carteirinha-usar-imagem-esquerda, #cfg-carteirinha-usar-imagem-direita',
+                function () {
+                    aplicarRegrasCarteirinha();
+                });
+
+            // Carrega config ao abrir
+            carregarConfiguracoes();
+        });
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Redefinir Senha</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- MESMO CSS DO LOGIN -->
+  <link rel="stylesheet" href="/css/login.css" />
+
+  <link rel="shortcut icon" href="/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border-width: 0;
+    }
+
+    /* Ajustes leves para “encaixar” no login.css sem mexer nele */
+    .form-links {
+      text-align: center;
+      margin: .25rem 0 .75rem;
+    }
+
+    .form-links .sep {
+      margin: 0 .4rem;
+      opacity: .6;
+    }
+
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: .75rem;
+      margin: .5rem 0 1rem;
+      flex-wrap: wrap;
+    }
+
+    .step-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: .9rem;
+      font-weight: 600;
+      opacity: .5;
+      padding: .35rem .65rem;
+      border-radius: 999px;
+      border: 1px solid rgba(0, 0, 0, .1);
+      background: rgba(0, 0, 0, .03);
+    }
+
+    .step-pill.active {
+      opacity: 1;
+    }
+
+    .step-pill .n {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      font-weight: 700;
+      color: #fff;
+      background: #4d84ff;
+      /* cor neutra; se quiser, removo e deixo herdar */
+    }
+
+    .d-none {
+      display: none !important;
+    }
+
+    /* Botões em linha no desktop, empilhados no mobile */
+    .btn-row {
+      display: flex;
+      gap: .75rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: .5rem;
+    }
+
+    .btn-row .btn {
+      min-width: 190px;
+    }
+
+    .btn-link-lite {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 49px;
+      padding: 0 18px;
+      border-radius: 49px;
+      text-decoration: none;
+      font-weight: 600;
+      border: 1px solid rgba(0, 0, 0, .15);
+      color: #444;
+      background: transparent;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .btn-link-lite:hover {
+      filter: brightness(.98);
+    }
+
+    .hint {
+      font-size: .9rem;
+      opacity: .8;
+      text-align: center;
+      margin: .2rem 0 .8rem;
+      line-height: 1.35;
+    }
+
+    /* Loading state for buttons */
+    .btn.is-loading,
+    .btn-link-lite.is-loading {
+      opacity: .85;
+      pointer-events: none;
+      position: relative;
+    }
+
+    .btn .spinner,
+    .btn-link-lite .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, .55);
+      border-top-color: rgba(255, 255, 255, 1);
+      animation: spin .8s linear infinite;
+      margin-left: .6rem;
+      vertical-align: middle;
+    }
+
+    .btn.transparent .spinner {
+      border: 2px solid rgba(0, 0, 0, .25);
+      border-top-color: rgba(0, 0, 0, .55);
+    }
+
+    .btn-link-lite .spinner {
+      border: 2px solid rgba(0, 0, 0, .2);
+      border-top-color: rgba(0, 0, 0, .55);
+    }
+
+    .is-loading .spinner {
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="forms-container">
+      <div class="signin-signup">
+
+        <form id="resetForm" class="sign-in-form" aria-labelledby="reset-title" novalidate>
+          <a href="/" aria-label="Página Inicial">
+            <!-- Mantém o mesmo padrão do login -->
+            <img src="/assets/images/logo_light.png" alt="logo" class="form-logo" />
+          </a>
+
+          <h2 class="title" id="reset-title">Redefinir Senha</h2>
+
+          <p class="form-links">
+            <a class="pass" href="/politicaprivacidade">Política de Privacidade</a>
+            <span class="sep">|</span>
+            <a class="pass" href="/termos">Termos de Serviço</a>
+          </p>
+
+          <div class="steps" aria-label="Progresso">
+            <span class="step-pill step-1 active"><span class="n">1</span> E-mail</span>
+            <span class="step-pill step-2"><span class="n">2</span> Código</span>
+            <span class="step-pill step-3"><span class="n">3</span> Nova senha</span>
+          </div>
+
+          <!-- PASSO 1 -->
+          <div id="step1">
+            <div class="input-field">
+              <i class="fas fa-envelope"></i>
+              <label for="email" class="sr-only">E-mail</label>
+              <input type="email" id="email" name="email" autocomplete="email" placeholder="Seu e-mail" required />
+            </div>
+
+            <p class="hint">Vamos enviar um código de 6 dígitos para seu e-mail (se ele existir no sistema).</p>
+
+            <div class="btn-row">
+              <button type="submit" class="btn solid" id="btnSend">Enviar código<span class="spinner"
+                  aria-hidden="true"></span></button>
+              <a class="btn-link-lite" href="/">Voltar ao login</a>
+            </div>
+          </div>
+
+          <!-- PASSO 2 -->
+          <div id="step2" class="d-none">
+            <div class="input-field">
+              <i class="fas fa-hashtag"></i>
+              <label for="code" class="sr-only">Código</label>
+              <input type="text" id="code" name="code" inputmode="numeric" maxlength="6"
+                placeholder="Código (6 dígitos)" required />
+            </div>
+
+            <p class="hint">Verifique a caixa de entrada e spam. O código expira em 15 minutos.</p>
+
+            <div class="btn-row">
+              <button type="button" class="btn transparent" id="btnBack1">Voltar</button>
+              <button type="button" class="btn solid" id="btnVerify">Validar código<span class="spinner"
+                  aria-hidden="true"></span></button>
+            </div>
+
+            <div class="btn-row" style="margin-top:.35rem;">
+              <button type="button" class="btn-link-lite" id="btnResend">
+                <i class="fa-solid fa-rotate-right" style="margin-right:.45rem;"></i> Reenviar código
+                <span class="spinner" aria-hidden="true"></span></button>
+            </div>
+          </div>
+
+          <!-- PASSO 3 -->
+          <div id="step3" class="d-none">
+            <div class="input-field">
+              <i class="fas fa-lock"></i>
+              <label for="newPassword" class="sr-only">Nova senha</label>
+              <input type="password" id="newPassword" name="newPassword" autocomplete="new-password"
+                placeholder="Nova senha (mín. 6)" minlength="6" required />
+              <i class="far fa-eye" id="toggleNewPassword" style="cursor:pointer;" role="button" tabindex="0"
+                aria-label="Mostrar/Ocultar senha"></i>
+            </div>
+
+            <div class="input-field">
+              <i class="fas fa-lock"></i>
+              <label for="confirmPassword" class="sr-only">Confirmar senha</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" autocomplete="new-password"
+                placeholder="Confirmar nova senha" minlength="6" required />
+              <i class="far fa-eye" id="toggleConfirmPassword" style="cursor:pointer;" role="button" tabindex="0"
+                aria-label="Mostrar/Ocultar senha"></i>
+            </div>
+
+            <div class="btn-row">
+              <button type="button" class="btn transparent" id="btnBack2">Voltar</button>
+              <button type="button" class="btn solid" id="btnConfirm">Redefinir senha<span class="spinner"
+                  aria-hidden="true"></span></button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <div class="panels-container">
+      <div class="panel left-panel">
+        <div class="content">
+          <h3>Esqueceu a senha?</h3>
+          <p>Recupere o acesso em 3 passos: e-mail, código e nova senha.</p>
+        </div>
+      </div>
+      <div class="panel right-panel">
+        <div class="content">
+          <h3>Já lembrou?</h3>
+          <p>Volte para o login e entre normalmente.</p>
+          <a class="btn transparent" href="/">Ir para login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script>
+    function showToast(type, message) {
+      let bgColor = "linear-gradient(to right, #00b09b, #96c93d)";
+      if (type === "danger" || type === "error") bgColor = "linear-gradient(to right, #de1f1f, #c40606)";
+      else if (type === "warning") bgColor = "linear-gradient(to right, #FFA900, #FF7700)";
+      else if (type === "info") bgColor = "linear-gradient(to right, #0080ff, #00c6ff)";
+
+      Toastify({
+        text: message,
+        duration: 3200,
+        gravity: "top",
+        position: "right",
+        style: { background: bgColor },
+      }).showToast();
+    }
+
+    const $ = (s) => document.querySelector(s);
+
+    // Always call API on the same origin, even if this page is under a subpath
+    const API_BASE = new URL("/api", window.location.origin).toString().replace(/\/$/, "");
+
+    function setStep(n) {
+      [".step-1", ".step-2", ".step-3"].forEach((sel, i) => {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        el.classList.toggle("active", i === (n - 1));
+      });
+    }
+
+    function show(el) { el.classList.remove("d-none"); }
+    function hide(el) { el.classList.add("d-none"); }
+
+    // Acessibilidade: Enter/Espaço nos ícones com role="button"
+    function handleKeydownAsClick(event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.target.click();
+      }
+    }
+
+    function setLoading(btn, loading, label) {
+      if (!btn) return;
+      btn.classList.toggle("is-loading", !!loading);
+      btn.disabled = !!loading;
+      if (label) btn.dataset.label = label;
+      const base = btn.dataset.label || btn.textContent.trim();
+      btn.textContent = loading ? (btn.dataset.loadingText || "Carregando") : base;
+      // Re-append spinner if textContent overwrite removed it
+      if (!btn.querySelector('.spinner')) {
+        const sp = document.createElement('span');
+        sp.className = 'spinner';
+        sp.setAttribute('aria-hidden', 'true');
+        btn.appendChild(sp);
+      }
+    }
+
+    (function init() {
+      const step1 = $("#step1");
+      const step2 = $("#step2");
+      const step3 = $("#step3");
+
+      const emailInput = $("#email");
+      const codeInput = $("#code");
+      const newPass = $("#newPassword");
+      const confirmPass = $("#confirmPassword");
+
+      const btnSend = $("#btnSend");
+      const btnVerify = $("#btnVerify");
+      const btnConfirm = $("#btnConfirm");
+      const btnResend = $("#btnResend");
+      const btnBack1 = $("#btnBack1");
+      const btnBack2 = $("#btnBack2");
+
+      // labels for loading states
+      btnSend.dataset.label = btnSend.textContent.trim();
+      btnSend.dataset.loadingText = "Enviando...";
+      btnVerify.dataset.label = btnVerify.textContent.trim();
+      btnVerify.dataset.loadingText = "Validando...";
+      btnConfirm.dataset.label = btnConfirm.textContent.trim();
+      btnConfirm.dataset.loadingText = "Aplicando...";
+      btnResend.dataset.label = btnResend.textContent.trim();
+      btnResend.dataset.loadingText = "Reenviando...";
+
+
+      // toggles
+      const toggleNew = $("#toggleNewPassword");
+      const toggleConfirm = $("#toggleConfirmPassword");
+
+      function togglePassword(input, icon) {
+        const type = input.getAttribute("type") === "password" ? "text" : "password";
+        input.setAttribute("type", type);
+        icon.classList.toggle("fa-eye");
+        icon.classList.toggle("fa-eye-slash");
+      }
+
+      toggleNew.addEventListener("click", () => togglePassword(newPass, toggleNew));
+      toggleConfirm.addEventListener("click", () => togglePassword(confirmPass, toggleConfirm));
+      toggleNew.addEventListener("keydown", handleKeydownAsClick);
+      toggleConfirm.addEventListener("keydown", handleKeydownAsClick);
+
+      let emailMem = null;
+      let codeMem = null;
+
+      // SUBMIT do form (só para o passo 1, para manter Enter funcionando)
+      $("#resetForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        // Se estiver no step1 visível, envia código
+        if (!step1.classList.contains("d-none")) {
+          await sendCode();
+        }
+      });
+
+      async function sendCode() {
+        const email = (emailInput.value || "").trim();
+        if (!email) {
+          showToast("warning", "Informe seu e-mail.");
+          emailInput.focus();
+          return;
+        }
+
+        setLoading(btnSend, true);
+        try {
+          const r = await fetch(`${API_BASE}/password-reset/request`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+          });
+
+          const contentType = (r.headers.get("content-type") || "");
+          const j = contentType.includes("application/json") ? await r.json() : {};
+          showToast("info", j?.message || "Se o e-mail existir, enviaremos um código.");
+
+          emailMem = email;
+          hide(step1); show(step2); setStep(2);
+          codeInput.focus();
+        } catch (err) {
+          console.error(err);
+          showToast("danger", "Não foi possível enviar o código agora. Tente novamente.");
+        } finally {
+          setLoading(btnSend, false);
+        }
+      }
+
+      btnResend.addEventListener("click", async () => {
+        if (!emailMem) return;
+
+        setLoading(btnResend, true);
+        try {
+          const r = await fetch(`${API_BASE}/password-reset/request`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailMem })
+          });
+          const contentType = (r.headers.get("content-type") || "");
+          const j = contentType.includes("application/json") ? await r.json() : {};
+          showToast("info", j?.message || "Código reenviado (se o e-mail existir).");
+        } catch (err) {
+          console.error(err);
+          showToast("danger", "Falha ao reenviar o código.");
+        } finally {
+          setLoading(btnResend, false);
+        }
+      });
+
+      btnBack1.addEventListener("click", () => {
+        hide(step2); show(step1); setStep(1);
+        emailInput.focus();
+      });
+
+      btnVerify.addEventListener("click", async () => {
+        const code = (codeInput.value || "").trim();
+        if (!code) {
+          showToast("warning", "Informe o código.");
+          codeInput.focus();
+          return;
+        }
+        if (!emailMem) {
+          showToast("danger", "Sessão inválida. Volte e informe o e-mail novamente.");
+          hide(step2); show(step1); setStep(1);
+          return;
+        }
+
+        setLoading(btnVerify, true);
+        try {
+          const r = await fetch(`${API_BASE}/password-reset/verify`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailMem, code })
+          });
+
+          const contentType = (r.headers.get("content-type") || "");
+          const j = contentType.includes("application/json") ? await r.json() : {};
+
+          if (j?.valid) {
+            codeMem = code;
+            showToast("success", "Código validado. Defina a nova senha.");
+            hide(step2); show(step3); setStep(3);
+            newPass.focus();
+          } else {
+            showToast("danger", j?.message || "Código inválido ou expirado.");
+          }
+        } catch (err) {
+          console.error(err);
+          showToast("danger", "Erro ao validar o código.");
+        } finally {
+          setLoading(btnVerify, false);
+        }
+      });
+
+      btnBack2.addEventListener("click", () => {
+        hide(step3); show(step2); setStep(2);
+        codeInput.focus();
+      });
+
+      btnConfirm.addEventListener("click", async () => {
+        const p1 = (newPass.value || "");
+        const p2 = (confirmPass.value || "");
+
+        if (p1.length < 6) {
+          showToast("warning", "A senha deve ter pelo menos 6 caracteres.");
+          newPass.focus();
+          return;
+        }
+        if (p1 !== p2) {
+          showToast("warning", "As senhas não conferem.");
+          confirmPass.focus();
+          return;
+        }
+        if (!emailMem) {
+          showToast("danger", "Sessão inválida. Volte e refaça o processo.");
+          hide(step3); show(step1); setStep(1);
+          return;
+        }
+        if (!codeMem) {
+          showToast("danger", "Código não confirmado. Volte e valide o código novamente.");
+          hide(step3); show(step2); setStep(2);
+          return;
+        }
+
+        setLoading(btnConfirm, true);
+
+        try {
+          const r = await fetch(`${API_BASE}/password-reset/confirm`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: emailMem, code: codeMem, novaSenha: p1 })
+          });
+
+          const contentType = (r.headers.get("content-type") || "");
+          const j = contentType.includes("application/json") ? await r.json() : {};
+
+          if (j?.success) {
+            showToast("success", "Senha redefinida com sucesso! Redirecionando...");
+            setTimeout(() => { window.location.href = "/"; }, 1200);
+          } else {
+            showToast("danger", j?.message || "Não foi possível redefinir a senha.");
+          }
+        } catch (err) {
+          console.error(err);
+          showToast("danger", "Erro ao redefinir a senha.");
+        } finally {
+          setLoading(btnConfirm, false);
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>

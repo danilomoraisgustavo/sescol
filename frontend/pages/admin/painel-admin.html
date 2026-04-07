@@ -1,0 +1,996 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>SETRANE EXPRESS – Painel Admin (Tenant)</title>
+
+    <!-- Mantém o visual do template sem depender de config.js/apps.js -->
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@300;400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/app-dark.css">
+
+    <style>
+        .small-label {
+            font-size: .75rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .kpi-value {
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
+
+        .kpi-sub {
+            font-size: .8rem;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+
+        .table-sm th,
+        .table-sm td {
+            padding-top: .35rem;
+            padding-bottom: .35rem;
+        }
+
+        .badge-pill {
+            border-radius: 999px;
+        }
+
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        /* evita dependência de stickOnScroll */
+        .topnav {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar" id="btnToggleSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" id="globalSearch"
+                    type="search" placeholder="Buscar usuários..." aria-label="Search">
+            </form>
+
+            <ul class="nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle"
+                                onerror="this.style.display='none'">
+                        </span>
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <div class="dropdown-item-text">
+                            <div class="small text-muted">Logado como</div>
+                            <div class="font-weight-bold" id="meNome">—</div>
+                            <div class="small text-muted" id="meEmail">—</div>
+                            <div class="small text-muted">Tenant: <span class="mono" id="meTenant">—</span> · Cargo:
+                                <span class="mono" id="meCargo">—</span>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="#" id="btnSair">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar
+            style="max-width:260px;">
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Admin do Tenant</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="./painel-admin.html" data-tab="usuarios">
+                            <i class="fe fe-users fe-16"></i>
+                            <span class="ml-3 item-text">Usuários</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tab-tenant" data-tab="tenant">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Minha empresa</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#tab-branding" data-tab="branding">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Branding</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-grid fe-16"></i>
+                            <span class="ml-3 item-text">Painel Escolar</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link text-danger" href="#" id="btnSair2">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+
+                        <div class="d-flex align-items-center mb-3">
+                            <div>
+                                <h2 class="h4 mb-1">Painel Administrativo do Tenant</h2>
+                                <p class="text-muted mb-0">Gerencie usuários e configurações do seu próprio tenant.</p>
+                            </div>
+
+                            <div class="ml-auto">
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="btnAtualizar">
+                                    <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4 mb-3">
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Usuários</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpiUsuarios">0</span>
+                                            <span class="small text-muted">total</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            <span id="kpiUsuariosAtivos">0</span> ativos · <span
+                                                id="kpiUsuariosAdmins">0</span> admins
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Tenant</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2 mono" id="kpiTenantId">—</span>
+                                            <span class="small text-muted">ID</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub" id="kpiTenantNome">—</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Segurança</span>
+                                        <div class="text-muted kpi-sub">Acesso restrito ao tenant do token JWT.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card shadow mb-4">
+                            <div class="card-header bg-dark border-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-3">
+                                        <span class="small-label d-block mb-0 text-muted">Seção</span>
+                                        <div class="font-weight-bold" id="tabTitle">Usuários</div>
+                                    </div>
+                                    <div class="ml-auto d-flex align-items-center">
+                                        <div class="input-group input-group-sm mr-2" style="max-width: 320px;">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text bg-dark border-0"><i
+                                                        class="fe fe-search fe-14"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control bg-dark border-0 text-muted"
+                                                id="filterText" placeholder="Filtrar...">
+                                        </div>
+
+                                        <button class="btn btn-sm btn-outline-primary" id="btnNovoUsuario">
+                                            <i class="fe fe-user-plus fe-12 mr-1"></i> Novo usuário
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-body p-0">
+                                <div class="table-responsive" id="tabUsuarios">
+                                    <table class="table table-sm table-striped table-hover mb-0 table-borderless">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th style="width:70px;">ID</th>
+                                                <th>Nome</th>
+                                                <th>Email</th>
+                                                <th>Telefone</th>
+                                                <th style="width:110px;">Cargo</th>
+                                                <th style="width:110px;">Init</th>
+                                                <th style="width:110px;">Ativo</th>
+                                                <th style="width:170px;" class="text-right">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="usuariosBody">
+                                            <tr>
+                                                <td colspan="8" class="text-center text-muted py-4">Carregando
+                                                    usuários...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="p-3 d-none" id="tabTenant">
+                                    <div class="row">
+                                        <div class="col-lg-7 mb-3">
+                                            <div class="card shadow">
+                                                <div class="card-body">
+                                                    <div class="small-label mb-2">Minha empresa / instituição</div>
+
+                                                    <input type="hidden" id="tenant_id">
+                                                    <div class="form-group">
+                                                        <label class="text-muted small">Nome</label>
+                                                        <input class="form-control" id="tenant_nome">
+                                                    </div>
+
+                                                    <div class="form-row">
+                                                        <div class="form-group col-md-6">
+                                                            <label class="text-muted small">Documento</label>
+                                                            <input class="form-control" id="tenant_documento">
+                                                        </div>
+                                                        <div class="form-group col-md-6">
+                                                            <label class="text-muted small">Telefone</label>
+                                                            <input class="form-control" id="tenant_telefone">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label class="text-muted small">Email</label>
+                                                        <input class="form-control" id="tenant_email">
+                                                    </div>
+
+                                                    <div class="custom-control custom-switch mb-3">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="tenant_ativo" checked>
+                                                        <label class="custom-control-label"
+                                                            for="tenant_ativo">Ativo</label>
+                                                    </div>
+
+                                                    <div class="alert alert-danger d-none" id="tenantErro"></div>
+                                                    <div class="alert alert-success d-none" id="tenantOk"></div>
+
+                                                    <button class="btn btn-sm btn-primary" id="btnSalvarTenant">
+                                                        <i class="fe fe-save fe-12 mr-1"></i> Salvar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-5 mb-3">
+                                            <div class="card shadow">
+                                                <div class="card-body">
+                                                    <div class="small-label mb-2">Informações</div>
+                                                    <div class="text-muted">Estas configurações são do seu tenant (<span
+                                                            class="mono" id="tenantInfoId">—</span>) e não afetam outros
+                                                        tenants.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 d-none" id="tabBranding">
+                                    <div class="row">
+                                        <div class="col-lg-7 mb-3">
+                                            <div class="card shadow">
+                                                <div class="card-body">
+                                                    <div class="small-label mb-2">Branding do seu tenant</div>
+
+                                                    <div class="form-group">
+                                                        <label class="text-muted small">Nome do sistema</label>
+                                                        <input class="form-control" id="branding_nome_sistema"
+                                                            placeholder="SETRANE EXPRESS">
+                                                    </div>
+
+                                                    <div class="form-row">
+                                                        <div class="form-group col-md-6">
+                                                            <label class="text-muted small">Telefone contato</label>
+                                                            <input class="form-control" id="branding_telefone_contato"
+                                                                placeholder="+55 ...">
+                                                        </div>
+                                                        <div class="form-group col-md-6">
+                                                            <label class="text-muted small">Email contato</label>
+                                                            <input class="form-control" id="branding_email_contato"
+                                                                placeholder="contato@...">
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label class="text-muted small">Site oficial</label>
+                                                        <input class="form-control" id="branding_site_oficial"
+                                                            placeholder="https://...">
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label class="text-muted small">Cidade/UF</label>
+                                                        <input class="form-control" id="branding_cidade_uf"
+                                                            placeholder="Canaã dos Carajás/PA">
+                                                    </div>
+
+                                                    <div class="form-group">
+                                                        <label class="text-muted small">Parágrafo extra do termo</label>
+                                                        <textarea class="form-control"
+                                                            id="branding_termo_paragrafo_extra" rows="5"></textarea>
+                                                    </div>
+
+                                                    <div class="form-row">
+                                                        <div class="form-group col-md-6">
+                                                            <div class="custom-control custom-switch">
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                    id="branding_doc_separador_ativo" checked>
+                                                                <label class="custom-control-label"
+                                                                    for="branding_doc_separador_ativo">Separador
+                                                                    ativo</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group col-md-6">
+                                                            <div class="custom-control custom-switch">
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                    id="branding_carteirinha_exibir_qr_verso">
+                                                                <label class="custom-control-label"
+                                                                    for="branding_carteirinha_exibir_qr_verso">QR no
+                                                                    verso</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <button class="btn btn-sm btn-primary" id="btnSalvarBranding">
+                                                        <i class="fe fe-save fe-12 mr-1"></i> Salvar branding
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-secondary ml-2"
+                                                        id="btnRecarregarBranding">
+                                                        <i class="fe fe-refresh-ccw fe-12 mr-1"></i> Recarregar
+                                                    </button>
+
+                                                    <div class="text-muted mt-2">Tenant atual: <span class="mono"
+                                                            id="brandingTenantInfo">—</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-5 mb-3">
+                                            <div class="card shadow">
+                                                <div class="card-body">
+                                                    <div class="small-label mb-2">Observação</div>
+                                                    <div class="text-muted">
+                                                        O backend aplica <span class="mono">tenant_id</span> do token em
+                                                        todas as operações.
+                                                        Este painel não possui visão global de tenants.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div><!-- card-body -->
+                        </div><!-- card -->
+
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+
+    <script>
+        function getToken() { return localStorage.getItem('auth_token') || ''; }
+
+        function safeBase64Decode(b64url) {
+            try {
+                var b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+                while (b64.length % 4) b64 += '=';
+                return decodeURIComponent(escape(window.atob(b64)));
+            } catch (e) { try { return window.atob(b64url); } catch (e2) { return ''; } }
+        }
+
+        function decodeJwt(token) {
+            if (!token || token.split('.').length < 2) return null;
+            var payload = token.split('.')[1];
+            var json = safeBase64Decode(payload);
+            try { return JSON.parse(json); } catch (e) { return null; }
+        }
+
+        function isJwtExpired(payload) {
+            if (!payload || !payload.exp) return false;
+            return payload.exp <= Math.floor(Date.now() / 1000);
+        }
+
+        function redirectToLogin() { window.location.href = '/admin-login'; }
+
+        function logout() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('tenant_id');
+            fetch('/api/logout', { method: 'POST', credentials: 'include' })
+                .catch(function () { })
+                .finally(function () { redirectToLogin(); });
+        }
+
+        function apiFetch(url, opts) {
+            opts = opts || {};
+            opts.headers = opts.headers || {};
+
+            var token = getToken();
+            if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+
+            // garante envio de cookies (admin-login grava setrane_token HttpOnly)
+            opts.credentials = opts.credentials || 'include';
+
+            // não forçar Content-Type em FormData
+            if (!opts.headers['Content-Type'] && !(opts.body instanceof FormData)) {
+                opts.headers['Content-Type'] = 'application/json';
+            }
+
+            return fetch(url, opts).then(async function (resp) {
+                var ct = (resp.headers.get('content-type') || '').toLowerCase();
+                var isJson = ct.includes('application/json');
+
+                // se for 401, volta pro login admin
+                if (resp.status === 401) {
+                    logout();
+                    throw new Error('Sessão expirada. Faça login novamente.');
+                }
+
+                if (!resp.ok) {
+                    var body = '';
+                    if (isJson) { try { body = JSON.stringify(await resp.json()); } catch (e) { } }
+                    else { try { body = await resp.text(); } catch (e2) { } }
+                    throw new Error('HTTP ' + resp.status + ' em ' + url + (body ? ' - ' + body.slice(0, 500) : ''));
+                }
+
+                if (isJson) return resp.json();
+                return resp.text();
+            });
+        }
+
+        var currentTab = 'usuarios';
+        function setTab(tab) {
+            currentTab = tab;
+            $('#tabUsuarios').toggleClass('d-none', tab !== 'usuarios');
+            $('#tabTenant').toggleClass('d-none', tab !== 'tenant');
+            $('#tabBranding').toggleClass('d-none', tab !== 'branding');
+            var titleMap = { usuarios: 'Usuários', tenant: 'Minha empresa', branding: 'Branding' };
+            $('#tabTitle').text(titleMap[tab] || 'Admin');
+            $('#btnNovoUsuario').toggle(tab === 'usuarios');
+            $('#filterText').val('');
+            renderFiltered();
+        }
+
+        var cache = { users: [], tenant: null, branding: null };
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, function (m) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m]);
+            });
+        }
+
+        function badgeBool(val, yes, no) {
+            var ok = !!val;
+            var cls = ok ? 'badge badge-pill badge-success' : 'badge badge-pill badge-secondary';
+            return '<span class="' + cls + '">' + (ok ? (yes || 'SIM') : (no || 'NÃO')) + '</span>';
+        }
+
+        function badgeCargo(c) {
+            c = (c || '').toUpperCase();
+            var cls = 'badge badge-pill badge-light';
+            if (c === 'ADMIN') cls = 'badge badge-pill badge-danger';
+            if (c === 'GESTOR') cls = 'badge badge-pill badge-warning';
+            if (c === 'USUARIO') cls = 'badge badge-pill badge-info';
+            return '<span class="' + cls + '">' + (c || '—') + '</span>';
+        }
+
+        function renderUsuarios(query) {
+            var body = $('#usuariosBody');
+            body.empty();
+
+            var list = (cache.users || []).slice();
+            if (query) {
+                list = list.filter(function (u) {
+                    return (u.nome || '').toLowerCase().includes(query)
+                        || (u.email || '').toLowerCase().includes(query)
+                        || (u.cargo || '').toLowerCase().includes(query);
+                });
+            }
+
+            if (!list.length) {
+                body.html('<tr><td colspan="8" class="text-center text-muted py-4">Nenhum usuário encontrado.</td></tr>');
+                return;
+            }
+
+            list.forEach(function (u) {
+                var tr = $('<tr>');
+                tr.append($('<td class="mono">').text(u.id != null ? u.id : '—'));
+                tr.append($('<td>').html('<strong>' + escapeHtml(u.nome || '') + '</strong>'));
+                tr.append($('<td>').text(u.email || ''));
+                tr.append($('<td>').text(u.telefone || ''));
+                tr.append($('<td>').html(badgeCargo(u.cargo)));
+                tr.append($('<td>').html(badgeBool(u.init, 'SIM', 'NÃO')));
+                tr.append($('<td>').html(badgeBool(u.ativo, 'ATIVO', 'INATIVO')));
+
+                var actions = $('<td class="text-right">');
+                actions.append('<button class="btn btn-sm btn-outline-secondary mr-1" data-action="edit-user" data-id="' + u.id + '"><i class="fe fe-edit fe-12"></i></button>');
+                actions.append('<button class="btn btn-sm btn-outline-danger" data-action="del-user" data-id="' + u.id + '"><i class="fe fe-trash fe-12"></i></button>');
+                tr.append(actions);
+                body.append(tr);
+            });
+        }
+
+        function renderFiltered() {
+            var q = ($('#filterText').val() || '').trim().toLowerCase();
+            if (currentTab === 'usuarios') renderUsuarios(q);
+        }
+
+        function openUserModal(user) {
+            $('#usuarioErro').addClass('d-none').text('');
+            $('#usuarioOk').addClass('d-none').text('');
+            $('#usuario_senha').val('');
+            $('#usuario_senha2').val('');
+
+            if (user) {
+                $('#modalUsuarioTitle').text('Editar usuário');
+                $('#usuario_id').val(user.id);
+                $('#usuario_nome').val(user.nome || '');
+                $('#usuario_email').val(user.email || '');
+                $('#usuario_telefone').val(user.telefone || '');
+                $('#usuario_meta').val('ID: ' + user.id + ' · Tenant: ' + (user.tenant_id != null ? user.tenant_id : '—'));
+                $('#usuario_cargo').val((user.cargo || 'USUARIO').toUpperCase());
+                $('#usuario_init').prop('checked', !!user.init);
+                $('#usuario_ativo').prop('checked', !!user.ativo);
+                $('#usuario_fornecedor').val(user.fornecedor_id || '');
+                toggleFornecedorByCargo();
+            } else {
+                $('#modalUsuarioTitle').text('Novo usuário');
+                $('#usuario_id').val('');
+                $('#usuario_nome').val('');
+                $('#usuario_email').val('');
+                $('#usuario_telefone').val('');
+                $('#usuario_meta').val('—');
+                $('#usuario_cargo').val('USUARIO');
+                $('#usuario_init').prop('checked', false);
+                $('#usuario_ativo').prop('checked', true);
+                $('#usuario_fornecedor').val('');
+                toggleFornecedorByCargo();
+            }
+
+            $('#modalUsuario').modal('show');
+        }
+
+        function validateUserForm() {
+            var nome = ($('#usuario_nome').val() || '').trim();
+            var email = ($('#usuario_email').val() || '').trim();
+            var senha = $('#usuario_senha').val() || '';
+            var senha2 = $('#usuario_senha2').val() || '';
+
+            if (!nome) return 'Informe o nome.';
+            if (!email || email.indexOf('@') === -1) return 'Informe um email válido.';
+            if (senha || senha2) {
+                if (senha.length < 6) return 'A senha deve ter no mínimo 6 caracteres.';
+                if (senha !== senha2) return 'As senhas não conferem.';
+            }
+            return null;
+        }
+
+
+        function toggleFornecedorByCargo() {
+            var cargo = ($('#usuario_cargo').val() || '').toUpperCase();
+            if (cargo === 'FORNECEDOR_ESCOLAR') {
+                $('#wrapFornecedor').removeClass('d-none');
+            } else {
+                $('#wrapFornecedor').addClass('d-none');
+                $('#usuario_fornecedor').val('');
+            }
+        }
+
+        function loadFornecedores() {
+            return apiFetch('/api/admin/fornecedores')
+                .then(function (res) {
+                    var items = res.items || [];
+                    var sel = $('#usuario_fornecedor');
+                    sel.empty();
+                    sel.append('<option value="">Selecione…</option>');
+                    items.forEach(function (f) {
+                        sel.append('<option value="' + f.id + '">' + f.nome + '</option>');
+                    });
+                })
+                .catch(function () { });
+        }
+
+        function collectUserPayload() {
+
+            var p = {
+                nome: ($('#usuario_nome').val() || '').trim(),
+                email: ($('#usuario_email').val() || '').trim(),
+                cargo: ($('#usuario_cargo').val() || 'USUARIO').toUpperCase(),
+                init: !!$('#usuario_init').prop('checked'),
+                ativo: !!$('#usuario_ativo').prop('checked'),
+                fornecedor_id: ($('#usuario_fornecedor').val() || null)
+            };
+            var senha = ($('#usuario_senha').val() || '').trim();
+            if (senha) p.senha = senha;
+            return p;
+        }
+
+        function saveUser() {
+            var err = validateUserForm();
+            if (err) { $('#usuarioErro').removeClass('d-none').text(err); return; }
+
+            var id = Number($('#usuario_id').val() || 0);
+            var payload = collectUserPayload();
+            var method = id ? 'PUT' : 'POST';
+            var url = id ? ('/api/admin/users/' + id) : '/api/admin/users';
+
+            apiFetch(url, { method: method, body: JSON.stringify(payload) }).then(function () {
+                $('#usuarioOk').removeClass('d-none').text('Salvo com sucesso.');
+                setTimeout(function () { $('#modalUsuario').modal('hide'); }, 450);
+                loadAll();
+            }).catch(function (e) {
+                $('#usuarioErro').removeClass('d-none').text('Falha ao salvar: ' + e.message);
+            });
+        }
+
+        function deleteUser(id) {
+            if (!id) return;
+            if (!confirm('Excluir este usuário?')) return;
+            apiFetch('/api/admin/users/' + id, { method: 'DELETE' }).then(loadAll).catch(function (err) {
+                alert('Falha ao excluir usuário: ' + err.message);
+            });
+        }
+
+        function fillTenantForm(t) {
+            t = t || {};
+            $('#tenant_id').val(t.id || '');
+            $('#tenantInfoId').text(t.id || '—');
+            $('#tenant_nome').val(t.nome || '');
+            $('#tenant_documento').val(t.documento || '');
+            $('#tenant_email').val(t.email || '');
+            $('#tenant_telefone').val(t.telefone || '');
+            $('#tenant_ativo').prop('checked', t.ativo !== false);
+            $('#kpiTenantId').text(t.id || '—');
+            $('#kpiTenantNome').text(t.nome || '—');
+            $('#brandingTenantInfo').text(t.id || '—');
+        }
+
+        function saveTenant() {
+            $('#tenantErro').addClass('d-none').text('');
+            $('#tenantOk').addClass('d-none').text('');
+
+            var payload = {
+                nome: ($('#tenant_nome').val() || '').trim(),
+                documento: ($('#tenant_documento').val() || '').trim() || null,
+                email: ($('#tenant_email').val() || '').trim() || null,
+                telefone: ($('#tenant_telefone').val() || '').trim() || null,
+                ativo: !!$('#tenant_ativo').prop('checked')
+            };
+
+            if (!payload.nome) { $('#tenantErro').removeClass('d-none').text('Informe o nome.'); return; }
+
+            apiFetch('/api/admin/tenant', { method: 'PUT', body: JSON.stringify(payload) }).then(function (t) {
+                $('#tenantOk').removeClass('d-none').text('Salvo com sucesso.');
+                fillTenantForm(t);
+            }).catch(function (e) {
+                $('#tenantErro').removeClass('d-none').text('Falha ao salvar: ' + e.message);
+            });
+        }
+
+        function fillBrandingForm(b) {
+            b = b || {};
+            $('#branding_nome_sistema').val(b.nome_sistema || '');
+            $('#branding_telefone_contato').val(b.telefone_contato || '');
+            $('#branding_email_contato').val(b.email_contato || '');
+            $('#branding_site_oficial').val(b.site_oficial || '');
+            $('#branding_cidade_uf').val(b.cidade_uf || '');
+            $('#branding_termo_paragrafo_extra').val(b.termo_paragrafo_extra || '');
+            $('#branding_doc_separador_ativo').prop('checked', b.doc_separador_ativo !== false);
+            $('#branding_carteirinha_exibir_qr_verso').prop('checked', !!b.carteirinha_exibir_qr_verso);
+        }
+
+        function collectBrandingPayload() {
+            return {
+                nome_sistema: ($('#branding_nome_sistema').val() || '').trim() || null,
+                telefone_contato: ($('#branding_telefone_contato').val() || '').trim() || null,
+                email_contato: ($('#branding_email_contato').val() || '').trim() || null,
+                site_oficial: ($('#branding_site_oficial').val() || '').trim() || null,
+                cidade_uf: ($('#branding_cidade_uf').val() || '').trim() || null,
+                termo_paragrafo_extra: ($('#branding_termo_paragrafo_extra').val() || '').trim() || null,
+                doc_separador_ativo: !!$('#branding_doc_separador_ativo').prop('checked'),
+                carteirinha_exibir_qr_verso: !!$('#branding_carteirinha_exibir_qr_verso').prop('checked')
+            };
+        }
+
+        function saveBranding() {
+            var payload = collectBrandingPayload();
+            apiFetch('/api/admin/branding', { method: 'PUT', body: JSON.stringify(payload) }).then(function (b) {
+                alert('Branding salvo.');
+                fillBrandingForm(b);
+            }).catch(function (e) {
+                alert('Falha ao salvar branding: ' + e.message);
+            });
+        }
+
+        function setKPIsFromUsers() {
+            var total = (cache.users || []).length;
+            var ativos = (cache.users || []).filter(function (u) { return !!u.ativo; }).length;
+            var admins = (cache.users || []).filter(function (u) { return String(u.cargo).toUpperCase() === 'ADMIN'; }).length;
+            $('#kpiUsuarios').text(total);
+            $('#kpiUsuariosAtivos').text(ativos);
+            $('#kpiUsuariosAdmins').text(admins);
+        }
+
+        function loadAll() {
+            apiFetch('/api/admin/me').then(function (me) {
+                $('#meNome').text(me.nome || '—');
+                $('#meEmail').text(me.email || '—');
+                $('#meTenant').text(me.tenant_id != null ? me.tenant_id : '—');
+                $('#meCargo').text(me.cargo || '—');
+            }).catch(function () {
+                var p = decodeJwt(getToken()) || {};
+                $('#meNome').text(p.nome || 'Administrador');
+                $('#meEmail').text(p.email || '—');
+                $('#meTenant').text(p.tenant_id != null ? p.tenant_id : '—');
+                $('#meCargo').text(p.cargo || 'ADMIN');
+            });
+
+            apiFetch('/api/admin/stats').then(function (stats) {
+                $('#kpiUsuarios').text(stats.usuarios_total || 0);
+                $('#kpiUsuariosAtivos').text(stats.usuarios_ativos || 0);
+                $('#kpiUsuariosAdmins').text(stats.usuarios_admins || 0);
+            }).catch(function () { });
+
+            apiFetch('/api/admin/tenant').then(function (t) {
+                cache.tenant = t;
+                fillTenantForm(t);
+            }).catch(function (err) {
+                console.warn('Tenant:', err.message);
+            });
+
+            apiFetch('/api/admin/users').then(function (data) {
+                var items = data.items || data || [];
+                // node-postgres retorna BIGINT como string; normaliza IDs e booleans
+                cache.users = (items || []).map(function (u) {
+                    var id = (u && u.id != null) ? Number(u.id) : null;
+                    var tid = (u && u.tenant_id != null) ? Number(u.tenant_id) : null;
+                    return Object.assign({}, u, {
+                        id: id,
+                        tenant_id: tid,
+                        init: (u && (u.init === true || u.init === 't' || u.init === 1 || u.init === '1')),
+                        ativo: (u && (u.ativo === true || u.ativo === 't' || u.ativo === 1 || u.ativo === '1'))
+                    });
+                });
+                setKPIsFromUsers();
+                if (currentTab === 'usuarios') renderUsuarios(($('#filterText').val() || '').trim().toLowerCase());
+            }).catch(function (err) {
+                console.warn('Users:', err.message);
+                $('#usuariosBody').html('<tr><td colspan="8" class="text-center text-danger py-4">Falha ao carregar usuários. Verifique se o endpoint /api/admin/users existe.</td></tr>');
+            });
+
+            apiFetch('/api/admin/branding').then(function (b) {
+                cache.branding = b;
+                fillBrandingForm(b);
+            }).catch(function (err) {
+                console.warn('Branding:', err.message);
+                fillBrandingForm({});
+            });
+        }
+
+        function wireTableActions() {
+            $('#usuariosBody').on('click', 'button[data-action]', function () {
+                var action = $(this).data('action');
+                var id = Number($(this).data('id'));
+                var user = (cache.users || []).find(function (u) { return String(u.id) === String(id); });
+
+                if (action === 'edit-user') {
+                    // garante dados completos (ex.: telefone/status) antes de abrir o modal
+                    if (!user || typeof user.telefone === 'undefined' || typeof user.init === 'undefined' || typeof user.ativo === 'undefined') {
+                        return apiFetch('/api/admin/users').then(function (data) {
+                            cache.users = data.items || data || [];
+                            setKPIsFromUsers();
+                            var u2 = (cache.users || []).find(function (x) { return String(x.id) === String(id); });
+                            openUserModal(u2);
+                        }).catch(function () { openUserModal(user); });
+                    }
+                    return openUserModal(user);
+                }
+                if (action === 'del-user') return deleteUser(id);
+            });
+        }
+
+        $(document).ready(function () {
+            var token = getToken();
+            var payload = decodeJwt(token);
+
+            // Se não houver token no localStorage (admin usa cookie HttpOnly), valida sessão via backend
+            if (!token || !payload || isJwtExpired(payload) || ((payload.cargo || payload.role || '').toUpperCase() !== 'ADMIN')) {
+                return apiFetch('/api/admin/me', { method: 'GET' })
+                    .then(function () {
+                        // sessão ok via cookie -> segue
+                    })
+                    .catch(function () {
+                        return redirectToLogin();
+                    });
+            }
+
+            // Sidebar toggle simples (sem dependências extras)
+            $('#btnToggleSidebar').on('click', function () {
+                $('#leftSidebar').toggleClass('d-none');
+            });
+
+            $('[data-tab]').on('click', function (e) {
+                e.preventDefault();
+                setTab($(this).data('tab'));
+            });
+
+            $('#filterText').on('input', renderFiltered);
+            $('#globalSearch').on('input', function () {
+                $('#filterText').val(($(this).val() || '').trim());
+                renderFiltered();
+            });
+
+            $('#btnAtualizar').on('click', loadAll);
+            $('#btnSair, #btnSair2').on('click', function (e) { e.preventDefault(); logout(); });
+
+            $('#btnNovoUsuario').on('click', function () { openUserModal(null); loadFornecedores(); });
+            $('#usuario_cargo').on('change', toggleFornecedorByCargo);
+            $('#btnSalvarUsuario').on('click', saveUser);
+
+            $('#btnSalvarTenant').on('click', saveTenant);
+
+            $('#btnSalvarBranding').on('click', saveBranding);
+            $('#btnRecarregarBranding').on('click', function () { apiFetch('/api/admin/branding').then(fillBrandingForm); });
+
+            wireTableActions();
+            setTab('usuarios');
+            loadAll();
+        });
+    </script>
+
+    <!-- Modal Usuário -->
+    <div class="modal fade" id="modalUsuario" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalUsuarioTitle">Novo usuário</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span
+                            aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="usuario_id">
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="text-muted small">Nome</label>
+                            <input class="form-control" id="usuario_nome" placeholder="Nome completo">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="text-muted small">Email</label>
+                            <input class="form-control" id="usuario_email" placeholder="email@dominio.com">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="text-muted small">Telefone</label>
+                            <input class="form-control" id="usuario_telefone" placeholder="(99) 99999-9999">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="text-muted small">ID / Tenant</label>
+                            <input class="form-control" id="usuario_meta" disabled placeholder="—">
+                        </div>
+                    </div>
+
+
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label class="text-muted small">Cargo</label>
+                            <select class="form-control" id="usuario_cargo">
+                                <option value="ADMIN">ADMIN</option>
+                                <option value="GESTOR">GESTOR</option>
+                                <option value="USUARIO">USUARIO</option>
+                                <option value="FORNECEDOR_ESCOLAR">FORNECEDOR_ESCOLAR</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group col-md-4 d-none" id="wrapFornecedor">
+                            <label class="text-muted small">Fornecedor</label>
+                            <select class="form-control" id="usuario_fornecedor">
+                                <option value="">Selecione…</option>
+                            </select>
+                            <small class="text-muted">Obrigatório apenas para FORNECEDOR_ESCOLAR</small>
+                        </div>
+
+                        <div class="form-group col-md-4">
+                            <div class="custom-control custom-switch mt-4">
+                                <input type="checkbox" class="custom-control-input" id="usuario_init">
+                                <label class="custom-control-label" for="usuario_init">Init (habilitado)</label>
+                            </div>
+                        </div>
+
+
+
+
+                        <div class="form-group col-md-4">
+                            <div class="custom-control custom-switch mt-4">
+                                <input type="checkbox" class="custom-control-input" id="usuario_ativo" checked>
+                                <label class="custom-control-label" for="usuario_ativo">Ativo</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-dark">
+                        <div class="small-label mb-1">Senha</div>
+                        <div class="text-muted small">Defina uma nova senha (opcional). Se não informar, o usuário
+                            ficará sem acesso até definir uma senha depois.</div>
+                        <div class="form-row mt-2">
+                            <div class="form-group col-md-6">
+                                <label class="text-muted small">Nova senha</label>
+                                <input type="password" class="form-control" id="usuario_senha"
+                                    placeholder="Digite uma nova senha">
+                            </div>
+                            <div class="form-group col-md-6">
+                                <label class="text-muted small">Confirmar nova senha</label>
+                                <input type="password" class="form-control" id="usuario_senha2"
+                                    placeholder="Repita a nova senha">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-danger d-none" id="usuarioErro"></div>
+                    <div class="alert alert-success d-none" id="usuarioOk"></div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnSalvarUsuario">
+                        <i class="fe fe-save fe-12 mr-1"></i>Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

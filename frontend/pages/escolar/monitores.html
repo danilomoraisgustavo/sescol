@@ -1,0 +1,1668 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Monitores</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <style>
+        .badge-cnh-ok {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .badge-cnh-vencida {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .badge-cnh-perto {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .small-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: .03em;
+            color: #6c757d;
+        }
+
+        .table-cursos td {
+            vertical-align: middle;
+        }
+
+        #modal-motorista .modal-body {
+            max-height: calc(80vh - 120px);
+            overflow-y: auto;
+        }
+
+        /* garantir select2 ocupando 100% */
+        .select2-container {
+            width: 100% !important;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Monitores de transporte escolar</h2>
+                                <p class="text-muted mb-0">
+                                    Cadastre, gerencie e acompanhe a situação de documentos e cursos obrigatórios dos
+                                    monitores escolares.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- RESUMO RÁPIDO -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Total de monitores</span>
+                                        <h3 class="mb-0" id="resumo-total-monitores">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Ativos</span>
+                                        <h3 class="mb-0" id="resumo-monitores-ativos">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Cursos pendentes</span>
+                                        <h3 class="mb-0" id="resumo-cursos-pendentes-monitores">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE MONITORES -->
+                        <div class="row">
+                            <div class="col-12 my-4">
+                                <div class="d-flex mb-2 align-items-center">
+                                    <div>
+                                        <h2 class="h4 mb-1">Monitores cadastrados</h2>
+                                        <p class="mb-0 text-muted">
+                                            Lista de monitores com situação de cursos obrigatórios e status operacional.
+                                        </p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <button class="btn btn-primary" type="button" id="btn-novo-monitor">
+                                            Novo monitor +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col-md-6">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-monitores"
+                                                                class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control"
+                                                                id="search-monitores"
+                                                                placeholder="Pesquisar por nome ou CPF">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                                                <div class="form-inline justify-content-md-end">
+                                                    <div class="form-group mr-2">
+                                                        <label class="mr-1 small-label"
+                                                            for="filtro-status-monitor">Status</label>
+                                                        <select id="filtro-status-monitor"
+                                                            class="form-control form-control-sm">
+                                                            <option value="">Todos</option>
+                                                            <option value="ativo">Ativo</option>
+                                                            <option value="inativo">Inativo</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0" id="tabela-monitores">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width:70px;">ID</th>
+                                                        <th>Nome</th>
+                                                        <th style="width:220px;">Fornecedor</th>
+                                                        <th style="width:150px;">CPF</th>
+                                                        <th style="width:180px;">Cursos obrigatórios</th>
+                                                        <th style="width:150px;">Documento pessoal</th>
+                                                        <th style="width:140px;">Certificados</th>
+                                                        <th style="width:110px;">Status</th>
+                                                        <th style="width:220px;">Rota Associada</th>
+                                                        <th style="width:120px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-monitores"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de monitores" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-monitores">
+                                            </ul>
+                                        </nav>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL CADASTRO/EDIÇÃO DE MONITOR -->
+            <div class="modal fade" id="modal-monitor" tabindex="-1" role="dialog" aria-labelledby="modalMonitorLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-monitor" novalidate>
+                            <input type="hidden" id="monitor-id">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalMonitorLabel">Novo monitor</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <!-- DADOS PESSOAIS + FORNECEDOR -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                        <span class="small-label">Dados pessoais</span>
+                                        <span class="badge badge-info">Fornecedor obrigatório</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="monitor-nome">Nome completo</label>
+                                                <input type="text" class="form-control" id="monitor-nome" required>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="monitor-cpf">CPF</label>
+                                                <input type="text" class="form-control input-cpf" id="monitor-cpf"
+                                                    required>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="monitor-rg">RG</label>
+                                                <input type="text" class="form-control" id="monitor-rg">
+                                            </div>
+                                        </div>
+
+                                        <!-- FORNECEDOR (OBRIGATÓRIO) -->
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="monitor-fornecedor-id">Fornecedor responsável</label>
+                                                <select id="monitor-fornecedor-id" class="form-control" required>
+                                                    <option value="">Carregando fornecedores...</option>
+                                                </select>
+                                                <small class="form-text text-muted">
+                                                    Selecione o fornecedor ao qual este monitor está vinculado.
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="monitor-data-nascimento">Data de nascimento</label>
+                                                <input type="date" class="form-control" id="monitor-data-nascimento">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="monitor-telefone">Telefone</label>
+                                                <input type="text" class="form-control input-phone"
+                                                    id="monitor-telefone">
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="monitor-email">E-mail</label>
+                                                <input type="email" class="form-control" id="monitor-email">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="monitor-endereco">Endereço</label>
+                                                <input type="text" class="form-control" id="monitor-endereco">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="monitor-bairro">Bairro</label>
+                                                <input type="text" class="form-control" id="monitor-bairro">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="monitor-cidade">Cidade</label>
+                                                <input type="text" class="form-control" id="monitor-cidade">
+                                            </div>
+                                            <div class="form-group col-md-1">
+                                                <label for="monitor-uf">UF</label>
+                                                <input type="text" class="form-control" id="monitor-uf" maxlength="2">
+                                            </div>
+                                            <div class="form-group col-md-1">
+                                                <label for="monitor-cep">CEP</label>
+                                                <input type="text" class="form-control input-cep" id="monitor-cep">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-2">
+                                                <label for="monitor-status">Status</label>
+                                                <select id="monitor-status" class="form-control" required>
+                                                    <option value="ativo" selected>Ativo</option>
+                                                    <option value="inativo">Inativo</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- DOCUMENTO PESSOAL -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small-label">Documento pessoal</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="monitor-arquivo-documento">Anexar documento (RG/CPF ou
+                                                    similar)</label>
+                                                <input type="file" class="form-control-file"
+                                                    id="monitor-arquivo-documento" accept="image/*,.pdf">
+                                                <small class="form-text text-muted">
+                                                    Envie um documento legível com os dados de identificação do monitor.
+                                                </small>
+                                                <div id="monitor-documento-atual" class="small text-muted mt-1"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CURSO OBRIGATÓRIO -->
+                                <div class="card border mb-0">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                        <span class="small-label">Curso obrigatório</span>
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            id="btn-adicionar-curso-monitor">
+                                            Adicionar curso
+                                        </button>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0 table-cursos">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width:220px;">Tipo de curso</th>
+                                                        <th style="width:150px;">Data de conclusão</th>
+                                                        <th style="width:150px;">Validade</th>
+                                                        <th>Observações</th>
+                                                        <th style="width:220px;">Arquivo (certificado)</th>
+                                                        <th style="width:60px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-cursos-monitor">
+                                                    <!-- linhas de cursos -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="p-2 small text-muted">
+                                            Curso obrigatório: Monitor escolar. Você pode adicionar outros cursos como
+                                            complemento, se desejar.
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar monitor</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL PRÓPRIO PARA CERTIFICADOS DO MONITOR -->
+            <div class="modal fade" id="modal-certificados-monitor" tabindex="-1" role="dialog"
+                aria-labelledby="modalCertificadosMonitorTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-md" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalCertificadosMonitorTitulo">Certificados do monitor</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalCertificadosMonitorBody">
+                            <!-- Lista de certificados gerada via JavaScript -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
+
+            <div class="modal fade" id="modal-rotas-monitor" tabindex="-1" role="dialog"
+                aria-labelledby="modalRotasMonitorTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <form id="form-rotas-monitor">
+                            <input type="hidden" id="rotas-monitor-id">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalRotasMonitorTitulo">Associar monitor às rotas
+                                </h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="alert alert-info mb-3">
+                                    Selecione uma ou mais rotas escolares para associar ao monitor.
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="select-rotas-monitor">Rotas escolares</label>
+                                    <select id="select-rotas-monitor" class="form-control" multiple required></select>
+                                    <small class="form-text text-muted">
+                                        Dica: você pode pesquisar pelo nome e selecionar múltiplas opções.
+                                    </small>
+                                </div>
+
+                                <div class="small text-muted" id="rotas-monitor-status"></div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar associações</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAIS GLOBAIS DE SISTEMA já existentes no arquivo original (mensagem / confirmação) -->
+        </main>
+
+
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/d3.min.js"></script>
+    <script src="../../js/topojson.min.js"></script>
+    <script src="../../js/datamaps.all.min.js"></script>
+    <script src="../../js/datamaps-zoomto.js"></script>
+    <script src="../../js/datamaps.custom.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script>
+        // Helpers globais de modais de sistema
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+
+    <script>
+        var apiBaseMonitores = '/api/monitores';
+        var apiBaseFornecedores = '/api/fornecedores';
+        var apiBaseRotasEscolaresMonitores = '/api/monitores/rotas-escolares';
+
+        var monitores = [];
+        var fornecedores = [];
+        var paginaAtualMonitores = 1;
+        var totalPaginasMonitores = 1;
+        var tamanhoPaginaMonitores = 20;
+
+        // ============================
+        // FORNECEDORES (SELECT)
+        // ============================
+
+        function montarRotuloFornecedor(f) {
+            if (!f) return '';
+            var nome = f.nome_fantasia || f.razao_social || '';
+            var cnpj = f.cnpj ? ' - ' + f.cnpj : '';
+            return nome + cnpj;
+        }
+
+        function carregarFornecedores() {
+            // opcionalmente você pode filtrar: ?status=ativo
+            var url = apiBaseFornecedores + '?status=ativo';
+
+            return fetch(url)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar fornecedores');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    fornecedores = Array.isArray(data) ? data : [];
+
+                    var $select = $('#monitor-fornecedor-id');
+                    $select.empty();
+
+                    $select.append('<option value="">Selecione um fornecedor...</option>');
+
+                    fornecedores.forEach(function (f) {
+                        var label = montarRotuloFornecedor(f);
+                        $select.append(
+                            $('<option>', {
+                                value: f.id,
+                                text: label
+                            })
+                        );
+                    });
+
+                    // aplica select2
+                    $select.select2({
+                        placeholder: 'Selecione um fornecedor...',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('#modal-monitor')
+                    });
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    var $select = $('#monitor-fornecedor-id');
+                    $select.empty();
+                    $select.append('<option value="">Erro ao carregar fornecedores</option>');
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de fornecedores para monitores.');
+                });
+        }
+
+        function encontrarFornecedorPorId(id) {
+            id = parseInt(id, 10);
+            if (Number.isNaN(id)) return null;
+            return fornecedores.find(function (f) { return f.id === id; }) || null;
+        }
+
+        // ============================
+        // ROTAS ESCOLARES (ASSOCIAÇÃO DO MONITOR)
+        // ============================
+
+        var rotasEscolaresDisponiveis = [];
+        var carregandoRotasEscolares = false;
+
+        function montarRotuloRota(r) {
+            if (!r) return '';
+            var nome = r.nome || '';
+            var tipo = r.tipo ? ' (' + r.tipo + ')' : '';
+            return nome + tipo;
+        }
+
+        function carregarRotasEscolaresDisponiveis() {
+            if (carregandoRotasEscolares) return Promise.resolve(rotasEscolaresDisponiveis);
+            carregandoRotasEscolares = true;
+
+            var url = apiBaseRotasEscolaresMonitores + '?status=ativo';
+
+            return fetch(url)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar rotas escolares');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    rotasEscolaresDisponiveis = Array.isArray(data) ? data : [];
+                    return rotasEscolaresDisponiveis;
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    rotasEscolaresDisponiveis = [];
+                    return [];
+                })
+                .finally(function () {
+                    carregandoRotasEscolares = false;
+                });
+        }
+
+        function popularSelectRotas($select, rotas) {
+            $select.empty();
+            (rotas || []).forEach(function (r) {
+                $select.append(
+                    $('<option>', {
+                        value: r.id,
+                        text: montarRotuloRota(r)
+                    })
+                );
+            });
+        }
+
+        function abrirModalAssociarRotasMonitor(monitorId) {
+            $('#rotas-monitor-id').val(String(monitorId || ''));
+            $('#rotas-monitor-status').text('Carregando rotas...');
+
+            var $select = $('#select-rotas-monitor');
+
+            // reinicializa select2
+            if ($select.hasClass('select2-hidden-accessible')) { $select.select2('destroy'); }
+
+            Promise.all([
+                carregarRotasEscolaresDisponiveis(),
+                fetch(apiBaseMonitores + '/' + monitorId + '/rotas')
+                    .then(function (resp) {
+                        if (!resp.ok) {
+                            return resp.text().then(function () {
+                                throw new Error('HTTP ' + resp.status + ' ao buscar rotas do monitor');
+                            });
+                        }
+                        return resp.json();
+                    })
+                    .catch(function () { return { rota_ids: [] }; })
+            ])
+                .then(function (arr) {
+                    var rotas = arr[0] || [];
+                    var assoc = arr[1] || {};
+                    var rotaIds = Array.isArray(assoc.rota_ids) ? assoc.rota_ids.map(String) : [];
+
+                    popularSelectRotas($select, rotas);
+                    $select.val(rotaIds);
+
+                    $select.select2({
+                        placeholder: 'Selecione uma ou mais rotas...',
+                        allowClear: true,
+                        width: '100%',
+                        dropdownParent: $('#modal-rotas-monitor')
+                    });
+
+                    $select.trigger('change');
+
+                    $('#rotas-monitor-status').text('Selecione e salve para confirmar.');
+                    $('#modal-rotas-monitor').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar as rotas para associação.');
+                });
+        }
+
+        function salvarAssociacaoRotasMonitor(e) {
+            e.preventDefault();
+
+            var monitorId = parseInt($('#rotas-monitor-id').val(), 10);
+            if (!monitorId) return;
+
+            var rotaIds = ($('#select-rotas-monitor').val() || []).map(function (x) { return parseInt(x, 10); })
+                .filter(function (n) { return Number.isInteger(n); });
+
+            $('#rotas-monitor-status').text('Salvando...');
+
+            fetch(apiBaseMonitores + '/' + monitorId + '/rotas', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rota_ids: rotaIds })
+            })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.text().then(function (t) {
+                            try {
+                                var j = JSON.parse(t);
+                                throw new Error((j && j.erro) || ('Erro ao salvar (HTTP ' + resp.status + ')'));
+                            } catch (_) {
+                                throw new Error('Erro ao salvar (HTTP ' + resp.status + ')');
+                            }
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#rotas-monitor-status').text('Associações salvas com sucesso.');
+                    $('#modal-rotas-monitor').modal('hide');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    $('#rotas-monitor-status').text('');
+                    mostrarMensagemSistema('Erro', err.message || 'Erro ao salvar as associações de rotas.');
+                });
+        }
+
+
+        // ============================
+        // RESUMO RÁPIDO
+        // ============================
+
+        function atualizarResumoMonitores() {
+            var total = monitores.length;
+            var ativos = monitores.filter(function (m) {
+                return m.status === 'ativo';
+            }).length;
+            var cursosPendentes = monitores.reduce(function (acc, m) {
+                if (typeof m.cursos_pendentes === 'number') return acc + m.cursos_pendentes;
+                return acc;
+            }, 0);
+
+            $('#resumo-total-monitores').text(total);
+            $('#resumo-monitores-ativos').text(ativos);
+            $('#resumo-cursos-pendentes-monitores').text(cursosPendentes);
+        }
+
+        function resumoCursosMonitor(m) {
+            if (m.cursos_obrigatorios_ok) {
+                return '<span class="badge badge-success">Em dia</span>';
+            }
+            if (typeof m.cursos_pendentes === 'number' && m.cursos_pendentes > 0) {
+                return '<span class="badge badge-warning text-dark">' + m.cursos_pendentes + ' pendente(s)</span>';
+            }
+            if (m.cursos_resumo) {
+                return m.cursos_resumo;
+            }
+            return '<span class="text-muted">Não informado</span>';
+        }
+
+
+        function safeText(s) {
+            return String(s || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+
+        // ============================
+        // PAGINAÇÃO / LISTAGEM
+        // ============================
+
+        function atualizarPaginacaoMonitores() {
+            var ul = document.getElementById('paginacao-monitores');
+            if (!ul) return;
+
+            ul.innerHTML = '';
+
+            var liPrev = document.createElement('li');
+            liPrev.className = 'page-item' + (paginaAtualMonitores <= 1 ? ' disabled' : '');
+            var aPrev = document.createElement('a');
+            aPrev.className = 'page-link';
+            aPrev.href = '#';
+            aPrev.textContent = 'Anterior';
+            aPrev.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualMonitores > 1) {
+                    irParaPaginaMonitores(paginaAtualMonitores - 1);
+                }
+            });
+            liPrev.appendChild(aPrev);
+            ul.appendChild(liPrev);
+
+            var liInfo = document.createElement('li');
+            liInfo.className = 'page-item disabled';
+            var aInfo = document.createElement('a');
+            aInfo.className = 'page-link';
+            aInfo.href = '#';
+            aInfo.textContent = paginaAtualMonitores + ' / ' + totalPaginasMonitores;
+            liInfo.appendChild(aInfo);
+            ul.appendChild(liInfo);
+
+            var liNext = document.createElement('li');
+            liNext.className = 'page-item' + (paginaAtualMonitores >= totalPaginasMonitores ? ' disabled' : '');
+            var aNext = document.createElement('a');
+            aNext.className = 'page-link';
+            aNext.href = '#';
+            aNext.textContent = 'Próxima';
+            aNext.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualMonitores < totalPaginasMonitores) {
+                    irParaPaginaMonitores(paginaAtualMonitores + 1);
+                }
+            });
+            liNext.appendChild(aNext);
+            ul.appendChild(liNext);
+        }
+
+        function irParaPaginaMonitores(pagina) {
+            if (pagina < 1 || pagina > totalPaginasMonitores) return;
+            paginaAtualMonitores = pagina;
+            renderizarTabelaMonitores();
+        }
+
+        function carregarMonitores() {
+            return fetch(apiBaseMonitores)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar monitores');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    monitores = data || [];
+                    paginaAtualMonitores = 1;
+                    renderizarTabelaMonitores();
+                    atualizarResumoMonitores();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de monitores.');
+                });
+        }
+
+        function renderizarTabelaMonitores() {
+            var tbody = document.getElementById('tbody-monitores');
+            if (!tbody) return;
+
+            var termo = ($('#search-monitores').val() || '').toLowerCase();
+            var filtroStatus = $('#filtro-status-monitor').val();
+
+            var filtrados = monitores.filter(function (m) {
+                var textoBusca = [
+                    m.nome || '',
+                    m.cpf || '',
+                    m.fornecedor_nome_fantasia || '',
+                    m.fornecedor_razao_social || ''
+                ].join(' ').toLowerCase();
+
+                if (termo && textoBusca.indexOf(termo) === -1) return false;
+                if (filtroStatus && m.status !== filtroStatus) return false;
+
+                return true;
+            });
+
+            totalPaginasMonitores = Math.max(1, Math.ceil(filtrados.length / tamanhoPaginaMonitores));
+            if (paginaAtualMonitores > totalPaginasMonitores) {
+                paginaAtualMonitores = totalPaginasMonitores;
+            }
+            if (paginaAtualMonitores < 1) {
+                paginaAtualMonitores = 1;
+            }
+
+            var inicio = (paginaAtualMonitores - 1) * tamanhoPaginaMonitores;
+            var fim = inicio + tamanhoPaginaMonitores;
+            var paginaItens = filtrados.slice(inicio, fim);
+
+            tbody.innerHTML = '';
+
+            paginaItens.forEach(function (m) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', m.id);
+
+                var tdId = document.createElement('td');
+                tdId.textContent = m.id;
+                tr.appendChild(tdId);
+
+                var tdNome = document.createElement('td');
+                var nomeHtml = '<strong>' + (m.nome || '') + '</strong>';
+                if (m.telefone) {
+                    nomeHtml += '<br><small class="text-muted">' + m.telefone + '</small>';
+                }
+                tdNome.innerHTML = nomeHtml;
+                tr.appendChild(tdNome);
+
+                // Coluna FORNECEDOR
+                var tdFornecedor = document.createElement('td');
+                var fornecLabel = '';
+                if (m.fornecedor_nome_fantasia || m.fornecedor_razao_social) {
+                    fornecLabel = '<strong>' + (m.fornecedor_nome_fantasia || m.fornecedor_razao_social) + '</strong>';
+                    if (m.fornecedor_cnpj) {
+                        fornecLabel += '<br><small class="text-muted">' + m.fornecedor_cnpj + '</small>';
+                    }
+                } else {
+                    fornecLabel = '<span class="text-muted">Não vinculado</span>';
+                }
+                tdFornecedor.innerHTML = fornecLabel;
+                tr.appendChild(tdFornecedor);
+
+                var tdCpf = document.createElement('td');
+                tdCpf.textContent = m.cpf || '';
+                tr.appendChild(tdCpf);
+
+                var tdCursos = document.createElement('td');
+                tdCursos.innerHTML = resumoCursosMonitor(m);
+                tr.appendChild(tdCursos);
+
+                var tdDoc = document.createElement('td');
+                if (m.documento_pessoal_url) {
+                    tdDoc.innerHTML =
+                        '<a href="' + m.documento_pessoal_url +
+                        '" target="_blank" class="btn btn-sm btn-outline-primary">Ver documento</a>';
+                } else {
+                    tdDoc.innerHTML = '<span class="text-muted">–</span>';
+                }
+                tr.appendChild(tdDoc);
+
+                var tdCertificados = document.createElement('td');
+                tdCertificados.innerHTML =
+                    '<button type="button" class="btn btn-sm btn-outline-secondary action-ver-certificados-monitor" data-id="' +
+                    m.id + '">Certificados</button>';
+                tr.appendChild(tdCertificados);
+
+                var tdStatus = document.createElement('td');
+                var spanStatus = document.createElement('span');
+                if (m.status === 'ativo') {
+                    spanStatus.className = 'badge badge-success';
+                    spanStatus.textContent = 'Ativo';
+                } else {
+                    spanStatus.className = 'badge badge-secondary';
+                    spanStatus.textContent = 'Inativo';
+                }
+                tdStatus.appendChild(spanStatus);
+                tr.appendChild(tdStatus);
+
+                // Coluna ROTA ASSOCIADA
+                var tdRotaAssoc = document.createElement('td');
+                if (m.rotas_qtd && Number(m.rotas_qtd) > 0) {
+                    var nomes = safeText(m.rotas_nomes || '');
+                    tdRotaAssoc.innerHTML =
+                        '<span class="badge badge-info">' + m.rotas_qtd + '</span>' +
+                        (nomes ? '<br><small class="text-muted">' + nomes + '</small>' : '');
+                } else {
+                    tdRotaAssoc.innerHTML = '<span class="text-muted">–</span>';
+                }
+                tr.appendChild(tdRotaAssoc);
+
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+                btnDrop.appendChild(spanSr);
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-monitor';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', m.id);
+                aEditar.textContent = 'Ver / editar';
+
+                var aToggle = document.createElement('a');
+                aToggle.className = 'dropdown-item text-warning action-toggle-status-monitor';
+                aToggle.href = '#';
+                aToggle.setAttribute('data-id', m.id);
+                aToggle.textContent = m.status === 'ativo' ? 'Desativar' : 'Ativar';
+
+
+                var aAssociarRotas = document.createElement('a');
+                aAssociarRotas.className = 'dropdown-item action-associar-rotas-monitor';
+                aAssociarRotas.href = '#';
+                aAssociarRotas.setAttribute('data-id', m.id);
+                aAssociarRotas.textContent = 'Associar à rota escolar';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-monitor';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', m.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aEditar);
+                menu.appendChild(aToggle);
+                menu.appendChild(aAssociarRotas);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarPaginacaoMonitores();
+        }
+
+        // ============================
+        // FORM / MODAL
+        // ============================
+
+        function limparFormMonitor() {
+            $('#monitor-id').val('');
+            $('#monitor-nome').val('');
+            $('#monitor-cpf').val('');
+            $('#monitor-rg').val('');
+            $('#monitor-data-nascimento').val('');
+            $('#monitor-telefone').val('');
+            $('#monitor-email').val('');
+            $('#monitor-endereco').val('');
+            $('#monitor-bairro').val('');
+            $('#monitor-cidade').val('');
+            $('#monitor-uf').val('');
+            $('#monitor-cep').val('');
+            $('#monitor-status').val('ativo');
+
+            // fornecedor
+            $('#monitor-fornecedor-id').val('').trigger('change');
+
+            $('#monitor-arquivo-documento').val('');
+            $('#monitor-documento-atual').empty();
+
+            $('#tbody-cursos-monitor').empty();
+            adicionarLinhaCursoMonitor();
+        }
+
+        function preencherFormMonitor(dados) {
+            $('#monitor-id').val(dados.id || '');
+            $('#monitor-nome').val(dados.nome || '');
+            $('#monitor-cpf').val(dados.cpf || '');
+            $('#monitor-rg').val(dados.rg || '');
+            $('#monitor-data-nascimento').val(dados.data_nascimento || '');
+            $('#monitor-telefone').val(dados.telefone || '');
+            $('#monitor-email').val(dados.email || '');
+            $('#monitor-endereco').val(dados.endereco || '');
+            $('#monitor-bairro').val(dados.bairro || '');
+            $('#monitor-cidade').val(dados.cidade || '');
+            $('#monitor-uf').val(dados.uf || '');
+            $('#monitor-cep').val(dados.cep || '');
+            $('#monitor-status').val(dados.status || 'ativo');
+
+            // fornecedor do monitor (dados.fornecedor_id vindo do backend)
+            if (dados.fornecedor_id) {
+                $('#monitor-fornecedor-id').val(String(dados.fornecedor_id)).trigger('change');
+            } else {
+                $('#monitor-fornecedor-id').val('').trigger('change');
+            }
+
+            $('#monitor-arquivo-documento').val('');
+            if (dados.documento_pessoal_url) {
+                $('#monitor-documento-atual').html(
+                    'Documento atual: <a href="' + dados.documento_pessoal_url +
+                    '" target="_blank">ver documento enviado</a>'
+                );
+            } else {
+                $('#monitor-documento-atual').empty();
+            }
+
+            $('#tbody-cursos-monitor').empty();
+            if (Array.isArray(dados.cursos) && dados.cursos.length) {
+                dados.cursos.forEach(function (c) {
+                    adicionarLinhaCursoMonitor(c);
+                });
+            } else {
+                adicionarLinhaCursoMonitor();
+            }
+        }
+
+        function abrirModalNovoMonitor() {
+            limparFormMonitor();
+            $('#modalMonitorLabel').text('Novo monitor');
+            aplicarRestricaoFornecedorSelect();
+            $('#modal-monitor').modal('show');
+        }
+
+        function abrirModalEditarMonitor(id) {
+            fetch(apiBaseMonitores + '/' + id)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar monitor');
+                    return resp.json();
+                })
+                .then(function (dados) {
+                    limparFormMonitor();
+                    preencherFormMonitor(dados || {});
+                    $('#modalMonitorLabel').text('Editar monitor #' + id);
+                    aplicarRestricaoFornecedorSelect();
+                    $('#modal-monitor').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar os dados do monitor.');
+                });
+        }
+
+        // ============================
+        // CURSOS
+        // ============================
+
+        function htmlLinhaCursoMonitor(curso) {
+            curso = curso || {};
+            var tipo = curso.tipo || 'monitor_escolar';
+            var dataConclusao = curso.data_conclusao || '';
+            var validade = curso.validade || '';
+            var observacoes = curso.observacoes || '';
+
+            return `
+      <tr>
+        <td>
+          <select class="form-control form-control-sm curso-tipo-monitor">
+            <option value="monitor_escolar" ${tipo === 'monitor_escolar' ? 'selected' : ''}>Monitor escolar (obrigatório)</option>
+            <option value="outro" ${tipo === 'outro' ? 'selected' : ''}>Outro curso</option>
+          </select>
+        </td>
+        <td>
+          <input type="date" class="form-control form-control-sm curso-data-conclusao-monitor" value="${dataConclusao}">
+        </td>
+        <td>
+          <input type="date" class="form-control form-control-sm curso-validade-monitor" value="${validade}">
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm curso-observacoes-monitor" value="${observacoes}" placeholder="Observações">
+        </td>
+        <td>
+          <input type="file" class="form-control-file curso-arquivo-monitor" accept="image/*,.pdf">
+          ${curso.arquivo_url ? `<small class="text-muted d-block mt-1">Atual: <a href="${curso.arquivo_url}" target="_blank" rel="noopener noreferrer">ver certificado</a></small>` : ''}
+        </td>
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-danger btn-remover-curso-monitor">
+            <span class="fe fe-trash-2"></span>
+          </button>
+        </td>
+      </tr>
+    `;
+        }
+
+        function adicionarLinhaCursoMonitor(curso) {
+            $('#tbody-cursos-monitor').append(htmlLinhaCursoMonitor(curso));
+        }
+
+        // ============================
+        // SALVAR / ALTERAR / EXCLUIR
+        // ============================
+
+        function salvarMonitor(event) {
+            event.preventDefault();
+
+            var fornecedorIdSelecionado = $('#monitor-fornecedor-id').val();
+
+            if (!$('#monitor-nome').val().trim() ||
+                !$('#monitor-cpf').val().trim() ||
+                !fornecedorIdSelecionado) {
+                mostrarMensagemSistema(
+                    'Dados incompletos',
+                    'Preencha nome, CPF e selecione um fornecedor para o monitor.'
+                );
+                return;
+            }
+
+            var id = $('#monitor-id').val() || null;
+
+            var dadosMonitor = {
+                nome: $('#monitor-nome').val().trim(),
+                cpf: $('#monitor-cpf').val().trim(),
+                rg: $('#monitor-rg').val().trim() || null,
+                data_nascimento: $('#monitor-data-nascimento').val() || null,
+                telefone: $('#monitor-telefone').val().trim() || null,
+                email: $('#monitor-email').val().trim() || null,
+                endereco: $('#monitor-endereco').val().trim() || null,
+                bairro: $('#monitor-bairro').val().trim() || null,
+                cidade: $('#monitor-cidade').val().trim() || null,
+                uf: $('#monitor-uf').val().trim() || null,
+                cep: $('#monitor-cep').val().trim() || null,
+                status: $('#monitor-status').val(),
+                fornecedor_id: fornecedorIdSelecionado ? parseInt(fornecedorIdSelecionado, 10) : null
+            };
+
+            var formData = new FormData();
+            formData.append('dados', JSON.stringify(dadosMonitor));
+
+            $('#tbody-cursos-monitor tr').each(function (index) {
+                var $tr = $(this);
+                var tipo = $tr.find('.curso-tipo-monitor').val();
+                var dtConc = $tr.find('.curso-data-conclusao-monitor').val();
+                var dtVal = $tr.find('.curso-validade-monitor').val();
+                var obs = $tr.find('.curso-observacoes-monitor').val();
+                var inputArquivo = $tr.find('.curso-arquivo-monitor')[0];
+
+                if (!tipo && !dtConc && !dtVal && (!inputArquivo || !inputArquivo.files.length)) {
+                    return;
+                }
+
+                formData.append('cursos[' + index + '][tipo]', tipo || '');
+                formData.append('cursos[' + index + '][data_conclusao]', dtConc || '');
+                formData.append('cursos[' + index + '][validade]', dtVal || '');
+                formData.append('cursos[' + index + '][observacoes]', obs || '');
+
+                if (inputArquivo && inputArquivo.files[0]) {
+                    formData.append('cursos[' + index + '][arquivo]', inputArquivo.files[0]);
+                }
+            });
+
+            var inputDocArquivo = document.getElementById('monitor-arquivo-documento');
+            if (inputDocArquivo && inputDocArquivo.files && inputDocArquivo.files[0]) {
+                formData.append('arquivo_documento', inputDocArquivo.files[0]);
+            }
+
+            var method = id ? 'PUT' : 'POST';
+            var url = apiBaseMonitores + (id ? '/' + id : '');
+
+            fetch(url, {
+                method: method,
+                body: formData
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao salvar monitor');
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-monitor').modal('hide');
+                    return carregarMonitores();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar os dados do monitor.');
+                });
+        }
+
+        function alterarStatusMonitor(id, novoStatus) {
+            fetch(apiBaseMonitores + '/' + id + '/status', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: novoStatus })
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao alterar status');
+                    return resp.json();
+                })
+                .then(function () {
+                    carregarMonitores();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao alterar status do monitor.');
+                });
+        }
+
+        function excluirMonitor(id) {
+            confirmarAcaoSistema(
+                'Excluir monitor',
+                'Deseja realmente excluir este monitor? Esta ação não poderá ser desfeita.',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                fetch(apiBaseMonitores + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao excluir monitor');
+                        return resp.json();
+                    })
+                    .then(function () {
+                        carregarMonitores();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir o monitor.');
+                    });
+            });
+        }
+
+        // Rótulo de curso (para modal de certificados)
+        function rotuloTipoCursoMonitor(tipo) {
+            switch (tipo) {
+                case 'monitor_escolar':
+                    return 'Monitor escolar';
+                case 'outro':
+                    return 'Outro curso';
+                default:
+                    return tipo || 'Certificado';
+            }
+        }
+
+        // ============================
+        // DOCUMENT READY
+        // ============================
+
+        // CONTEXTO DO USUÁRIO (para travar fornecedor no cargo FORNECEDOR_ESCOLAR)
+        var __ME_CACHE = null;
+
+        function obterMeUsuario() {
+            if (window.__ME) { __ME_CACHE = window.__ME; return Promise.resolve(__ME_CACHE); }
+            if (__ME_CACHE) return Promise.resolve(__ME_CACHE);
+            return fetch('/api/me', { credentials: 'include' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (me) {
+                    __ME_CACHE = me;
+                    if (me) window.__ME = me;
+                    return me;
+                })
+                .catch(function () { return null; });
+        }
+
+        function aplicarRestricaoFornecedorSelect() {
+            return obterMeUsuario().then(function (me) {
+                if (!me) return;
+                var cargo = String(me.cargo || '').toUpperCase();
+                if (cargo !== 'FORNECEDOR_ESCOLAR') return;
+                var fornecedorId = me.fornecedor_id;
+                if (!fornecedorId) return;
+
+                var $sel = $('#monitor-fornecedor-id');
+                // Garante que a opção exista
+                var hasOpt = $sel.find('option[value="' + fornecedorId + '"]').length > 0;
+                if (!hasOpt) {
+                    $sel.append($('<option>', { value: fornecedorId }).text('Fornecedor #' + fornecedorId));
+                }
+                $sel.val(String(fornecedorId)).trigger('change');
+                $sel.prop('disabled', true);
+            });
+        }
+
+
+
+        $(document).ready(function () {
+            // Máscaras
+            $('.input-cpf').mask('000.000.000-00', { placeholder: "___.___.___-__" });
+            $('.input-cep').mask('00000-000', { placeholder: "_____-___" });
+            $('.input-phone').mask('(00) 00000-0000', { placeholder: "(__) _____-____" });
+
+            // Carrega fornecedores e depois monitores (para já ter labels carregados)
+            carregarFornecedores().then(function () {
+                return aplicarRestricaoFornecedorSelect();
+            }).then(function () {
+                return carregarMonitores();
+            });
+
+            // Filtros e busca
+            $('#search-monitores').on('input', function () {
+                paginaAtualMonitores = 1;
+                renderizarTabelaMonitores();
+            });
+            $('#filtro-status-monitor').on('change', function () {
+                paginaAtualMonitores = 1;
+                renderizarTabelaMonitores();
+            });
+
+            // Botões do header
+            $('#btn-novo-monitor').on('click', function () {
+                abrirModalNovoMonitor();
+            });
+
+            // Formulário e modal
+            $('#form-monitor').on('submit', salvarMonitor);
+
+
+            $('#modal-monitor').on('shown.bs.modal', function () { aplicarRestricaoFornecedorSelect(); });
+            // Cursos
+            $('#btn-adicionar-curso-monitor').on('click', function () {
+                adicionarLinhaCursoMonitor();
+            });
+
+            $('#tbody-cursos-monitor').on('click', '.btn-remover-curso-monitor', function () {
+                $(this).closest('tr').remove();
+                if (!$('#tbody-cursos-monitor tr').length) {
+                    adicionarLinhaCursoMonitor();
+                }
+            });
+
+            // Ações na tabela
+            $('#tbody-monitores').on('click', '.action-editar-monitor', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    abrirModalEditarMonitor(id);
+                }
+            });
+
+            $('#tbody-monitores').on('click', '.action-toggle-status-monitor', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (!id) return;
+                var monitor = monitores.find(function (m) {
+                    return m.id === id;
+                });
+                if (!monitor) return;
+
+                var novoStatus = monitor.status === 'ativo' ? 'inativo' : 'ativo';
+                var mensagem = novoStatus === 'inativo'
+                    ? 'O monitor será marcado como inativo. Deseja continuar?'
+                    : 'O monitor será reativado. Deseja continuar?';
+
+                confirmarAcaoSistema(
+                    'Alterar status do monitor',
+                    mensagem,
+                    novoStatus === 'inativo' ? 'Desativar' : 'Ativar'
+                ).then(function (confirmado) {
+                    if (!confirmado) return;
+                    alterarStatusMonitor(id, novoStatus);
+                });
+            });
+
+            $('#tbody-monitores').on('click', '.action-excluir-monitor', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    excluirMonitor(id);
+                }
+            });
+
+            // Ver certificados dos monitores (abre modal próprio)
+            $('#tbody-monitores').on('click', '.action-ver-certificados-monitor', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (!id) return;
+
+                fetch(apiBaseMonitores + '/' + id)
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao buscar certificados');
+                        return resp.json();
+                    })
+                    .then(function (dados) {
+                        if (!Array.isArray(dados.cursos) || !dados.cursos.length) {
+                            mostrarMensagemSistema('Certificados', 'Nenhum certificado cadastrado para este monitor.');
+                            return;
+                        }
+
+                        var html = '<ul class="list-unstyled mb-0">';
+                        var temArquivo = false;
+
+                        dados.cursos.forEach(function (c) {
+                            if (c.arquivo_url) {
+                                temArquivo = true;
+                                var rotulo = rotuloTipoCursoMonitor(c.tipo);
+                                var extra = '';
+                                if (c.data_conclusao) {
+                                    extra = ' (' + c.data_conclusao + ')';
+                                }
+                                html += '<li class="mb-1">' +
+                                    '<a href="' + c.arquivo_url + '" target="_blank" rel="noopener noreferrer">' +
+                                    rotulo + extra +
+                                    '</a>' +
+                                    '</li>';
+                            }
+                        });
+                        html += '</ul>';
+
+                        if (!temArquivo) {
+                            mostrarMensagemSistema('Certificados', 'Cursos cadastrados, porém sem arquivos de certificados.');
+                            return;
+                        }
+
+                        var titulo = 'Certificados do monitor #' + id;
+                        if (dados.nome) {
+                            titulo += ' - ' + dados.nome;
+                        }
+
+                        $('#modalCertificadosMonitorTitulo').text(titulo);
+                        $('#modalCertificadosMonitorBody').html(html);
+                        $('#modal-certificados-monitor').modal('show');
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Não foi possível carregar os certificados deste monitor.');
+                    });
+            });
+
+            // Associar rotas escolares ao monitor
+            $('#tbody-monitores').on('click', '.action-associar-rotas-monitor', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (!id) return;
+                abrirModalAssociarRotasMonitor(id);
+            });
+
+            // Salvar associações de rotas
+            $('#form-rotas-monitor').on('submit', salvarAssociacaoRotasMonitor);
+        });
+    </script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+</body>
+
+</html>

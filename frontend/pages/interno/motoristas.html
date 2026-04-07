@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte">
+  <meta name="author" content="PyDen Technologies">
+  <link rel="icon" href="../../assets/favicon.ico">
+  <title>SETRANE EXPRESS – Motoristas (Interno)</title>
+
+  <link rel="stylesheet" href="../../css/simplebar.css">
+  <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="../../css/feather.css">
+  <link rel="stylesheet" href="../../css/select2.css">
+  <link rel="stylesheet" href="../../css/dropzone.css">
+  <link rel="stylesheet" href="../../css/uppy.min.css">
+  <link rel="stylesheet" href="../../css/jquery.steps.css">
+  <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+  <link rel="stylesheet" href="../../css/quill.snow.css">
+  <link rel="stylesheet" href="../../css/daterangepicker.css">
+  <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+  <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+  <style>
+    .badge-cnh-ok {
+      background-color: #28a745;
+      color: #fff;
+    }
+
+    .badge-cnh-vencida {
+      background-color: #dc3545;
+      color: #fff;
+    }
+
+    .badge-cnh-perto {
+      background-color: #ffc107;
+      color: #212529;
+    }
+
+    .small-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: .03em;
+      color: #6c757d;
+    }
+
+    #modal-motorista-interno .modal-body {
+      max-height: calc(80vh - 120px);
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body class="vertical dark">
+  <div class="wrapper">
+    <nav class="topnav navbar navbar-light">
+      <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+        <i class="fe fe-menu navbar-toggler-icon"></i>
+      </button>
+      <form class="form-inline mr-auto searchform text-muted">
+        <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+          placeholder="Buscar..." aria-label="Search">
+      </form>
+      <ul class="nav">
+        <li class="nav-item">
+          <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+            <i class="fe fe-sun fe-16"></i>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+            <span class="fe fe-grid fe-16"></span>
+          </a>
+        </li>
+        <li class="nav-item nav-notif">
+          <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+            <span class="fe fe-bell fe-16"></span>
+            <span class="dot dot-md bg-success"></span>
+          </a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink" role="button"
+            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <span class="avatar avatar-sm mt-2">
+              <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+            </span>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+            <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+            <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+            <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+      <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+        <i class="fe fe-x"><span class="sr-only"></span></i>
+      </a>
+
+      <nav class="vertnav navbar navbar-light">
+        <div class="w-100 mb-4 d-flex">
+          <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+            <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+          </a>
+        </div>
+
+        <!-- ===================== -->
+        <!-- ESCOLAR -->
+        <!-- ===================== -->
+        <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+        <ul class="navbar-nav flex-fill w-100 mb-2">
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">
+              <i class="fe fe-home fe-16"></i>
+              <span class="ml-3 item-text">Painel</span>
+            </a>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
+              <i class="fe fe-layers fe-16"></i>
+              <span class="ml-3 item-text">Cadastros</span>
+            </a>
+            <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+              <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                    class="ml-1 item-text">Zoneamentos</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                    class="ml-1 item-text">Escolas</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                    class="ml-1 item-text">Alunos</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span class="ml-1 item-text">Pontos de
+                    parada</span></a></li>
+
+              <li class="nav-item dropdown">
+                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                  class="dropdown-toggle nav-link pl-3">
+                  <span class="ml-1 item-text">Rotas escolares</span>
+                </a>
+                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                  <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                        class="ml-1 item-text">Rotas Municipais</span></a></li>
+                  <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                        class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                  <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                        class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                </ul>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-item dropdown">
+            <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle nav-link">
+              <i class="fe fe-truck fe-16"></i>
+              <span class="ml-3 item-text">Operação</span>
+            </a>
+            <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+              <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                    class="ml-1 item-text">Motoristas</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                    class="ml-1 item-text">Monitores</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                    class="ml-1 item-text">Veículos</span></a></li>
+              <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                    class="ml-1 item-text">Fornecedores</span></a></li>
+            </ul>
+          </li>
+        </ul>
+
+        <!-- ===================== -->
+        <!-- INTERNO -->
+        <!-- ===================== -->
+        <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+        <ul class="navbar-nav flex-fill w-100 mb-2">
+
+          <li class="nav-item">
+            <a class="nav-link" href="/interno/motoristas">
+              <i class="fe fe-user-check fe-16"></i>
+              <span class="ml-3 item-text">Motoristas Internos</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" href="/interno/veiculos">
+              <i class="fe fe-truck fe-16"></i>
+              <span class="ml-3 item-text">Veículos Internos</span>
+            </a>
+          </li>
+
+        </ul>
+
+        <!-- ===================== -->
+        <!-- SISTEMA -->
+        <!-- ===================== -->
+        <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+        <ul class="navbar-nav flex-fill w-100 mb-2">
+          <li class="nav-item">
+            <a class="nav-link" href="/sistema/configuracoes">
+              <i class="fe fe-settings fe-16"></i>
+              <span class="ml-3 item-text">Configurações</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/auth-logout.html">
+              <i class="fe fe-log-out fe-16"></i>
+              <span class="ml-3 item-text">Sair</span>
+            </a>
+          </li>
+        </ul>
+
+      </nav>
+    </aside>
+
+
+    <main role="main" class="main-content">
+      <div class="container-fluid">
+        <div class="row justify-content-center">
+          <div class="col-12">
+
+            <div class="row mb-3">
+              <div class="col">
+                <h2 class="h4 mb-1">Motoristas (demanda interna)</h2>
+                <p class="text-muted mb-0">
+                  Cadastre, gerencie e acompanhe motoristas que atendem demandas internas, incluindo CNH e anexos (CNH e
+                  documentos pessoais).
+                </p>
+              </div>
+            </div>
+
+            <!-- RESUMO RÁPIDO -->
+            <div class="row mb-4">
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">Total de motoristas</span>
+                    <h3 class="mb-0" id="resumo-total">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">Ativos</span>
+                    <h3 class="mb-0" id="resumo-ativos">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">CNH perto do vencimento</span>
+                    <h3 class="mb-0" id="resumo-cnh-perto">0</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 mb-3">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <span class="small-label d-block mb-1">Documentos pendentes</span>
+                    <h3 class="mb-0" id="resumo-docs-pendentes">0</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LISTA -->
+            <div class="row">
+              <div class="col-12 my-4">
+                <div class="d-flex mb-2 align-items-center">
+                  <div>
+                    <h2 class="h4 mb-1">Motoristas cadastrados</h2>
+                    <p class="mb-0 text-muted">Lista com situação de CNH, veículo associado e anexos.</p>
+                  </div>
+                  <div class="ml-auto">
+                    <button class="btn btn-primary" type="button" id="btn-novo">
+                      Novo motorista +
+                    </button>
+                  </div>
+                </div>
+
+                <div class="card shadow">
+                  <div class="card-body">
+                    <div class="toolbar row mb-3">
+                      <div class="col-md-6">
+                        <form class="form-inline">
+                          <div class="form-row">
+                            <div class="form-group col-auto">
+                              <label for="search" class="sr-only">Pesquisar</label>
+                              <input type="text" class="form-control" id="search"
+                                placeholder="Pesquisar por nome, CPF...">
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                        <div class="form-inline justify-content-md-end">
+                          <div class="form-group mr-2">
+                            <label class="mr-1 small-label" for="filtro-status">Status</label>
+                            <select id="filtro-status" class="form-control form-control-sm">
+                              <option value="">Todos</option>
+                              <option value="ativo">Ativo</option>
+                              <option value="inativo">Inativo</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="mr-1 small-label" for="filtro-cnh">CNH</label>
+                            <select id="filtro-cnh" class="form-control form-control-sm">
+                              <option value="">Qualquer</option>
+                              <option value="ok">Válida</option>
+                              <option value="perto">Perto de vencer</option>
+                              <option value="vencida">Vencida</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="table-responsive">
+                      <table class="table table-bordered table-hover mb-0" id="tabela">
+                        <thead class="thead-light">
+                          <tr role="row">
+                            <th style="width:70px;">ID</th>
+                            <th>Nome</th>
+                            <th style="width:150px;">CPF</th>
+                            <th style="width:190px;">Situação CNH</th>
+                            <th style="width:140px;">CNH (arquivo)</th>
+                            <th style="width:110px;">Status</th>
+                            <th style="width:120px;">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody id="tbody"></tbody>
+                      </table>
+                    </div>
+
+                    <nav aria-label="Paginação" class="mt-3 mb-0 text-muted">
+                      <ul class="pagination justify-content-end mb-0" id="paginacao"></ul>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL CADASTRO/EDIÇÃO -->
+      <div class="modal fade" id="modal-motorista-interno" tabindex="-1" role="dialog"
+        aria-labelledby="modalMotoristaInternoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+          <div class="modal-content">
+            <form class="needs-validation" id="form-motorista" novalidate>
+              <input type="hidden" id="motorista-id">
+
+              <div class="modal-header">
+                <h5 class="modal-title" id="modalMotoristaInternoLabel">Novo motorista</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+
+              <div class="modal-body">
+
+                <!-- DADOS PESSOAIS -->
+                <div class="card border mb-3">
+                  <div class="card-header py-2">
+                    <span class="small-label">Dados pessoais</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                        <label for="motorista-nome">Nome completo</label>
+                        <input type="text" class="form-control" id="motorista-nome" required>
+                      </div>
+                      <div class="form-group col-md-3">
+                        <label for="motorista-cpf">CPF</label>
+                        <input type="text" class="form-control input-cpf" id="motorista-cpf" required>
+                      </div>
+                      <div class="form-group col-md-3">
+                        <label for="motorista-rg">RG</label>
+                        <input type="text" class="form-control" id="motorista-rg">
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-3">
+                        <label for="motorista-data-nascimento">Data de nascimento</label>
+                        <input type="date" class="form-control" id="motorista-data-nascimento">
+                      </div>
+                      <div class="form-group col-md-3">
+                        <label for="motorista-telefone">Telefone</label>
+                        <input type="text" class="form-control input-phone" id="motorista-telefone">
+                      </div>
+                      <div class="form-group col-md-6">
+                        <label for="motorista-email">E-mail</label>
+                        <input type="email" class="form-control" id="motorista-email">
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-4">
+                        <label for="motorista-endereco">Endereço</label>
+                        <input type="text" class="form-control" id="motorista-endereco">
+                      </div>
+                      <div class="form-group col-md-3">
+                        <label for="motorista-bairro">Bairro</label>
+                        <input type="text" class="form-control" id="motorista-bairro">
+                      </div>
+                      <div class="form-group col-md-3">
+                        <label for="motorista-cidade">Cidade</label>
+                        <input type="text" class="form-control" id="motorista-cidade">
+                      </div>
+                      <div class="form-group col-md-1">
+                        <label for="motorista-uf">UF</label>
+                        <input type="text" class="form-control" id="motorista-uf" maxlength="2">
+                      </div>
+                      <div class="form-group col-md-1">
+                        <label for="motorista-cep">CEP</label>
+                        <input type="text" class="form-control input-cep" id="motorista-cep">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- DADOS DA CNH -->
+                <div class="card border mb-3">
+                  <div class="card-header py-2">
+                    <span class="small-label">Dados da CNH</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-row">
+                      <div class="form-group col-md-3">
+                        <label for="motorista-numero-cnh">Número da CNH</label>
+                        <input type="text" class="form-control" id="motorista-numero-cnh" required>
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label for="motorista-categoria-cnh">Categoria</label>
+                        <select id="motorista-categoria-cnh" class="form-control" required>
+                          <option value=""></option>
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="D">D</option>
+                          <option value="E">E</option>
+                        </select>
+                      </div>
+                      <div class="form-group col-md-3">
+                        <label for="motorista-validade-cnh">Validade da CNH</label>
+                        <input type="date" class="form-control" id="motorista-validade-cnh" required>
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label for="motorista-orgao-cnh">Órgão emissor</label>
+                        <input type="text" class="form-control" id="motorista-orgao-cnh">
+                      </div>
+                      <div class="form-group col-md-2">
+                        <label for="motorista-status">Status</label>
+                        <select id="motorista-status" class="form-control" required>
+                          <option value="ativo" selected>Ativo</option>
+                          <option value="inativo">Inativo</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ANEXOS -->
+                <div class="card border mb-0">
+                  <div class="card-header py-2">
+                    <span class="small-label">Anexos</span>
+                  </div>
+                  <div class="card-body">
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                        <label for="arquivo-cnh">CNH (frente e verso)</label>
+                        <input type="file" class="form-control-file" id="arquivo-cnh" accept="image/*,.pdf">
+                        <small class="form-text text-muted">Envie um arquivo nítido com validade visível.</small>
+                        <div id="cnh-arquivo-atual" class="small text-muted mt-1"></div>
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group col-md-6">
+                        <label for="arquivo-comprovante">Comprovante (opcional)</label>
+                        <input type="file" class="form-control-file" id="arquivo-comprovante" accept="image/*,.pdf">
+                        <small class="form-text text-muted">Ex.: comprovante de residência, contrato, etc.</small>
+                        <div id="comprovante-arquivo-atual" class="small text-muted mt-1"></div>
+                      </div>
+                      <div class="form-group col-md-6">
+                        <label for="arquivo-outro">Outro anexo (opcional)</label>
+                        <input type="file" class="form-control-file" id="arquivo-outro" accept="image/*,.pdf">
+                        <small class="form-text text-muted">Qualquer documento adicional.</small>
+                        <div id="outro-arquivo-atual" class="small text-muted mt-1"></div>
+                      </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 mb-0">
+                      Dica: se você já tiver um backend de upload central, pode mapear esses campos para o mesmo storage
+                      (S3/local) e salvar as URLs no cadastro do motorista interno.
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar motorista</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAIS GLOBAIS -->
+      <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+        aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="modalSistemaMensagemCorpo"></div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+        aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="modalSistemaConfirmacaoCorpo"></div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                data-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="../../js/jquery.min.js"></script>
+  <script src="../../js/popper.min.js"></script>
+  <script src="../../js/moment.min.js"></script>
+  <script src="../../js/bootstrap.min.js"></script>
+  <script src="../../js/simplebar.min.js"></script>
+  <script src="../../js/daterangepicker.js"></script>
+  <script src="../../js/jquery.stickOnScroll.js"></script>
+  <script src="../../js/tinycolor-min.js"></script>
+  <script src="../../js/config.js"></script>
+  <script src="../../js/d3.min.js"></script>
+  <script src="../../js/topojson.min.js"></script>
+  <script src="../../js/datamaps.all.min.js"></script>
+  <script src="../../js/datamaps-zoomto.js"></script>
+  <script src="../../js/datamaps.custom.js"></script>
+  <script src="../../js/Chart.min.js"></script>
+  <script>
+    Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+    Chart.defaults.global.defaultFontColor = colors.mutedColor;
+  </script>
+  <script src="../../js/gauge.min.js"></script>
+  <script src="../../js/jquery.sparkline.min.js"></script>
+  <script src="../../js/apexcharts.min.js"></script>
+  <script src="../../js/apexcharts.custom.js"></script>
+  <script src="../../js/jquery.mask.min.js"></script>
+  <script src="../../js/select2.min.js"></script>
+  <script src="../../js/jquery.steps.min.js"></script>
+  <script src="../../js/jquery.validate.min.js"></script>
+  <script src="../../js/jquery.timepicker.js"></script>
+  <script src="../../js/dropzone.min.js"></script>
+  <script src="../../js/uppy.min.js"></script>
+  <script src="../../js/quill.min.js"></script>
+  <script src="../../js/apps.js"></script>
+  <script src="../../js/sidebar-permissoes.js"></script>
+
+  <script>
+    function mostrarMensagemSistema(titulo, mensagem) {
+      $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+      $('#modalSistemaMensagemCorpo').html(mensagem || '');
+      $('#modal-sistema-mensagem').modal('show');
+    }
+
+    function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+      return new Promise(function (resolve) {
+        var resolvido = false;
+        $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+        $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+        $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+        var $modal = $('#modal-sistema-confirmacao');
+
+        function finalizar(valor) {
+          if (resolvido) return;
+          resolvido = true;
+          resolve(valor);
+        }
+
+        $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+          $modal.modal('hide');
+          finalizar(true);
+        });
+
+        $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+          $modal.modal('hide');
+          finalizar(false);
+        });
+
+        $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+          finalizar(false);
+        });
+
+        $modal.modal('show');
+      });
+    }
+  </script>
+
+  <script>
+    // Ajuste aqui conforme sua API
+    var apiBase = '/api/interno/motoristas';
+
+    var itens = [];
+    var paginaAtual = 1;
+    var totalPaginas = 1;
+    var tamanhoPagina = 20;
+
+    function calcularSituacaoCNH(validadeStr) {
+      if (!validadeStr) return { codigo: 'desconhecida', rotulo: 'Sem informação' };
+      var hoje = new Date();
+      var validade = new Date(validadeStr + 'T00:00:00');
+      var diffMs = validade - hoje;
+      var diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+      if (diffDias < 0) return { codigo: 'vencida', rotulo: 'Vencida' };
+      if (diffDias <= 60) return { codigo: 'perto', rotulo: 'Perto de vencer' };
+      return { codigo: 'ok', rotulo: 'Válida' };
+    }
+
+    function badgeSituacaoCNH(m) {
+      var sit = calcularSituacaoCNH(m.validade_cnh);
+      var classe = 'badge-secondary';
+      if (sit.codigo === 'ok') classe = 'badge-cnh-ok';
+      if (sit.codigo === 'perto') classe = 'badge-cnh-perto';
+      if (sit.codigo === 'vencida') classe = 'badge-cnh-vencida';
+
+      var cat = m.categoria_cnh ? 'Cat. ' + m.categoria_cnh : '';
+      var validade = m.validade_cnh ? ' até ' + moment(m.validade_cnh).format('DD/MM/YYYY') : '';
+      return '<span class="badge ' + classe + '">' + sit.rotulo + (cat ? ' | ' + cat : '') + validade + '</span>';
+    }
+
+    function docsPendentes(m) {
+      // backend pode enviar booleanos ou URLs; aqui consideramos pendente quando não há url
+      var pend = 0;
+      if (!m.arquivo_cnh_url) pend++; return pend;
+    }
+
+    function atualizarResumo() {
+      var total = itens.length;
+      var ativos = itens.filter(function (m) { return m.status === 'ativo'; }).length;
+      var cnhPerto = itens.filter(function (m) { return calcularSituacaoCNH(m.validade_cnh).codigo === 'perto'; }).length;
+      var docsPend = itens.reduce(function (acc, m) { return acc + docsPendentes(m); }, 0);
+
+      $('#resumo-total').text(total);
+      $('#resumo-ativos').text(ativos);
+      $('#resumo-cnh-perto').text(cnhPerto);
+      $('#resumo-docs-pendentes').text(docsPend);
+    }
+
+    function atualizarPaginacao() {
+      var ul = document.getElementById('paginacao');
+      if (!ul) return;
+
+      ul.innerHTML = '';
+
+      var liPrev = document.createElement('li');
+      liPrev.className = 'page-item' + (paginaAtual <= 1 ? ' disabled' : '');
+      var aPrev = document.createElement('a');
+      aPrev.className = 'page-link';
+      aPrev.href = '#';
+      aPrev.textContent = 'Anterior';
+      aPrev.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (paginaAtual > 1) { paginaAtual -= 1; renderizarTabela(); }
+      });
+      liPrev.appendChild(aPrev);
+      ul.appendChild(liPrev);
+
+      var liInfo = document.createElement('li');
+      liInfo.className = 'page-item disabled';
+      var aInfo = document.createElement('a');
+      aInfo.className = 'page-link';
+      aInfo.href = '#';
+      aInfo.textContent = paginaAtual + ' / ' + totalPaginas;
+      liInfo.appendChild(aInfo);
+      ul.appendChild(liInfo);
+
+      var liNext = document.createElement('li');
+      liNext.className = 'page-item' + (paginaAtual >= totalPaginas ? ' disabled' : '');
+      var aNext = document.createElement('a');
+      aNext.className = 'page-link';
+      aNext.href = '#';
+      aNext.textContent = 'Próxima';
+      aNext.addEventListener('click', function (e) {
+        e.preventDefault();
+        if (paginaAtual < totalPaginas) { paginaAtual += 1; renderizarTabela(); }
+      });
+      liNext.appendChild(aNext);
+      ul.appendChild(liNext);
+    }
+
+    function carregar() {
+      return fetch(apiBase)
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao buscar motoristas internos');
+          return resp.json();
+        })
+        .then(function (data) {
+          itens = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+          paginaAtual = 1;
+          renderizarTabela();
+          atualizarResumo();
+        })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de motoristas internos.');
+        });
+    }
+
+    function renderizarTabela() {
+      var tbody = document.getElementById('tbody');
+      if (!tbody) return;
+
+      var termo = ($('#search').val() || '').toLowerCase();
+      var filtroStatus = $('#filtro-status').val();
+      var filtroCnh = $('#filtro-cnh').val();
+
+      var filtrados = itens.filter(function (m) {
+        var textoBusca = [
+          m.nome || '',
+          m.cpf || ''
+        ].join(' ').toLowerCase();
+
+        if (termo && textoBusca.indexOf(termo) === -1) return false;
+        if (filtroStatus && m.status !== filtroStatus) return false;
+
+        if (filtroCnh) {
+          var sit = calcularSituacaoCNH(m.validade_cnh).codigo;
+          if (sit !== filtroCnh) return false;
+        }
+        return true;
+      });
+
+      totalPaginas = Math.max(1, Math.ceil(filtrados.length / tamanhoPagina));
+      if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+      if (paginaAtual < 1) paginaAtual = 1;
+
+      var inicio = (paginaAtual - 1) * tamanhoPagina;
+      var fim = inicio + tamanhoPagina;
+      var paginaItens = filtrados.slice(inicio, fim);
+
+      tbody.innerHTML = '';
+
+      paginaItens.forEach(function (m) {
+        var tr = document.createElement('tr');
+        tr.setAttribute('data-id', m.id);
+
+        tr.innerHTML = `
+          <td>${m.id || ''}</td>
+          <td>
+            <strong>${m.nome || ''}</strong>
+            ${m.telefone ? `<br><small class="text-muted">${m.telefone}</small>` : ''}
+          </td>
+          <td>${m.cpf || ''}</td>
+          <td>${badgeSituacaoCNH(m)}</td>
+<td>
+            ${m.arquivo_cnh_url ? `<a href="${m.arquivo_cnh_url}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>` : `<span class="text-muted">–</span>`}
+          </td>
+<td>
+            ${m.status === 'ativo' ? `<span class="badge badge-success">Ativo</span>` : `<span class="badge badge-secondary">Inativo</span>`}
+          </td>
+          <td>
+            <div class="dropdown">
+              <button class="btn btn-sm dropdown-toggle more-horizontal" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="text-muted sr-only">Ação</span>
+              </button>
+              <div class="dropdown-menu dropdown-menu-right">
+                <a class="dropdown-item action-editar" href="#" data-id="${m.id}">Ver / editar</a>
+                <a class="dropdown-item text-warning action-toggle-status" href="#" data-id="${m.id}">
+                  ${m.status === 'ativo' ? 'Desativar' : 'Ativar'}
+                </a>
+                <a class="dropdown-item text-danger action-excluir" href="#" data-id="${m.id}">Excluir</a>
+              </div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      atualizarPaginacao();
+    }
+
+    function limparForm() {
+      $('#motorista-id').val('');
+      $('#modalMotoristaInternoLabel').text('Novo motorista');
+
+      $('#motorista-nome').val('');
+      $('#motorista-cpf').val('');
+      $('#motorista-rg').val('');
+      $('#motorista-data-nascimento').val('');
+      $('#motorista-telefone').val('');
+      $('#motorista-email').val('');
+      $('#motorista-endereco').val('');
+      $('#motorista-bairro').val('');
+      $('#motorista-cidade').val('');
+      $('#motorista-uf').val('');
+      $('#motorista-cep').val('');
+
+      $('#motorista-numero-cnh').val('');
+      $('#motorista-categoria-cnh').val('');
+      $('#motorista-validade-cnh').val('');
+      $('#motorista-orgao-cnh').val('');
+      $('#motorista-status').val('ativo');
+
+
+      $('#arquivo-cnh').val('');
+      $('#arquivo-comprovante').val('');
+      $('#arquivo-outro').val('');
+
+      $('#cnh-arquivo-atual').empty();
+      $('#comprovante-arquivo-atual').empty();
+      $('#outro-arquivo-atual').empty();
+    }
+
+    function preencherForm(d) {
+      d = d || {};
+      $('#motorista-id').val(d.id || '');
+      $('#modalMotoristaInternoLabel').text('Editar motorista #' + (d.id || ''));
+
+      $('#motorista-nome').val(d.nome || '');
+      $('#motorista-cpf').val(d.cpf || '');
+      $('#motorista-rg').val(d.rg || '');
+      $('#motorista-data-nascimento').val(d.data_nascimento || '');
+      $('#motorista-telefone').val(d.telefone || '');
+      $('#motorista-email').val(d.email || '');
+      $('#motorista-endereco').val(d.endereco || '');
+      $('#motorista-bairro').val(d.bairro || '');
+      $('#motorista-cidade').val(d.cidade || '');
+      $('#motorista-uf').val(d.uf || '');
+      $('#motorista-cep').val(d.cep || '');
+
+      $('#motorista-numero-cnh').val(d.numero_cnh || '');
+      $('#motorista-categoria-cnh').val(d.categoria_cnh || '');
+      $('#motorista-validade-cnh').val(d.validade_cnh || '');
+      $('#motorista-orgao-cnh').val(d.orgao_emissor_cnh || '');
+      $('#motorista-status').val(d.status || 'ativo');
+
+
+      $('#arquivo-cnh').val('');
+      $('#arquivo-comprovante').val('');
+      $('#arquivo-outro').val('');
+
+      if (d.arquivo_cnh_url) $('#cnh-arquivo-atual').html('Arquivo atual: <a href="' + d.arquivo_cnh_url + '" target="_blank">ver CNH</a>');
+      else $('#cnh-arquivo-atual').empty();
+
+
+      if (d.arquivo_comprovante_url) $('#comprovante-arquivo-atual').html('Arquivo atual: <a href="' + d.arquivo_comprovante_url + '" target="_blank">ver comprovante</a>');
+      else $('#comprovante-arquivo-atual').empty();
+
+      if (d.arquivo_outro_url) $('#outro-arquivo-atual').html('Arquivo atual: <a href="' + d.arquivo_outro_url + '" target="_blank">ver anexo</a>');
+      else $('#outro-arquivo-atual').empty();
+    }
+
+    function abrirModalNovo() {
+      limparForm();
+      $('#modal-motorista-interno').modal('show');
+    }
+
+    function abrirModalEditar(id) {
+      fetch(apiBase + '/' + id)
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao buscar motorista');
+          return resp.json();
+        })
+        .then(function (dados) {
+          limparForm();
+          preencherForm(dados || {});
+          $('#modal-motorista-interno').modal('show');
+        })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Não foi possível carregar os dados do motorista.');
+        });
+    }
+
+    function salvarMotorista(e) {
+      e.preventDefault();
+
+      var nome = $('#motorista-nome').val().trim();
+      var cpf = $('#motorista-cpf').val().trim();
+      var numeroCnh = $('#motorista-numero-cnh').val().trim();
+      var categoriaCnh = $('#motorista-categoria-cnh').val();
+      var validadeCnh = $('#motorista-validade-cnh').val();
+
+      if (!nome || !cpf || !numeroCnh || !categoriaCnh || !validadeCnh) {
+        mostrarMensagemSistema('Dados incompletos', 'Preencha pelo menos: nome, CPF, dados obrigatórios da CNH e documentos pessoais.');
+        return;
+      }
+
+      var id = $('#motorista-id').val() || null;
+
+      var payload = {
+        nome: nome,
+        cpf: cpf,
+        rg: $('#motorista-rg').val().trim() || null,
+        data_nascimento: $('#motorista-data-nascimento').val() || null,
+        telefone: $('#motorista-telefone').val().trim() || null,
+        email: $('#motorista-email').val().trim() || null,
+        endereco: $('#motorista-endereco').val().trim() || null,
+        bairro: $('#motorista-bairro').val().trim() || null,
+        cidade: $('#motorista-cidade').val().trim() || null,
+        uf: $('#motorista-uf').val().trim() || null,
+        cep: $('#motorista-cep').val().trim() || null,
+
+        numero_cnh: numeroCnh,
+        categoria_cnh: categoriaCnh,
+        validade_cnh: validadeCnh,
+        orgao_emissor_cnh: $('#motorista-orgao-cnh').val().trim() || null,
+        status: $('#motorista-status').val(),
+      };
+
+      var formData = new FormData();
+      formData.append('dados', JSON.stringify(payload));
+
+      var fCnh = document.getElementById('arquivo-cnh');
+      if (fCnh && fCnh.files && fCnh.files[0]) formData.append('arquivo_cnh', fCnh.files[0]);
+      var fComp = document.getElementById('arquivo-comprovante');
+      if (fComp && fComp.files && fComp.files[0]) formData.append('arquivo_comprovante', fComp.files[0]);
+
+      var fOutro = document.getElementById('arquivo-outro');
+      if (fOutro && fOutro.files && fOutro.files[0]) formData.append('arquivo_outro', fOutro.files[0]);
+
+      var method = id ? 'PUT' : 'POST';
+      var url = apiBase + (id ? '/' + id : '');
+
+      fetch(url, { method: method, body: formData })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao salvar motorista');
+          return resp.json().catch(function () { return {}; });
+        })
+        .then(function () {
+          $('#modal-motorista-interno').modal('hide');
+          return carregar();
+        })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Erro ao salvar os dados do motorista.');
+        });
+    }
+
+    function alterarStatus(id, novoStatus) {
+      fetch(apiBase + '/' + id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: novoStatus })
+      })
+        .then(function (resp) {
+          if (!resp.ok) throw new Error('Erro ao alterar status');
+          return resp.json().catch(function () { return {}; });
+        })
+        .then(function () { carregar(); })
+        .catch(function (err) {
+          console.error(err);
+          mostrarMensagemSistema('Erro', 'Erro ao alterar status do motorista.');
+        });
+    }
+
+    function excluir(id) {
+      confirmarAcaoSistema('Excluir motorista', 'Deseja realmente excluir este motorista? Esta ação não poderá ser desfeita.', 'Excluir')
+        .then(function (confirmado) {
+          if (!confirmado) return;
+          fetch(apiBase + '/' + id, { method: 'DELETE' })
+            .then(function (resp) {
+              if (!resp.ok) throw new Error('Erro ao excluir motorista');
+              return resp.json().catch(function () { return {}; });
+            })
+            .then(function () { carregar(); })
+            .catch(function (err) {
+              console.error(err);
+              mostrarMensagemSistema('Erro', 'Erro ao excluir o motorista.');
+            });
+        });
+    }
+
+    $(document).ready(function () {
+      $('.input-cpf').mask('000.000.000-00', { placeholder: "___.___.___-__" });
+      $('.input-cep').mask('00000-000', { placeholder: "_____-___" });
+      $('.input-phone').mask('(00) 00000-0000', { placeholder: "(__) _____-____" });
+
+      carregar();
+
+      $('#search').on('input', function () { paginaAtual = 1; renderizarTabela(); });
+      $('#filtro-status, #filtro-cnh').on('change', function () { paginaAtual = 1; renderizarTabela(); });
+
+      $('#btn-novo').on('click', abrirModalNovo);
+      $('#form-motorista').on('submit', salvarMotorista);
+
+      $('#tbody').on('click', '.action-editar', function (e) {
+        e.preventDefault();
+        var id = parseInt($(this).data('id'), 10);
+        if (id) abrirModalEditar(id);
+      });
+
+      $('#tbody').on('click', '.action-toggle-status', function (e) {
+        e.preventDefault();
+        var id = parseInt($(this).data('id'), 10);
+        if (!id) return;
+        var item = itens.find(function (x) { return x.id === id; });
+        if (!item) return;
+
+        var novoStatus = item.status === 'ativo' ? 'inativo' : 'ativo';
+        var msg = novoStatus === 'inativo'
+          ? 'O motorista será marcado como inativo e não poderá ser alocado em novas demandas internas. Deseja continuar?'
+          : 'O motorista será reativado. Deseja continuar?';
+
+        confirmarAcaoSistema('Alterar status do motorista', msg, (novoStatus === 'inativo' ? 'Desativar' : 'Ativar'))
+          .then(function (ok) {
+            if (!ok) return;
+            alterarStatus(id, novoStatus);
+          });
+      });
+
+      $('#tbody').on('click', '.action-excluir', function (e) {
+        e.preventDefault();
+        var id = parseInt($(this).data('id'), 10);
+        if (id) excluir(id);
+      });
+    });
+  </script>
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-56159088-1');
+  </script>
+</body>
+
+</html>

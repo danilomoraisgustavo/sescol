@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Painel Escolar / Transporte">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Painel Escolar</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <!-- Leaflet CSS para o mapa de rotas -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        .small-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .kpi-value {
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
+
+        .kpi-sub {
+            font-size: .8rem;
+        }
+
+        .card-kpi {
+            cursor: default;
+        }
+
+        .table-sm th,
+        .table-sm td {
+            padding-top: .35rem;
+            padding-bottom: .35rem;
+        }
+
+        .badge-pill {
+            border-radius: 999px;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <!-- BOTÃO PARA FECHAR/ABRIR SIDEBAR -->
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+
+            <!-- PESQUISA GLOBAL -->
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+
+            <ul class="nav">
+                <!-- ALTERAR PARA MODO ESCURO/CLARO -->
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+
+                <!-- ATALHOS DO SISTEMA -->
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+
+                <!-- NOTIFICAÇÕES -->
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+
+                <!-- MENU DO USUÁRIO -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+
+                        <!-- TÍTULO E FILTROS -->
+                        <div class="d-flex align-items-center mb-3">
+                            <div>
+                                <h2 class="h4 mb-1">Painel de Transporte Escolar</h2>
+                                <p class="text-muted mb-0">
+                                    Visão consolidada de alunos, pontos, rotas, frota e fornecedores do transporte
+                                    escolar.
+                                </p>
+                            </div>
+
+                            <div class="ml-auto">
+                                <form class="form-inline">
+                                    <div class="form-group mr-2">
+                                        <label for="reportrange" class="sr-only">Período</label>
+                                        <div id="reportrange"
+                                            class="px-3 py-2 text-muted border rounded bg-dark d-flex align-items-center">
+                                            <i class="fe fe-calendar fe-16 mr-2"></i>
+                                            <span class="small">Carregando...</span>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        id="btn-dashboard-atualizar">
+                                        <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- KPIs PRINCIPAIS (ALUNOS / ROTAS / PONTOS / FROTA) -->
+                        <div class="row mb-3">
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Alunos matriculados</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-total-alunos">0</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub" id="kpi-total-alunos-sub">
+                                            —
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Alunos aptos ao transporte</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-alunos-apto">0</span>
+                                            <span class="text-success small" id="kpi-alunos-apto-perc"></span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            <span id="kpi-alunos-apto-urbano">0</span> urbanos ·
+                                            <span id="kpi-alunos-apto-rural">0</span> rurais ·
+                                            <span id="kpi-alunos-sem-rota">0</span> sem rota
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Escolas e pontos atendidos</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-total-escolas">0</span>
+                                            <span class="small text-muted">escolas</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            <span id="kpi-total-pontos">0</span> pontos ativos ·
+                                            <span id="kpi-total-paradas-rotas">0</span> paradas em rotas
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Rotas e itinerários</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-total-rotas">0</span>
+                                            <span class="small text-muted">rotas</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            <span id="kpi-total-itinerarios">0</span> itinerários ·
+                                            <span id="kpi-rotas-superlotadas">0</span> superlotadas ·
+                                            <span id="kpi-rotas-sem-veiculo">0</span> sem veículo
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KPIs OPERACIONAIS (ZONAS / FROTA / PESSOAL / FORNECEDORES) -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Zoneamentos</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-total-zoneamentos">0</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            <span id="kpi-total-zoneamentos-urbano">0</span> urbanos ·
+                                            <span id="kpi-total-zoneamentos-rural">0</span> rurais
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Frota</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-total-veiculos">0</span>
+                                            <span class="small text-muted">veículos ativos</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            Capacidade: <span id="kpi-capacidade-frota">0</span> vagas ·
+                                            Ocupação: <span id="kpi-ocupacao-frota">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Motoristas & monitores</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-total-motoristas">0</span>
+                                            <span class="small text-muted">motoristas</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            <span id="kpi-total-monitores">0</span> monitores ativos
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow card-kpi">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Fornecedores</span>
+                                        <div class="d-flex align-items-baseline">
+                                            <span class="kpi-value mr-2" id="kpi-total-fornecedores">0</span>
+                                        </div>
+                                        <div class="text-muted kpi-sub">
+                                            <span id="kpi-total-garagens">0</span> garagens georreferenciadas
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GRÁFICOS PRINCIPAIS -->
+                        <div class="row my-3">
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="d-flex mb-2">
+                                            <div>
+                                                <span class="small-label d-block mb-1">Cobertura do transporte por
+                                                    zona</span>
+                                                <p class="mb-0 text-muted">
+                                                    Alunos aptos urbanos e rurais, comparando os que já possuem rota com
+                                                    os que ainda estão sem rota.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div id="chart-alunos-zona-rota" style="min-height: 280px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mapa de rotas escolares -->
+                            <div class="col-md-6 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="d-flex mb-2">
+                                            <div>
+                                                <span class="small-label d-block mb-1">Mapa de rotas escolares</span>
+                                                <p class="mb-0 text-muted">
+                                                    Visualização das rotas configuradas no sistema, por zona e status.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div id="map-rotas-escolares"
+                                            style="min-height: 280px; border-radius: 0.35rem;"></div>
+                                        <div class="mt-3">
+                                            <div class="d-flex flex-wrap align-items-center">
+                                                <div class="mr-3 mb-2">
+                                                    <span class="small-label d-block mb-1">Qualidade dos
+                                                        percursos</span>
+                                                    <span class="badge badge-pill badge-success mr-1">
+                                                        OK: <span id="kpi-rotas-com-trajeto">0</span>
+                                                    </span>
+                                                    <span class="badge badge-pill badge-danger mr-1">
+                                                        Sem percurso: <span id="kpi-rotas-sem-percurso">0</span>
+                                                    </span>
+                                                </div>
+
+                                                <div class="mr-3 mb-2">
+                                                    <span class="small-label d-block mb-1">Alertas de operação</span>
+                                                    <span class="badge badge-pill badge-warning mr-1">
+                                                        Sem veículo: <span id="kpi-rotas-alerta-sem-veiculo">0</span>
+                                                    </span>
+                                                    <span class="badge badge-pill badge-danger mr-1">
+                                                        Superlotadas: <span id="kpi-rotas-alerta-superlotadas">0</span>
+                                                    </span>
+                                                </div>
+
+                                                <div class="ml-auto mb-2">
+                                                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                                                        data-toggle="collapse" data-target="#collapseRotasAlertas"
+                                                        aria-expanded="false" aria-controls="collapseRotasAlertas">
+                                                        <span class="fe fe-alert-triangle fe-12 mr-1"></span>
+                                                        Ver alertas (<span id="kpi-rotas-alertas-total">0</span>)
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="collapse mt-2" id="collapseRotasAlertas">
+                                                <div class="card bg-dark border-0">
+                                                    <div class="card-body p-0">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-sm table-striped mb-0">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th style="width:70px;">Rota</th>
+                                                                        <th>Zona</th>
+                                                                        <th style="width:110px;">Alunos</th>
+                                                                        <th style="width:120px;">Capacidade</th>
+                                                                        <th style="width:140px;">Problemas</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody id="tabela-rotas-alertas-body">
+                                                                    <tr>
+                                                                        <td colspan="5"
+                                                                            class="text-center text-muted py-3">
+                                                                            Carregando alertas...
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted d-block mt-2">
+                                                    Dica: rotas “Sem percurso” não são desenhadas no mapa geral para
+                                                    evitar a maçaroca.
+                                                    Gere e salve o trajeto (Google) para elas aparecerem alinhadas às
+                                                    ruas.
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LINHA DE TEMPO E FROTA X DEMANDA -->
+                        <div class="row my-3">
+                            <div class="col-md-7 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="d-flex mb-2">
+                                            <div>
+                                                <span class="small-label d-block mb-1">Evolução de matrículas</span>
+                                                <p class="mb-0 text-muted">
+                                                    Alunos matriculados e aptos ao transporte por ano letivo.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div id="chart-alunos-ano" style="min-height: 260px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-5 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="d-flex mb-2">
+                                            <div>
+                                                <span class="small-label d-block mb-1">Capacidade da frota x
+                                                    demanda</span>
+                                                <p class="mb-0 text-muted">
+                                                    Comparativo de vagas disponíveis e alunos aptos.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div id="chart-frota-demanda" style="min-height: 260px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TABELA: ESCOLAS COM MAIOR DEMANDA -->
+                        <div class="row mb-5">
+                            <div class="col-md-12">
+                                <div class="d-flex mb-2 align-items-center">
+                                    <div>
+                                        <span class="small-label d-block mb-1">Escolas com maior demanda de
+                                            transporte</span>
+                                        <p class="mb-0 text-muted">
+                                            Ranking das escolas municipais por quantidade de alunos aptos ao transporte
+                                            escolar.
+                                        </p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                            id="btn-exportar-escolas">
+                                            <span class="fe fe-download fe-12 mr-1"></span>
+                                            Exportar CSV
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="card shadow">
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table
+                                                class="table table-sm table-striped table-hover mb-0 table-borderless">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width: 60px;">#</th>
+                                                        <th>Escola</th>
+                                                        <th style="width: 110px;">Alunos aptos</th>
+                                                        <th style="width: 140px;">Alunos / zona</th>
+                                                        <th style="width: 110px;">Pontos</th>
+                                                        <th style="width: 150px;">Zoneamentos</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tabela-escolas-demanda-body">
+                                                    <tr>
+                                                        <td colspan="6" class="text-center text-muted py-4">
+                                                            Carregando dados do painel...
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div> <!-- col-12 -->
+                </div> <!-- row -->
+            </div> <!-- container-fluid -->
+
+            <!-- MODAIS PADRÃO DO TEMPLATE -->
+            <div class="modal fade modal-notif modal-slide" tabindex="-1" role="dialog"
+                aria-labelledby="defaultModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-sm" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="defaultModalLabel">Notificações</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted mb-0">
+                                Em breve este painel exibirá avisos automáticos de documentos vencendo,
+                                rotas com superlotação e outros alertas operacionais.
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-block"
+                                data-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade modal-shortcut modal-slide" tabindex="-1" role="dialog"
+                aria-labelledby="defaultModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="defaultModalLabel">Atalhos</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body px-5">
+                            <div class="row align-items-center">
+                                <div class="col-6 text-center">
+                                    <div class="squircle bg-success justify-content-center">
+                                        <i class="fe fe-map fe-32 align-self-center text-white"></i>
+                                    </div>
+                                    <p>Zoneamentos</p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <div class="squircle bg-primary justify-content-center">
+                                        <i class="fe fe-users fe-32 align-self-center text-white"></i>
+                                    </div>
+                                    <p>Alunos</p>
+                                </div>
+                            </div>
+                            <div class="row align-items-center">
+                                <div class="col-6 text-center">
+                                    <div class="squircle bg-primary justify-content-center">
+                                        <i class="fe fe-truck fe-32 align-self-center text-white"></i>
+                                    </div>
+                                    <p>Rotas</p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <div class="squircle bg-primary justify-content-center">
+                                        <i class="fe fe-activity fe-32 align-self-center text-white"></i>
+                                    </div>
+                                    <p>Painel operacional</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main> <!-- main -->
+    </div> <!-- wrapper -->
+
+    <!-- Core JS -->
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <!-- ApexCharts para os gráficos do painel -->
+    <script src="../../js/apexcharts.min.js"></script>
+
+    <!-- Leaflet JS para o mapa de rotas -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // ==========================
+        // CONFIGURAÇÃO DO PERÍODO
+        // ==========================
+        var start = moment().startOf('year');
+        var end = moment().endOf('year');
+
+        function cb(start, end) {
+            $('#reportrange span').html(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+        }
+
+        $('#reportrange').daterangepicker({
+            startDate: start,
+            endDate: end,
+            locale: {
+                format: 'DD/MM/YYYY',
+                applyLabel: 'Aplicar',
+                cancelLabel: 'Cancelar',
+                daysOfWeek: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+                monthNames: [
+                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                ],
+                firstDay: 1
+            }
+        }, cb);
+        cb(start, end);
+
+        // ==========================
+        // INSTÂNCIAS DOS GRÁFICOS / MAPA
+        // ==========================
+        var chartAlunosZonaRota = null;
+        var chartAlunosAno = null;
+        var chartFrotaDemanda = null;
+
+        var mapaRotas = null;
+        var layerRotas = null;
+        var layerMarkers = null;
+        var selectedRotaLayer = null;
+
+        // ==========================
+        // CARREGAMENTO DO DASHBOARD
+        // ==========================
+        var apiDashboardEscolar = '/api/dashboard-escolar';
+        var apiRotasMapa = '/api/dashboard-escolar/rotas-mapa';
+
+        function getAuthToken() {
+            var raw =
+                localStorage.getItem('auth_token') ||
+                localStorage.getItem('access_token') ||
+                localStorage.getItem('token') ||
+                '';
+
+            raw = String(raw || '').trim();
+            if (!raw || raw === 'null' || raw === 'undefined') return '';
+
+            if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+                raw = raw.slice(1, -1).trim();
+            }
+
+            if (raw.toLowerCase().startsWith('bearer ')) {
+                raw = raw.slice(7).trim();
+            }
+
+            return raw;
+        }
+
+        function apiFetch(url, options) {
+            var token = getAuthToken();
+            var opts = options || {};
+
+            if (opts.credentials == null) opts.credentials = 'include';
+
+            opts.headers = Object.assign({}, opts.headers || {});
+            if (token) {
+                opts.headers['Authorization'] = 'Bearer ' + token;
+            }
+
+            return fetch(url, opts).then(function (resp) {
+                if (resp.status === 401) {
+                    try {
+                        localStorage.removeItem('auth_token');
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('token');
+                    } catch (e) { }
+                    throw new Error('Unauthorized');
+                }
+                return resp;
+            });
+        }
+
+        function carregarDashboard() {
+            var drp = $('#reportrange').data('daterangepicker');
+            var params = new URLSearchParams();
+            if (drp) {
+                params.set('inicio', drp.startDate.format('YYYY-MM-DD'));
+                params.set('fim', drp.endDate.format('YYYY-MM-DD'));
+            }
+
+            $('#tabela-escolas-demanda-body').html(
+                '<tr><td colspan="6" class="text-center text-muted py-4">Carregando dados do painel...</td></tr>'
+            );
+
+            apiFetch(apiDashboardEscolar + '?' + params.toString())
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar o painel');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    atualizarKPIs(data.resumo || {});
+                    atualizarTabelaEscolas(data.escolas_demanda || []);
+                    atualizarGraficos(data);
+                    atualizarAlertas(data.rotas_alertas || [], data.resumo || {});
+                    carregarMapaRotas(); // integra mapa ao fluxo
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    $('#tabela-escolas-demanda-body').html(
+                        '<tr><td colspan="6" class="text-center text-danger py-4">Erro ao carregar o painel.</td></tr>'
+                    );
+                });
+        }
+
+        // ==========================
+        // KPIs
+        // ==========================
+        function atualizarKPIs(r) {
+            var totalAlunos = r.total_alunos || 0;
+            var totalApto = r.total_alunos_apto || 0;
+
+            $('#kpi-total-alunos').text(totalAlunos);
+            if (totalAlunos > 0) {
+                var perc = ((totalApto / totalAlunos) * 100).toFixed(1);
+                $('#kpi-total-alunos-sub').text(
+                    totalApto + ' alunos aptos (' + perc + '%) do total matriculado'
+                );
+                $('#kpi-alunos-apto-perc').text(perc + '%');
+            } else {
+                $('#kpi-total-alunos-sub').text('Nenhum aluno cadastrado no período selecionado.');
+                $('#kpi-alunos-apto-perc').text('');
+            }
+
+            $('#kpi-alunos-apto').text(totalApto);
+            $('#kpi-alunos-apto-urbano').text(r.total_alunos_apto_urbano || 0);
+            $('#kpi-alunos-apto-rural').text(r.total_alunos_apto_rural || 0);
+            $('#kpi-alunos-sem-rota').text(r.alunos_sem_rota != null ? r.alunos_sem_rota : 0);
+
+            $('#kpi-total-escolas').text(r.total_escolas || 0);
+            $('#kpi-total-pontos').text(r.total_pontos_ativos || 0);
+            $('#kpi-total-paradas-rotas').text(r.total_paradas_rotas || 0);
+
+            $('#kpi-total-rotas').text(r.total_rotas || 0);
+            $('#kpi-total-itinerarios').text(r.total_itinerarios || 0);
+            $('#kpi-rotas-superlotadas').text(r.total_rotas_superlotadas || 0);
+            $('#kpi-rotas-sem-veiculo').text(r.total_rotas_sem_veiculo || 0);
+
+            $('#kpi-total-zoneamentos').text(r.total_zoneamentos || 0);
+            $('#kpi-total-zoneamentos-urbano').text(r.total_zoneamentos_urbana || 0);
+            $('#kpi-total-zoneamentos-rural').text(r.total_zoneamentos_rural || 0);
+
+            $('#kpi-total-veiculos').text(r.total_veiculos_ativos || 0);
+            $('#kpi-capacidade-frota').text(r.capacidade_frota_total || 0);
+            $('#kpi-ocupacao-frota').text(
+                r.taxa_ocupacao_frota != null ? (r.taxa_ocupacao_frota.toString() + '%') : '0%'
+            );
+
+            $('#kpi-total-motoristas').text(r.total_motoristas_ativos || 0);
+            $('#kpi-total-monitores').text(r.total_monitores_ativos || 0);
+
+            $('#kpi-total-fornecedores').text(r.total_fornecedores_ativos || 0);
+            $('#kpi-total-garagens').text(r.total_garagens_georreferenciadas || 0);
+        }
+
+
+        // ==========================
+        // ALERTAS DE ROTAS (QUALIDADE / OPERAÇÃO)
+        // ==========================
+        function atualizarAlertas(lista, resumo) {
+            lista = lista || [];
+            resumo = resumo || {};
+
+            // contadores
+            $('#kpi-rotas-com-trajeto').text(resumo.rotas_com_trajeto_ok || 0);
+            $('#kpi-rotas-sem-percurso').text(resumo.rotas_sem_registro_percurso || 0);
+            $('#kpi-rotas-alertas-total').text(lista.length);
+
+            var semVeiculo = 0;
+            var superlotadas = 0;
+
+            lista.forEach(function (r) {
+                if (r.veiculo_id == null) semVeiculo++;
+                if (r.superlotada) superlotadas++;
+            });
+
+            $('#kpi-rotas-alerta-sem-veiculo').text(semVeiculo);
+            $('#kpi-rotas-alerta-superlotadas').text(superlotadas);
+
+            // tabela
+            var tbody = $('#tabela-rotas-alertas-body');
+            tbody.empty();
+
+            if (!lista.length) {
+                tbody.html(
+                    '<tr><td colspan="5" class="text-center text-muted py-3">Nenhum alerta encontrado.</td></tr>'
+                );
+                return;
+            }
+
+            lista.forEach(function (r) {
+                var problemas = [];
+                if (r.sem_registro_percurso) problemas.push('Sem percurso');
+                if (r.com_registro_sem_trajeto) problemas.push('Percurso inválido');
+                if (r.veiculo_id == null) problemas.push('Sem veículo');
+                if (r.superlotada) problemas.push('Superlotada' + (r.superlotada_turnos ? ' (' + r.superlotada_turnos + ')' : ''));
+
+                var badges = problemas.map(function (p) {
+                    var cls = 'badge badge-pill badge-secondary mr-1';
+                    if (p === 'Sem percurso' || p === 'Percurso inválido') cls = 'badge badge-pill badge-danger mr-1';
+                    if (p === 'Sem veículo') cls = 'badge badge-pill badge-warning mr-1';
+                    if (p === 'Superlotada') cls = 'badge badge-pill badge-danger mr-1';
+                    return '<span class="' + cls + '">' + p + '</span>';
+                }).join('');
+
+                var cap = r.capacidade || 0;
+                var pico = (r.pico_por_turno != null ? r.pico_por_turno : (r.total_alunos || 0));
+                var detalheTurnos = '';
+                if (r.alunos_manha != null || r.alunos_tarde != null || r.alunos_noite != null || r.alunos_integral != null) {
+                    detalheTurnos = '<div class="text-muted" style="font-size:.78rem;">' +
+                        'M: ' + (r.alunos_manha || 0) + ' · ' +
+                        'T: ' + (r.alunos_tarde || 0) + ' · ' +
+                        'N: ' + (r.alunos_noite || 0) + ' · ' +
+                        'I: ' + (r.alunos_integral || 0) +
+                        '</div>';
+                }
+
+                var tr = $('<tr>');
+                tr.append($('<td>').html('<strong>' + (r.nome || ('#' + r.id)) + '</strong>'));
+                tr.append($('<td>').text(r.zona || 'nd'));
+                tr.append($('<td>').html('<strong>' + pico + '</strong>' + detalheTurnos));
+                tr.append($('<td>').text(cap ? cap : '—'));
+                tr.append($('<td>').html(badges || '<span class="text-muted">—</span>'));
+                tbody.append(tr);
+            });
+        }
+
+        // ==========================
+        // TABELA DE ESCOLAS
+        // ==========================
+        var cacheEscolasDemanda = [];
+
+        function atualizarTabelaEscolas(lista) {
+            cacheEscolasDemanda = lista || [];
+            var tbody = $('#tabela-escolas-demanda-body');
+            tbody.empty();
+
+            if (!lista || !lista.length) {
+                tbody.html(
+                    '<tr><td colspan="6" class="text-center text-muted py-4">Nenhuma escola com alunos aptos ao transporte no período selecionado.</td></tr>'
+                );
+                return;
+            }
+
+            lista.forEach(function (esc, idx) {
+                var tr = $('<tr>');
+                tr.append($('<td>').text(idx + 1));
+                tr.append($('<td>').html('<strong>' + (esc.escola_nome || 'Escola #' + esc.escola_id) + '</strong>'));
+                tr.append($('<td>').text(esc.total_apto || 0));
+
+                var zonaHtml =
+                    '<span class="badge badge-pill badge-info mr-1">Urb: ' + (esc.apto_urbano || 0) + '</span>' +
+                    '<span class="badge badge-pill badge-warning">Rur: ' + (esc.apto_rural || 0) + '</span>';
+                tr.append($('<td>').html(zonaHtml));
+
+                tr.append($('<td>').text(esc.total_pontos || 0));
+
+                var z = esc.total_zoneamentos || 0;
+                tr.append($('<td>').html(
+                    z
+                        ? '<span class="badge badge-light">' + z + ' zoneamento(s)</span>'
+                        : '<span class="text-muted">Não vinculado</span>'
+                ));
+
+                tbody.append(tr);
+            });
+        }
+
+        // ==========================
+        // GRÁFICOS
+        // ==========================
+        function atualizarGraficos(data) {
+            atualizarGraficoZonaRota(data.alunos_por_zona_rota || []);
+            atualizarGraficoAlunosAno(data.alunos_por_ano || {});
+            atualizarGraficoFrotaDemanda(data.frota_demanda || {});
+        }
+
+        // Cobertura do transporte por zona – barras empilhadas (Com rota / Sem rota)
+        function atualizarGraficoZonaRota(lista) {
+            var zonas = ['Urbana', 'Rural'];
+            var seriesNomes = ['Com rota', 'Sem rota'];
+
+            var series = seriesNomes.map(function (nomeSerie) {
+                return {
+                    name: nomeSerie,
+                    data: zonas.map(function (zona) {
+                        var item = lista.find(function (l) {
+                            return l.zona === zona && l.situacao_rota === nomeSerie;
+                        });
+                        return item ? item.total : 0;
+                    })
+                };
+            });
+
+            var options = {
+                chart: {
+                    type: 'bar',
+                    height: 280,
+                    stacked: true,
+                    toolbar: { show: false },
+                    fontFamily: base.defaultFontFamily
+                },
+                colors: ['#1abc9c', '#e74c3c'], // com rota (verde), sem rota (vermelho)
+                plotOptions: {
+                    bar: {
+                        horizontal: false,
+                        columnWidth: '45%',
+                        borderRadius: 6
+                    }
+                },
+                grid: {
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    strokeDashArray: 3
+                },
+                dataLabels: { enabled: false },
+                series: series,
+                xaxis: {
+                    categories: zonas,
+                    labels: {
+                        style: {
+                            fontSize: '11px'
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function (val) { return parseInt(val, 10); }
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'left',
+                    markers: { radius: 10 }
+                },
+                tooltip: {
+                    theme: 'dark',
+                    y: {
+                        formatter: function (val) {
+                            return val + ' aluno(s)';
+                        }
+                    }
+                }
+            };
+
+            if (!chartAlunosZonaRota) {
+                chartAlunosZonaRota = new ApexCharts(
+                    document.querySelector('#chart-alunos-zona-rota'),
+                    options
+                );
+                chartAlunosZonaRota.render();
+            } else {
+                chartAlunosZonaRota.updateOptions(options, true, true);
+            }
+        }
+
+        // Evolução de matrículas – gráfico misto (coluna + linha)
+        function atualizarGraficoAlunosAno(info) {
+            var anos = info.anos || [];
+            var serieMat = info.total_matriculados || [];
+            var serieApto = info.total_apto_transporte || [];
+
+            var options = {
+                chart: {
+                    height: 260,
+                    type: 'line',
+                    stacked: false,
+                    toolbar: { show: false },
+                    fontFamily: base.defaultFontFamily
+                },
+                colors: ['#3498db', '#1abc9c'],
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    width: [0, 3],
+                    curve: 'smooth'
+                },
+                grid: {
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    strokeDashArray: 3
+                },
+                series: [
+                    {
+                        name: 'Matriculados',
+                        type: 'column',
+                        data: serieMat
+                    },
+                    {
+                        name: 'Aptos ao transporte',
+                        type: 'line',
+                        data: serieApto
+                    }
+                ],
+                xaxis: {
+                    categories: anos,
+                    title: { text: 'Ano letivo' },
+                    labels: {
+                        style: { fontSize: '11px' }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function (val) { return parseInt(val, 10); }
+                    }
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'left'
+                },
+                tooltip: {
+                    shared: true,
+                    theme: 'dark',
+                    y: {
+                        formatter: function (val) {
+                            return val + ' aluno(s)';
+                        }
+                    }
+                }
+            };
+
+            if (!chartAlunosAno) {
+                chartAlunosAno = new ApexCharts(
+                    document.querySelector('#chart-alunos-ano'),
+                    options
+                );
+                chartAlunosAno.render();
+            } else {
+                chartAlunosAno.updateOptions(options, true, true);
+            }
+        }
+
+        // Frota x demanda – barra horizontal empilhada (alunos aptos + vagas livres)
+        function atualizarGraficoFrotaDemanda(info) {
+            var capacidade = info.capacidade_total || 0;
+            var aptos = info.alunos_apto || 0;
+
+            var vagasLivres = 0;
+            if (capacidade > aptos) {
+                vagasLivres = capacidade - aptos;
+            }
+
+            var options = {
+                chart: {
+                    type: 'bar',
+                    height: 260,
+                    stacked: true,
+                    toolbar: { show: false },
+                    fontFamily: base.defaultFontFamily
+                },
+                colors: ['#e74c3c', '#2ecc71'],
+                plotOptions: {
+                    bar: {
+                        horizontal: true,
+                        barHeight: '40%',
+                        borderRadius: 6
+                    }
+                },
+                grid: {
+                    borderColor: 'rgba(255,255,255,0.06)',
+                    strokeDashArray: 3
+                },
+                series: [{
+                    name: 'Alunos aptos',
+                    data: [aptos]
+                }, {
+                    name: 'Vagas livres',
+                    data: [vagasLivres]
+                }],
+                xaxis: {
+                    categories: ['Frota de transporte'],
+                    labels: {
+                        formatter: function (val) { return parseInt(val, 10); }
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function (val) { return parseInt(val, 10); }
+                },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'left'
+                },
+                tooltip: {
+                    theme: 'dark',
+                    y: {
+                        formatter: function (val) {
+                            return val + ' vaga(s) / aluno(s)';
+                        }
+                    }
+                }
+            };
+
+            if (!chartFrotaDemanda) {
+                chartFrotaDemanda = new ApexCharts(
+                    document.querySelector('#chart-frota-demanda'),
+                    options
+                );
+                chartFrotaDemanda.render();
+            } else {
+                chartFrotaDemanda.updateOptions(options, true, true);
+            }
+        }
+
+        // ==========================
+        // MAPA DE ROTAS ESCOLARES (LEAFLET)
+        // ==========================
+        function initMapaRotas() {
+            if (mapaRotas) return;
+
+            mapaRotas = L.map('map-rotas-escolares', {
+                zoomControl: true
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(mapaRotas);
+
+            // Posição inicial; depois será ajustada pelas rotas
+            mapaRotas.setView([0, 0], 2);
+        }
+
+        function carregarMapaRotas() {
+            initMapaRotas();
+
+            var drp = $('#reportrange').data('daterangepicker');
+            var params = new URLSearchParams();
+            if (drp) {
+                params.set('inicio', drp.startDate.format('YYYY-MM-DD'));
+                params.set('fim', drp.endDate.format('YYYY-MM-DD'));
+            }
+
+            apiFetch(apiRotasMapa + '?' + params.toString())
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar rotas do mapa');
+                    return resp.json();
+                })
+                .then(function (geojson) {
+                    if (!geojson || !geojson.features || !geojson.features.length) {
+                        if (layerRotas) {
+                            mapaRotas.removeLayer(layerRotas);
+                            layerRotas = null;
+                        }
+                        return;
+                    }
+
+                    if (layerRotas) {
+                        mapaRotas.removeLayer(layerRotas);
+                    }
+
+                    if (layerMarkers) {
+                        mapaRotas.removeLayer(layerMarkers);
+                        layerMarkers = null;
+                    }
+                    selectedRotaLayer = null;
+
+                    layerRotas = L.geoJSON(geojson, {
+                        onEachFeature: function (feature, layer) {
+                            layer.on('click', function () {
+                                // reset estilo do selecionado anterior
+                                if (selectedRotaLayer) {
+                                    layerRotas.resetStyle(selectedRotaLayer);
+                                }
+                                selectedRotaLayer = layer;
+
+                                // destaca rota selecionada
+                                layer.setStyle({ weight: 6, opacity: 1 });
+
+                                // limpa e adiciona marcadores de origem/destino (se existirem)
+                                if (layerMarkers) {
+                                    mapaRotas.removeLayer(layerMarkers);
+                                }
+                                layerMarkers = L.layerGroup().addTo(mapaRotas);
+
+                                var p = (feature && feature.properties) ? feature.properties : {};
+                                function addPointMarker(geo, label) {
+                                    if (!geo || !geo.type || geo.type !== 'Point' || !geo.coordinates) return;
+                                    var lat = geo.coordinates[1];
+                                    var lng = geo.coordinates[0];
+                                    var m = L.marker([lat, lng]);
+                                    if (label) m.bindTooltip(label, { direction: 'top', offset: [0, -10] });
+                                    m.addTo(layerMarkers);
+                                }
+
+                                addPointMarker(p.origem, 'Origem');
+                                addPointMarker(p.destino, 'Destino');
+
+                                // ajusta a visão para a rota
+                                try {
+                                    var b = layer.getBounds();
+                                    if (b && b.isValid()) {
+                                        mapaRotas.fitBounds(b, { padding: [20, 20] });
+                                    }
+                                } catch (e) { }
+
+                                // popup com detalhes
+                                var nome = p.nome || ('Rota ' + (p.id || ''));
+                                var cap = p.capacidade || 0;
+                                var pico = (p.pico_por_turno != null ? p.pico_por_turno : (p.total_alunos || 0));
+
+                                var html = '<strong>' + nome + '</strong>';
+                                html += '<br/>Pico por turno: ' + pico;
+                                if (cap) html += ' / Cap.: ' + cap;
+                                if (p.total_alunos_dia != null) html += '<br/>Total no dia: ' + p.total_alunos_dia;
+
+                                if (p.alunos_manha != null || p.alunos_tarde != null || p.alunos_noite != null || p.alunos_integral != null) {
+                                    html += '<br/><span class="text-muted">M: ' + (p.alunos_manha || 0)
+                                        + ' · T: ' + (p.alunos_tarde || 0)
+                                        + ' · N: ' + (p.alunos_noite || 0)
+                                        + ' · I: ' + (p.alunos_integral || 0)
+                                        + '</span>';
+                                }
+
+                                if (p.zona) html += '<br/>Zona: ' + p.zona;
+                                if (p.status) html += '<br/>Status: ' + p.status;
+
+                                if (p.distancia_m || p.duracao_seg) {
+                                    var km = p.distancia_m ? (p.distancia_m / 1000).toFixed(1) : null;
+                                    var min = p.duracao_seg ? Math.round(p.duracao_seg / 60) : null;
+                                    if (km !== null) html += '<br/>Distância: ' + km + ' km';
+                                    if (min !== null) html += '<br/>Duração: ~' + min + ' min';
+                                }
+
+                                layer.bindPopup(html).openPopup();
+                            });
+                        },
+                        style: function (feature) {
+                            var props = feature.properties || {};
+                            var zona = (props.zona || '').toLowerCase();
+                            var status = (props.status || '').toLowerCase();
+
+                            // 1ª opção: cor enviada pelo backend
+                            var color = props.color || '#3498db';
+
+                            if (status && status !== 'ativo') {
+                                color = '#7f8c8d';
+                            }
+
+                            return {
+                                color: color,
+                                weight: 3,
+                                opacity: 0.9
+                            };
+                        }
+                    }).bindTooltip(function (layer) {
+                        var p = layer.feature.properties || {};
+                        var nome = p.nome || ('Rota ' + (p.id || ''));
+                        var alunos = p.total_alunos || 0;
+                        var cap = p.capacidade || 0;
+
+                        var texto = '<strong>' + nome + '</strong>';
+                        texto += '<br/>Alunos: ' + alunos;
+                        if (cap) {
+                            texto += ' / Cap.: ' + cap;
+                        }
+                        if (p.zona) {
+                            texto += '<br/>Zona: ' + p.zona;
+                        }
+                        if (p.status) {
+                            texto += '<br/>Status: ' + p.status;
+                        }
+
+                        if (p.distancia_m || p.duracao_seg) {
+                            var km = p.distancia_m ? (p.distancia_m / 1000).toFixed(1) : null;
+                            var min = p.duracao_seg ? Math.round(p.duracao_seg / 60) : null;
+
+                            if (km !== null) {
+                                texto += '<br/>Distância: ' + km + ' km';
+                            }
+                            if (min !== null) {
+                                texto += '<br/>Duração: ~' + min + ' min';
+                            }
+                        }
+
+                        return texto;
+                    }).addTo(mapaRotas);
+
+                    try {
+                        var bounds = layerRotas.getBounds();
+                        if (bounds.isValid()) {
+                            mapaRotas.fitBounds(bounds, { padding: [20, 20] });
+                        }
+                    } catch (e) {
+                        console.warn('Não foi possível ajustar bounds do mapa:', e);
+                    }
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+        }
+
+        // ==========================
+        // EXPORT CSV ESCOLAS
+        // ==========================
+        function exportarEscolasCSV() {
+            if (!cacheEscolasDemanda || !cacheEscolasDemanda.length) return;
+
+            var linhas = [];
+            linhas.push([
+                'Posição',
+                'Escola',
+                'Total aptos',
+                'Aptos urbanos',
+                'Aptos rurais',
+                'Total pontos',
+                'Total zoneamentos'
+            ].join(';'));
+
+            cacheEscolasDemanda.forEach(function (e, idx) {
+                linhas.push([
+                    idx + 1,
+                    '"' + (e.escola_nome || '').replace(/"/g, '""') + '"',
+                    e.total_apto || 0,
+                    e.apto_urbano || 0,
+                    e.apto_rural || 0,
+                    e.total_pontos || 0,
+                    e.total_zoneamentos || 0
+                ].join(';'));
+            });
+
+            var blob = new Blob([linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'escolas_demanda_transporte.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==========================
+        // READY
+        // ==========================
+        $(document).ready(function () {
+            $('#btn-dashboard-atualizar').on('click', function () {
+                carregarDashboard();
+            });
+
+            $('#reportrange').on('apply.daterangepicker', function () {
+                carregarDashboard();
+            });
+
+            $('#btn-exportar-escolas').on('click', exportarEscolasCSV);
+
+            // Primeiro carregamento
+            carregarDashboard();
+        });
+    </script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+</body>
+
+</html>

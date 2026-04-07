@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="light">
+
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Políticas de Privacidade – SETRANE Express Driver Admin</title>
+  <meta content="width=device-width, initial-scale=1.0, shrink-to-fit=no" name="viewport" />
+  <link rel="icon" href="../../assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+
+  <!-- Fonts e icons -->
+  <script src="../../assets/js/plugin/webfont/webfont.min.js"></script>
+  <script>
+    WebFont.load({
+      google: { families: ["Public Sans:300,400,500,600,700"] },
+      custom: {
+        families: [
+          "Font Awesome 5 Solid",
+          "Font Awesome 5 Regular",
+          "Font Awesome 5 Brands",
+          "simple-line-icons"
+        ],
+        urls: ["../../assets/css/fonts.min.css"]
+      },
+      active: function () { sessionStorage.fonts = true; }
+    });
+  </script>
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="../../assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="../../assets/css/plugins.min.css">
+  <link rel="stylesheet" href="../../assets/css/pydenadmin.min.css">
+  <link rel="stylesheet" href="../../assets/css/demo.css">
+</head>
+
+<body>
+  <div class="wrapper">
+    <!-- SIDEBAR -->
+    <div class="sidebar" data-background-color="dark">
+      <div class="sidebar-logo">
+        <div class="logo-header" data-background-color="dark">
+          <a href="#" class="logo">
+            <img src="../../assets/img/pydenadmin/logo_light.png" alt="logo" class="navbar-brand" height="48" />
+          </a>
+          <div class="nav-toggle">
+            <button class="btn btn-toggle toggle-sidebar"><i class="gg-menu-right"></i></button>
+            <button class="btn btn-toggle sidenav-toggler"><i class="gg-menu-left"></i></button>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-wrapper scrollbar scrollbar-inner">
+        <div class="sidebar-content">
+          <ul class="nav nav-secondary">
+            <li class="nav-item">
+              <a href="/" class="nav-link"><i class="fas fa-home"></i> Página Inicial</a>
+            </li>
+            <li class="nav-item active">
+              <a href="#" class="nav-link"><i class="fas fa-user-secret"></i> Políticas de Privacidade</a>
+            </li>
+            <li class="nav-item">
+              <a href="/termos-de-uso" class="nav-link"><i class="fas fa-file-contract"></i> Termos de Uso</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <!-- END SIDEBAR -->
+
+    <div class="main-panel">
+      <!-- HEADER -->
+      <div class="main-header" style="top: 0;">
+        <div class="main-header-logo">
+          <div class="logo-header" data-background-color="dark">
+            <a href="#" class="logo">
+              <img src="../../assets/img/pydenadmin/logo_light.png" alt="logo" class="navbar-brand" height="48" />
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTEÚDO PRINCIPAL -->
+      <div class="container">
+        <div class="page-inner py-4">
+          <h2 class="fw-bold mb-4">Políticas de Privacidade</h2>
+          <h4>1. Introdução</h4>
+          <p>A SETRANE Express está comprometida em proteger a privacidade e os dados pessoais de seus usuários. Esta
+            Política de Privacidade descreve como coletamos, utilizamos, armazenamos e compartilhamos informações dos
+            diferentes perfis de usuários de nosso sistema (incluindo motoristas, fornecedores, fiscais e
+            administradores), em conformidade com a Lei Geral de Proteção de Dados Pessoais (LGPD – Lei nº 13.709/2018)
+            e demais legislações aplicáveis. Ao utilizar os serviços do SETRANE Express – seja no painel web, aplicativo
+            móvel ou via API – você concorda com os termos desta Política de Privacidade.</p>
+
+          <h4>2. Escopo e Aplicabilidade</h4>
+          <p>Esta Política de Privacidade se aplica a todos os usuários e participantes do sistema SETRANE Express,
+            abrangendo: (i) motoristas cadastrados na plataforma, (ii) fiscais (inspetores) que realizam atividades de
+            auditoria ou verificação, (iii) fornecedores/parceiros que utilizam o sistema para ofertar serviços ou
+            produtos, e (iv) usuários administradores do sistema. Ela cobre a coleta e o uso de dados pessoais em todos
+            os meios de interação com o SETRANE Express, incluindo o portal web administrativo, o aplicativo móvel e
+            quaisquer integrações via serviços de API. Nosso objetivo é garantir que, independentemente do meio de
+            acesso, seus dados pessoais sejam tratados com segurança, respeito e em conformidade com esta política.</p>
+
+          <h4>3. Dados Coletados e Tratados</h4>
+          <p>Coletamos e tratamos diversos tipos de dados pessoais para viabilizar as funcionalidades do SETRANE
+            Express.
+            Esses dados podem variar de acordo com o perfil de usuário, mas de forma geral incluem:</p>
+
+          <ul>
+            <li><strong>Dados de Identificação Pessoal:</strong> nome completo, CPF/CNPJ, RG, data de nascimento,
+              endereço, telefone, e-mail, e outras informações de contato. Esses dados são coletados no cadastro de
+              motoristas, fornecedores, fiscais e administradores para identificar o usuário de forma única e permitir
+              comunicações.</li>
+
+            <li><strong>Documentos e Dados Legais:</strong> cópias ou números de documentos oficiais (por exemplo: CNH –
+              Carteira Nacional de Habilitação para motoristas, documentos de identidade, comprovante de endereço,
+              contratos sociais no caso de fornecedores empresariais) e certidões ou antecedentes necessários. Também
+              podemos armazenar termos de consentimento assinados, contratos e registros legais pertinentes à relação do
+              usuário com a plataforma.</li>
+
+            <li><strong>Dados Veiculares:</strong> informações sobre veículos de motoristas (como placa, modelo, ano,
+              cor, número do RENAVAM e documentos do veículo) necessários para cadastro e operação dos motoristas na
+              plataforma. Esses dados garantem a regularidade e identificação dos veículos utilizados nos serviços.</li>
+
+            <li><strong>Dados de Localização:</strong> dados de geolocalização coletados durante o uso do aplicativo
+              pelos motoristas (e possivelmente fiscais), como coordenadas GPS em tempo real, rotas percorridas,
+              horários e locais de partidas e chegadas. A localização é utilizada para monitoramento de rotas, logística
+              das entregas/serviços e segurança das operações em tempo real.</li>
+
+            <li><strong>Logs e Registros de Atividade:</strong> registramos automaticamente eventos e atividades no
+              sistema, tais como data e hora de acessos, endereços IP de conexão, ações realizadas no painel ou
+              aplicativo (por exemplo, criação ou edição de cadastros, envio de formulários, geração de relatórios,
+              login e logout). Esses logs são associados aos perfis (motorista, fornecedor, fiscal, administrador) e
+              servem para fins de auditoria, monitoramento de segurança, solução de problemas e melhoria da plataforma.
+            </li>
+
+            <li><strong>Dados Financeiros:</strong> informações financeiras necessárias para as transações dentro da
+              plataforma. Por exemplo, dados bancários de motoristas e fornecedores (para processamento de pagamentos,
+              repasses ou cobrança de comissões), histórico de pagamentos e recebimentos, valores de corridas/entregas
+              ou serviços realizados, notas fiscais emitidas, etc. Se o sistema realizar pagamentos ou cobranças,
+              podemos armazenar dados como agência e conta bancária, PIX, CNPJ/CPF para faturamento e quaisquer outras
+              informações financeiras estritamente necessárias.</li>
+
+            <li><strong>Credenciais de Acesso:</strong> dados de autenticação como nome de usuário, IDs de usuário e
+              senhas (armazenadas de forma criptografada). Também mantemos tokens de sessão ou identificadores de sessão
+              ativa para gerenciar o login no sistema. Essas credenciais garantem que somente usuários autorizados
+              acessem áreas restritas conforme seu perfil (motorista, fiscal, fornecedor ou administrador).</li>
+
+            <li><strong>Outros Dados Necessários:</strong> quaisquer outros dados pessoais fornecidos voluntariamente
+              pelo usuário ou necessários para funcionalidades específicas do SETRANE Express. Por exemplo, preferências
+              do usuário, fotos de perfil, feedbacks e comunicações feitas através do aplicativo. Sempre que novos dados
+              forem coletados, informaremos o usuário sobre a necessidade e a base legal, garantindo transparência no
+              tratamento.</li>
+          </ul>
+
+          <p>Todos os dados são coletados de forma informada e consentida pelo usuário quando do cadastro ou uso
+            contínuo da plataforma. Apenas solicitamos e armazenamos informações relevantes e necessárias para os fins
+            abaixo especificados.</p>
+
+          <h4>4. Finalidades do Uso dos Dados</h4>
+          <p>Os dados coletados são utilizados para diversas finalidades relacionadas ao funcionamento eficiente, seguro
+            e personalizado do SETRANE Express. As principais finalidades do tratamento de dados incluem:</p>
+
+          <ul>
+            <li><strong>Cadastro e Gestão de Usuários:</strong> utilizamos os dados de identificação e contato para
+              realizar o cadastro inicial de motoristas, fornecedores, fiscais e administradores, criar suas contas e
+              perfis, bem como para atualizar seus registros. Esses dados permitem reconhecer cada usuário, verificar
+              sua identidade (por exemplo, conferindo documentos fornecidos) e manter suas informações atualizadas.</li>
+
+            <li><strong>Autenticação e Controle de Acesso:</strong> os dados de credenciais (login e senha, tokens de
+              sessão) são empregados para autenticar usuários no sistema e garantir que cada perfil acesse apenas as
+              funcionalidades e informações permitidas. Por exemplo, administradores têm acesso ampliado em comparação a
+              motoristas. Mantemos sessões seguras para que você permaneça autenticado durante o uso, e utilizamos
+              controle de sessão para prevenir acessos não autorizados (incluindo logout automático após certo tempo de
+              inatividade, quando aplicável).</li>
+
+            <li><strong>Operacionalização dos Serviços:</strong> diversos dados (como localização, dados veiculares,
+              dados de contato) são empregados para viabilizar os serviços oferecidos pela plataforma. Por exemplo, a
+              localização do motorista pode ser usada para otimizar rotas de entregas ou transportes, enquanto dados de
+              fornecedores são usados para disponibilizar produtos/serviços no sistema. Os dados veiculares garantem que
+              somente veículos aprovados sejam usados. Informações de contato permitem comunicação entre as partes
+              envolvidas (ex: contato entre fornecedores e motoristas, ou envio de SMS/e-mails de confirmação para
+              usuários).</li>
+
+            <li><strong>Geração de Relatórios e Documentos:</strong> o SETRANE Express pode utilizar informações dos
+              usuários para gerar relatórios gerenciais, recibos, comprovantes, contratos ou outros documentos em
+              formatos como PDF ou DOCX. Por exemplo, um administrador pode gerar relatórios de atividades dos
+              motoristas em um período, ou um fornecedor pode obter um comprovante de entrega. Os dados pessoais
+              relevantes (nome, IDs, datas, etc.) serão inseridos nesses documentos conforme necessário para refletir as
+              operações realizadas.</li>
+
+            <li><strong>Análise de Desempenho e Comportamento:</strong> podemos analisar dados de uso e logs de
+              atividade para compreender o comportamento dos usuários nas plataformas, avaliar desempenho de motoristas
+              e fornecedores, e melhorar nossos serviços. Por exemplo, métricas como número de entregas realizadas,
+              avaliações recebidas ou tempos de trajeto podem ser utilizadas internamente para aprimorar algoritmos de
+              roteirização, oferecer feedback aos usuários ou identificar necessidades de treinamento. Essas análises
+              são feitas de forma agregada sempre que possível, buscando preservar a privacidade individual.</li>
+
+            <li><strong>Envio de Notificações e Comunicados:</strong> utilizamos os dados de contato (e-mail, telefone)
+              para enviar notificações importantes relativas ao uso do serviço. Isso inclui confirmações de cadastro,
+              avisos sobre status de entregas/serviços, alertas de segurança (como mudança de senha), comunicados
+              administrativos e, quando consentido, comunicações de caráter comercial ou informativo sobre atualizações
+              da plataforma. O SETRANE Express integra-se a serviços de e-mail (por exemplo, AWS SES) para envio desses
+              comunicados, bem como pode utilizar mensagens push no aplicativo ou SMS conforme a necessidade.</li>
+
+            <li><strong>Controle de Acesso e Auditoria:</strong> os logs e registros de atividade são utilizados para
+              fins de auditoria de segurança e conformidade. Monitoramos e auditamos ações realizadas no sistema
+              (especialmente por perfis administrativos e fiscais) para detectar e prevenir usos indevidos, fraudes ou
+              violações desta política e dos termos de uso. Por exemplo, a tentativa de acesso a uma área não permitida
+              ou múltiplas falhas de login podem ser registradas e analisadas. Esses registros também ajudam na
+              investigação de incidentes e na garantia de integridade das operações (quem fez o quê e quando).</li>
+
+            <li><strong>Cumprimento de Obrigações Legais e Regulatórias:</strong> certos dados pessoais podem ser
+              utilizados para cumprir exigências legais, regulatórias ou fiscais. Por exemplo, informações financeiras e
+              notas fiscais são mantidas para atender obrigações contábeis e tributárias. Documentos pessoais podem ser
+              compartilhados com autoridades competentes mediante requisição legal (por exemplo, em caso de investigação
+              policial ou fiscalização de órgãos reguladores). Sempre que for necessário usar ou fornecer dados pessoais
+              para cumprir uma obrigação legal, o faremos nos limites da lei e informaremos o titular quando possível.
+            </li>
+
+            <li><strong>Demais Finalidades com Consentimento:</strong> caso desejemos utilizar seus dados para alguma
+              finalidade não prevista inicialmente (por exemplo, marketing de novos serviços), solicitaremos seu
+              consentimento específico. Você terá a opção de permitir ou negar usos adicionais de seus dados além das
+              finalidades primárias acima listadas.</li>
+          </ul>
+
+          <p>Em todas as hipóteses de uso, nos baseamos em fundamentos legais adequados (execução de contrato,
+            cumprimento de obrigação legal, legítimo interesse ou consentimento, conforme o caso) e limitamos o
+            tratamento dos dados ao mínimo necessário para atingir as finalidades informadas.</p>
+
+          <h4>5. Compartilhamento de Dados com Terceiros</h4>
+          <p>A SETRANE Express preza pela confidencialidade dos seus dados e não comercializa ou vende informações
+            pessoais dos usuários a terceiros. No entanto, alguns dados poderão ser compartilhados com terceiros
+            estritamente para viabilizar as operações do sistema ou cumprir determinações legais, conforme descrito
+            abaixo:</p>
+
+          <ul>
+            <li><strong>Fornecedores de Serviços de Infraestrutura:</strong> utilizamos serviços de terceiros confiáveis
+              para hospedar e processar dados. Por exemplo, a plataforma está hospedada em servidores em nuvem da Amazon
+              Web Services (AWS), o que implica que dados (incluindo informações pessoais e documentos armazenados)
+              possam residir em datacenters da AWS. Além disso, utilizamos o AWS Simple Email Service (SES) para envio
+              de e-mails transacionais (como confirmações e alertas), o que faz com que dados como seu endereço de
+              e-mail e o conteúdo da mensagem passem por esse serviço de e-mail. Da mesma forma, arquivos e documentos
+              podem ser armazenados no AWS S3, garantindo escalabilidade e segurança no armazenamento de fotos de
+              perfil, documentos escaneados ou relatórios gerados. Esses provedores atuam em conformidade com padrões
+              internacionais de segurança e apenas processam os dados conforme nossas instruções, não tendo permissão
+              para usá-los para finalidades próprias.</li>
+
+            <li><strong>Integrações com Terceiros:</strong> caso o SETRANE Express se integre a outras plataformas ou
+              APIs
+              de parceiros (por exemplo, sistemas de pagamento, serviços de mapas ou serviços de verificação de
+              identidade), poderá haver compartilhamento de dados específicos necessários para aquela integração. Nesses
+              casos, somente os dados indispensáveis serão transmitidos, e buscaremos sempre anonimizar ou cifrar quando
+              possível.</li>
+
+            <li><strong>Requisição Legal e Autoridades Governamentais:</strong> poderemos compartilhar dados pessoais de
+              usuários em resposta a ordens judiciais, solicitações de autoridades competentes ou outros procedimentos
+              legais necessários para cumprir a lei. Nessa hipótese, divulgaremos apenas as informações exigidas e nos
+              termos da requisição.</li>
+          </ul>
+
+          <p>Cabe ressaltar que ao compartilhar dados com qualquer terceiro, exigimos contratualmente que esses
+            terceiros adotem práticas adequadas de segurança e confidencialidade, em conformidade com esta Política de
+            Privacidade e com a LGPD. Não há compartilhamento de dados pessoais com fins comerciais ou publicitários
+            fora das hipóteses acima descritas. Se houver necessidade futura, solicitaremos seu consentimento.</p>
+
+          <h4>6. Transferência Internacional de Dados</h4>
+          <p>Em razão do uso de infraestruturas de nuvem e serviços como os da AWS, seus dados pessoais podem ser
+            transferidos e armazenados fora do Brasil, inclusive em países que podem não oferecer o mesmo nível de
+            proteção de dados pessoais previsto na legislação brasileira. Nesses casos, a SETRANE Express garante que
+            estão implementadas salvaguardas adequadas, como cláusulas contratuais padrão de proteção de dados ou o uso
+            de fornecedores certificados em conformidade com as normas internacionais de privacidade. Tais medidas
+            asseguram que a transferência internacional atenda aos requisitos dos artigos 33 a 36 da LGPD, mantendo seus
+            dados protegidos independentemente do local de armazenamento. Caso tenha dúvidas sobre as transferências
+            internacionais ou queira mais informações sobre as garantias aplicadas, entre em contato pelos canais
+            fornecidos ao final desta Política.</p>
+
+          <h4>7. Decisões Automatizadas</h4>
+          <p>Atualmente, o SETRANE Express não realiza decisões unicamente automatizadas que possam afetar de forma
+            significativa os usuários. Isto significa que nenhuma ação ou decisão que produza efeitos jurídicos ou
+            impacte significativamente você é tomada sem intervenção humana. Exemplos de decisões automatizadas poderiam
+            incluir o bloqueio automático de um motorista com base em comportamento ou aprovação/reprovação instantânea
+            de um cadastro por um algoritmo – contudo, no momento, essas decisões no SETRANE Express são tomadas com
+            avaliação humana (como a equipe de administradores revisando cadastros ou incidentes). Entretanto, usamos
+            processos automatizados em funcionalidades de menor impacto, como envio automático de notificações (ex:
+            aviso de conclusão de entrega), ordenação de listas ou sugestões dentro do aplicativo com base em suas
+            atividades. Essas automatizações visam melhorar a experiência do usuário e a eficiência do serviço, sem
+            substituir as avaliações humanas nos casos importantes. Caso no futuro venhamos a implementar alguma forma
+            de decisão automatizada que afete significativamente os titulares (por exemplo, um sistema automatizado de
+            pontuação de desempenho de motoristas ou fornecedores), garantiremos que tais processos estejam de acordo
+            com a LGPD. Nessa eventualidade, você será informado sobre a lógica envolvida na decisão automatizada,
+            poderá solicitar esclarecimentos ou revisão humana da decisão, conforme assegurado pela legislação.</p>
+
+          <h4>8. Tecnologias Utilizadas e Tratamento dos Dados</h4>
+          <p>O SETRANE Express é desenvolvido com um stack tecnológico moderno e em conformidade com boas práticas de
+            segurança da informação. Nosso backend opera em Node.js com o framework Express, utilizando uma arquitetura
+            de API robusta para processar as requisições dos usuários. Os dados coletados são armazenados em um banco de
+            dados PostgreSQL, conhecido por sua confiabilidade na gestão de informações transacionais. Empregamos
+            bibliotecas e ferramentas especializadas para funcionalidades específicas, garantindo que o tratamento dos
+            dados seja feito de forma eficiente e segura. Por exemplo, utilizamos bibliotecas de geração de documentos
+            (como geração de relatórios em PDF ou DOCX) para converter os dados necessários em arquivos consumíveis
+            pelos usuários (relatórios de performance, recibos, etc.), e essas bibliotecas operam localmente no
+            servidor, sem expor seus dados a terceiros durante o processamento. A autenticação dos usuários é gerenciada
+            via sessões seguras do Express: ao efetuar login, uma sessão é criada e vinculada a um identificador único
+            armazenado de forma segura (cookie de sessão no cliente e registro de sessão no servidor). Essa tecnologia
+            de sessão permite que você navegue pela plataforma sem precisar se autenticar a cada ação, ao mesmo tempo em
+            que protege o acesso por meio de configurações apropriadas (cookies de sessão possuem atributos de segurança
+            e expiração). Adicionalmente, toda a comunicação entre o aplicativo/portal e nossos servidores é feita
+            usando protocolo HTTPS (HTTP seguro), garantindo criptografia dos dados em trânsito. O conjunto tecnológico
+            (Node.js, Express, PostgreSQL, bibliotecas adicionais) foi escolhido visando escalabilidade e segurança,
+            seguindo padrões da indústria para proteção de dados pessoais.</p>
+
+          <h4>9. Segurança dos Dados</h4>
+          <p>Adotamos rigorosas medidas de segurança – administrativas, técnicas e organizacionais – para proteger os
+            dados pessoais sob nossa guarda contra acesso não autorizado, uso indevido, alteração, vazamento ou
+            destruição. Dentre as principais medidas implementadas, destacamos:</p>
+
+          <ul>
+            <li><strong>Criptografia:</strong> Dados sensíveis são protegidos por criptografia em diferentes camadas.
+              Senhas de acesso dos usuários, por exemplo, são armazenadas utilizando algoritmos de hash criptográfico
+              robustos, o que impede que sejam recuperadas em caso de invasão. Informações confidenciais transmitidas
+              entre o cliente e o servidor são criptografadas via HTTPS/TLS. Quando aplicável, dados armazenados em
+              repouso (no banco de dados ou nos backups) também são cifrados ou protegidos por controles de acesso
+              rígidos.</li>
+
+            <li><strong>Controle de Acesso e Autenticação:</strong> Implementamos controles de acesso baseados em
+              privilégios do usuário. Cada perfil (motorista, fiscal, fornecedor, administrador) possui permissões
+              definidas, de forma que usuários só conseguem acessar informações e funcionalidades necessárias ao seu
+              perfil. Além disso, mecanismos de autenticação por sessão (com cookies seguros) e, quando cabível,
+              verificação em duas etapas ou outros fatores de autenticação podem ser utilizados para assegurar que
+              somente o titular da conta consiga acessá-la. Sessões de login possuem tempo limitado e expiram
+              automaticamente após período de inatividade, reduzindo riscos em casos de sessões esquecidas abertas.</li>
+
+            <li><strong>Monitoração e Logs de Segurança:</strong> Mantemos logs de atividades de forma segura e
+              monitoramos nossos sistemas para detectar acessos suspeitos ou atividades fora do padrão. Sistemas de
+              firewall, detecção de intrusão e monitoramento de infraestrutura em tempo real são empregados para
+              proteger o ambiente. Tentativas excessivas de login, por exemplo, podem gerar alertas e bloqueios
+              temporários automáticos por segurança.</li>
+
+            <li><strong>Armazenamento Seguro:</strong> O banco de dados PostgreSQL e os repositórios de arquivos (como o
+              S3 da AWS) são configurados com rigorosos controles de acesso. O acesso a esses sistemas é restrito apenas
+              a pessoal autorizado e aos processos do SETRANE Express – chaves de acesso e credenciais de banco de dados
+              são mantidas em segredo e trocadas periodicamente. Realizamos backups regulares dos dados para prevenção
+              de perda acidental, e esses backups também são armazenados de forma cifrada ou em locais seguros.</li>
+
+            <li><strong>Testes e Atualizações de Segurança:</strong> A equipe do SETRANE Express aplica atualizações de
+              segurança regularmente em todos os componentes do sistema (servidor, dependências do Node.js/Express,
+              banco de dados, etc.) para proteger contra vulnerabilidades conhecidas. Também realizamos testes
+              periódicos (incluindo testes internos e, possivelmente, auditorias ou pentests externos) para avaliar a
+              efetividade de nossas medidas de segurança e identificar pontos de melhoria.</li>
+
+            <li><strong>Treinamento e Políticas Internas:</strong> Nossos colaboradores e administradores têm
+              treinamento e diretrizes claras sobre a importância da privacidade e segurança. O acesso interno a dados
+              pessoais é limitado ao mínimo necessário: somente funcionários que necessitam acessar dados para executar
+              suas funções podem fazê-lo, e mesmo assim sob obrigações de confidencialidade. Possuímos políticas
+              internas de proteção de dados e procedimentos para resposta a incidentes de segurança.</li>
+          </ul>
+
+          <p>Apesar de todos os nossos esforços em proteger seus dados, nenhum sistema é infalível. Em caso de incidente
+            de segurança, seguimos um plano de resposta que inclui notificação dos usuários afetados e das autoridades
+            competentes, conforme LGPD.</p>
+
+          <h4>10. Retenção dos Dados</h4>
+          <p>Armazenamos os dados pessoais dos usuários apenas pelo tempo necessário para cumprir as finalidades para as
+            quais foram coletados ou para cumprir obrigações legais/regulatórias. Os períodos de retenção podem variar
+            de acordo com a natureza dos dados e o contexto do tratamento:</p>
+
+          <ul>
+            <li><strong>Dados de Cadastro:</strong> Informações de perfil (como nome, contato, documentos) são mantidas
+              enquanto o usuário estiver ativo em nossa plataforma. Caso um motorista, fornecedor ou outro usuário
+              encerre sua conta, poderemos reter seus dados por um período adicional determinado (por exemplo, X anos)
+              conforme a necessidade para cumprimento de obrigações legais ou exercício regular de direitos (por
+              exemplo, prazos prescricionais para eventuais ações judiciais ou auditorias). Após o término desse
+              período, os dados cadastrais remanescentes serão eliminados de forma segura ou anonimizados, salvo se a
+              conservação for requerida por lei.</li>
+
+            <li><strong>Logs e Registros de Acesso:</strong> Dados de logs e histórico de atividades são mantidos por
+              períodos definidos em nossas políticas internas de retenção. De acordo com o Marco Civil da Internet (Lei
+              12.965/2014), registros de acesso a aplicações (logs de IP, data e hora de uso) podem ser guardados pelo
+              prazo legal mínimo de 6 meses. Internamente, poderemos manter certos logs por mais tempo (por exemplo, 1 a
+              2 anos) para fins legítimos de segurança, auditoria e melhoria do serviço. Após o período aplicável, tais
+              registros são descartados de forma segura, a menos que tenham sido anonimizados para análises
+              estatísticas.</li>
+
+            <li><strong>Dados Financeiros e Transacionais:</strong> Registros financeiros (pagamentos, faturas, notas
+              fiscais) são conservados durante o tempo exigido pela legislação fiscal e tributária brasileira,
+              tipicamente 5 anos ou conforme atualização da lei, para possibilitar fiscalização contábil e atendimento a
+              obrigações legais.</li>
+
+            <li><strong>Comunicações e Suporte:</strong> Conversas em canais de suporte, notificações enviadas e outras
+              comunicações podem ser arquivadas pelo tempo necessário para acompanhamento de solicitações do usuário ou
+              melhoria do atendimento, não excedendo o necessário para tais finalidades.</li>
+          </ul>
+
+          <p>Findo os prazos de retenção aplicáveis, os dados pessoais serão eliminados de nossos sistemas ou
+            anonimizados de forma irreversível, de modo que não seja mais possível associá-los a um indivíduo. Caso haja
+            solicitação do titular para exclusão antes do prazo previsto, avaliaremos o pedido conforme descrito na
+            seção de direitos do titular abaixo – caso não haja impedimentos legais, procederemos à exclusão antecipada
+            dos dados requeridos.</p>
+
+          <h4>11. Direitos dos Titulares de Dados</h4>
+          <p>Os titulares de dados pessoais (usuários do SETRANE Express) possuem uma série de direitos assegurados pela
+            LGPD no que diz respeito aos seus dados. Conforme o Artigo 18 da LGPD, você tem o direito de solicitar, a
+            qualquer momento e mediante requisição expressa, dentre outras coisas:</p>
+          <ul>
+            <li>Confirmação da existência de tratamento de seus dados pessoais;</li>
+            <li>Acesso aos seus dados armazenados;</li>
+            <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
+            <li>Anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou tratados em desconformidade
+              com a lei;</li>
+            <li>Portabilidade dos seus dados a outro fornecedor de serviço ou produto, mediante requisição, observadas
+              as regulamentações da autoridade nacional;</li>
+            <li>Eliminação dos dados pessoais tratados com seu consentimento, na medida do permitido em lei;</li>
+            <li>Informação sobre as entidades públicas e privadas com as quais realizamos uso compartilhado dos seus
+              dados;</li>
+            <li>Informação sobre a possibilidade de não fornecer consentimento e sobre as consequências da negativa;
+            </li>
+            <li>Revogação do consentimento, quando o tratamento tiver como base legal o consentimento.</li>
+          </ul>
+
+          <p>Resumidamente, você tem o direito de saber quais dados temos sobre você, para que eles são usados, com quem
+            são compartilhados, e pode solicitar a atualização, correção ou exclusão desses dados em diversas
+            circunstâncias. Também pode retirar consentimentos dados anteriormente, nos casos em que o tratamento se
+            baseie exclusivamente no consentimento. Para exercer seus direitos, entre em contato conosco através dos
+            canais indicados na seção de contato desta política. Atenderemos às solicitações no menor tempo possível e
+            sem custos, desde que atendidos os requisitos legais. Lembramos que alguns direitos podem estar sujeitos a
+            exceções: por exemplo, se determinada informação for necessária para cumprimento de obrigação legal ou
+            defesa em disputas, talvez não possamos apagá-la imediatamente. Nesses casos, justificaremos adequadamente a
+            impossibilidade de atender a solicitação, indicando o respectivo fundamento legal. Além disso, caso você
+            tenha alguma preocupação em relação ao tratamento de seus dados e não se sinta atendido após solicitar
+            diretamente à SETRANE Express, você tem o direito de entrar em contato com a Autoridade Nacional de Proteção
+            de Dados (ANPD), órgão governamental responsável por zelar pelo cumprimento da LGPD no Brasil, para
+            eventualmente registrar uma reclamação.</p>
+
+          <h4>12. Canal de Contato para Questões de Privacidade</h4>
+          <p>A SETRANE Express disponibiliza canais dedicados para esclarecer dúvidas, atender solicitações ou
+            reclamações
+            referentes a privacidade e proteção de dados. Se você desejar exercer algum dos direitos mencionados acima,
+            ou tiver qualquer questionamento sobre esta Política de Privacidade ou sobre como seus dados são utilizados,
+            não hesite em nos contatar.</p>
+
+          <p><strong>Canal de Contato Oficial:</strong> Envie sua solicitação ou dúvida para o e-mail <a
+              href="mailto:contato@pyden.tech">contato@pyden.tech</a>. Por favor, descreva claramente sua solicitação,
+            incluindo detalhes necessários para identificarmos você no sistema (como nome completo e e-mail cadastrado)
+            e a ação desejada. Isso nos ajudará a responder de forma mais rápida e precisa. Alternativamente, caso
+            prefira, você também pode entrar em contato pelo nosso canal de suporte ao usuário disponível no aplicativo
+            ou painel web, selecionando a opção relativa à “Privacidade de Dados” – sua mensagem será encaminhada
+            diretamente ao nosso Encarregado de Proteção de Dados (Data Protection Officer - DPO) ou equipe responsável.
+            Nos comprometemos a responder todas as solicitações de titulares em prazos adequados e em conformidade com a
+            LGPD. Normalmente, fornecemos um retorno inicial dentro de 15 dias. Para solicitações complexas (como
+            fornecimento de um relatório completo de todos os seus dados), podemos necessitar de um prazo adicional para
+            atendimento, mas você será informado do andamento. Lembramos que, para sua segurança, poderemos requerer
+            alguns dados adicionais para comprovar sua identidade antes de atender a determinadas solicitações (por
+            exemplo, acesso ou exclusão de dados), a fim de impedir fraudes ou divulgações não autorizadas de
+            informações pessoais.</p>
+
+          <h4>13. Disposições Gerais e Atualizações</h4>
+          <p>O uso do SETRANE Express implica na aceitação desta Política de Privacidade. Esta Política pode ser
+            atualizada periodicamente, seja em virtude de alterações na legislação de proteção de dados, seja devido a
+            mudanças em nossas práticas de tratamento de dados ou introdução de novos serviços. Em caso de alterações
+            relevantes, notificaremos os usuários pelos canais de contato fornecidos ou por meio de avisos no próprio
+            aplicativo/sistema. Recomendamos que você reveja periodicamente esta página para manter-se informado sobre
+            como estamos protegendo seus dados. Ao continuar a utilizar os serviços após a entrada em vigor de eventuais
+            atualizações, você estará concordando com os novos termos da Política de Privacidade. Caso não concorde com
+            as alterações implementadas, terá o direito de descontinuar o uso do serviço e solicitar a exclusão de seus
+            dados, conforme descrito na seção de direitos do titular.</p>
+
+          <h4>14. Legislação e Foro Aplicável</h4>
+          <p>Esta Política de Privacidade é regida pelas leis da República Federativa do Brasil. Eventuais controvérsias
+            ou disputas relativas a esta Política deverão ser preferencialmente resolvidas de forma amigável entre o
+            usuário e a SETRANE Express. Não sendo possível um acordo, as partes elegem o Foro da comarca de domicílio
+            do
+            usuário como o competente para dirimir quaisquer questões decorrentes desta Política, com renúncia expressa
+            a qualquer outro, por mais privilegiado que seja.</p>
+
+          <p><em>Data de última atualização: 03 de junho de 2025.</em></p>
+
+
+          <strong>Danilo de Morais Gustavo LTDA</strong><br>
+          E-mail: <a href="mailto:privacidade@pyden.tech">privacidade@pyden.tech</a><br>
+          Endereço: Rua Exemplo, 123, Canaã dos Carajás – PA
+          </p>
+        </div>
+      </div>
+      <!-- FIM DO CONTEÚDO -->
+
+      <!-- FOOTER OPCIONAL -->
+      <footer class="footer py-3">
+        <div class="container d-flex justify-content-between">
+          <span>© 2025 Danilo de Morais Gustavo LTDA. Todos os direitos reservados.</span>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- JS Files -->
+  <script src="../../assets/js/core/bootstrap.bundle.min.js"></script>
+  <script src="../../assets/js/pydenadmin.min.js"></script>
+</body>
+
+</html>

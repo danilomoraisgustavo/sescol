@@ -1,0 +1,19 @@
+{
+  "name": "setrane-express-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "server.js",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.11.3",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1",
+    "xlsx": "^0.18.5"
+  }
+}

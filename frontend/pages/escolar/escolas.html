@@ -1,0 +1,1760 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Escolas</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        #map-escolas,
+        #mapa-escola-localizacao {
+            width: 100%;
+            height: 420px;
+            border-radius: .25rem;
+            overflow: hidden;
+        }
+
+        #mapa-escola-localizacao {
+            height: 400px;
+        }
+
+        .leaflet-container {
+            font: inherit;
+        }
+
+        .dual-list-container {
+            display: flex;
+            align-items: stretch;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .dual-list-container select {
+            min-height: 180px;
+        }
+
+        .dual-list-buttons {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: .5rem;
+        }
+
+        .dual-list-buttons button {
+            min-width: 48px;
+        }
+
+        .badge-ensino {
+            margin-right: .25rem;
+            margin-bottom: .15rem;
+        }
+
+        .link-inep {
+            color: #007bff;
+            /* azul padrão bootstrap */
+            text-decoration: none;
+            /* sem sublinhado */
+        }
+
+        .link-inep:hover,
+        .link-inep:focus {
+            color: #0056b3;
+            /* azul um pouco mais escuro no hover */
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <!-- TOPNAV -->
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <!-- MAIN -->
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Escolas</h2>
+                                <p class="text-muted mb-0">
+                                    Visualize no mapa e gerencie todas as escolas atendidas pelo transporte escolar.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- MAPA DE ESCOLAS -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div>
+                                            <h2 class="h5 mb-0">Mapa de escolas</h2>
+                                            <small class="text-muted">
+                                                Cada ponto representa a localização oficial de uma escola.
+                                            </small>
+                                        </div>
+                                        <div class="ml-auto">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                id="btn-atualizar-mapa-escolas">
+                                                <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar mapa
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="map-escolas"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE ESCOLAS -->
+                        <div class="row">
+                            <div class="col-md-12 my-4">
+                                <h2 class="h4 mb-1">Escolas cadastradas</h2>
+                                <p class="mb-4">
+                                    Lista de escolas com código INEP, localização e zoneamentos vinculados.
+                                </p>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-escolas"
+                                                                class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control" id="search-escolas"
+                                                                placeholder="Pesquisar por nome ou INEP">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="col ml-auto">
+                                                <div class="dropdown float-right">
+                                                    <button class="btn btn-primary float-right ml-3" type="button"
+                                                        data-toggle="modal" data-target="#modal-nova-escola"
+                                                        id="btn-abrir-nova-escola">
+                                                        Nova escola +
+                                                    </button>
+                                                    <button class="btn btn-secondary dropdown-toggle" type="button"
+                                                        id="acoesEscolasMenu" data-toggle="dropdown"
+                                                        aria-haspopup="true" aria-expanded="false">
+                                                        Ações
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right"
+                                                        aria-labelledby="acoesEscolasMenu">
+                                                        <a class="dropdown-item text-danger" href="#"
+                                                            id="btn-excluir-escolas-selecionadas">Excluir
+                                                            selecionadas</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0" id="tabela-escolas">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width: 40px;">
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                    id="check-all-escolas">
+                                                                <label class="custom-control-label"
+                                                                    for="check-all-escolas"></label>
+                                                            </div>
+                                                        </th>
+                                                        <th style="width: 80px;">ID</th>
+                                                        <th>Nome</th>
+                                                        <th style="width: 130px;">INEP</th>
+                                                        <th style="width: 220px;">Ensino</th>
+                                                        <th style="width: 120px;">Zoneamentos</th>
+                                                        <th style="width: 80px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-escolas"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de escolas" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-escolas">
+                                                <li class="page-item disabled">
+                                                    <a class="page-link" href="#">Anterior</a>
+                                                </li>
+                                                <li class="page-item active">
+                                                    <a class="page-link" href="#">1</a>
+                                                </li>
+                                                <li class="page-item disabled">
+                                                    <a class="page-link" href="#">Próxima</a>
+                                                </li>
+                                            </ul>
+                                        </nav>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL NOVA / EDITAR ESCOLA -->
+            <div class="modal fade" id="modal-nova-escola" tabindex="-1" role="dialog"
+                aria-labelledby="modalNovaEscolaLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-escola" novalidate>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalNovaEscolaLabel">Nova escola</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <input type="hidden" id="escola-id" name="id">
+                                <input type="hidden" id="escola-lat" name="lat">
+                                <input type="hidden" id="escola-lng" name="lng">
+
+                                <!-- INFO BÁSICA -->
+                                <div class="form-row">
+                                    <div class="form-group col-md-8">
+                                        <label for="escola-nome">Nome da Escola</label>
+                                        <input type="text" class="form-control" id="escola-nome" name="nome"
+                                            placeholder="Ex.: EMEF João da Silva" required>
+                                        <div class="invalid-feedback">Informe o nome da escola.</div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="escola-inep">Código INEP</label>
+                                        <input type="text" class="form-control" id="escola-inep" name="codigo_inep"
+                                            placeholder="Ex.: 12345678" required>
+                                        <div class="invalid-feedback">Informe o código INEP da escola.</div>
+
+                                        <!-- NOVO: Ajuda para consultar o INEP -->
+                                        <small class="form-text text-muted mt-1">
+                                            Não sabe o código INEP da escola?
+                                            <a href="https://anonymousdata.inep.gov.br/analytics/saw.dll?Dashboard&PortalPath=%2Fshared%2FCenso%20da%20Educa%C3%A7%C3%A3o%20B%C3%A1sica%2F_portal%2FCat%C3%A1logo%20de%20Escolas&Page=Lista%20das%20Escolas&P1=dashboard&Action=Navigate&ViewState=1o8flktgo4bckim0ib6eum96kq&P16=NavRuleDefault&NavFromViewID=d%3Adashboard~p%3Asf156n9k0qs70741"
+                                                target="_blank" rel="noopener" class="link-inep">
+                                                Clique aqui para consultar.
+                                            </a>
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- LOCALIZAÇÃO E ENDEREÇO -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small font-weight-bold text-uppercase">
+                                            Localização da escola no mapa
+                                        </span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="mapa-escola-localizacao"></div>
+                                    </div>
+                                    <div class="card-footer small text-muted">
+                                        Clique no mapa para marcar o ponto oficial da escola. É possível arrastar o
+                                        marcador para ajustar.
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="escola-logradouro">Logradouro</label>
+                                        <input type="text" class="form-control" id="escola-logradouro" name="logradouro"
+                                            placeholder="Rua, avenida, travessa..." required>
+                                        <div class="invalid-feedback">Informe o logradouro.</div>
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label for="escola-numero">Número</label>
+                                        <input type="text" class="form-control" id="escola-numero" name="numero"
+                                            placeholder="Número" required>
+                                        <div class="invalid-feedback">Informe o número.</div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="escola-complemento">Complemento</label>
+                                        <input type="text" class="form-control" id="escola-complemento"
+                                            name="complemento" placeholder="Bloco, quadra, sala...">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="escola-referencia">Ponto de Referência</label>
+                                        <input type="text" class="form-control" id="escola-referencia" name="referencia"
+                                            placeholder="Ex.: Próximo à praça central">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="escola-bairro">Bairro</label>
+                                        <input type="text" class="form-control" id="escola-bairro" name="bairro"
+                                            placeholder="Bairro" required>
+                                        <div class="invalid-feedback">Informe o bairro.</div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="escola-cep">CEP</label>
+                                        <input type="text" class="form-control input-zip" id="escola-cep" name="cep"
+                                            placeholder="____-___" required>
+                                        <div class="invalid-feedback">Informe o CEP.</div>
+                                    </div>
+                                </div>
+
+                                <!-- TIPOS DE ENSINO -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small font-weight-bold text-uppercase">
+                                            Informações de ensino
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label class="d-block mb-1">Regime (oferta de ensino)</label>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-regime"
+                                                        id="regime-regular" value="regular" name="ensino_regime[]">
+                                                    <label class="custom-control-label"
+                                                        for="regime-regular">Regular</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-regime" id="regime-eja"
+                                                        value="eja" name="ensino_regime[]">
+                                                    <label class="custom-control-label" for="regime-eja">EJA</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-regime"
+                                                        id="regime-prof" value="profissionalizante"
+                                                        name="ensino_regime[]">
+                                                    <label class="custom-control-label"
+                                                        for="regime-prof">Profissionalizante</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-regime"
+                                                        id="regime-especial" value="especial" name="ensino_regime[]">
+                                                    <label class="custom-control-label"
+                                                        for="regime-especial">Especial</label>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group col-md-4">
+                                                <label class="d-block mb-1">Nível (oferta de ensino)</label>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-infantil" value="infantil" name="ensino_nivel[]">
+                                                    <label class="custom-control-label"
+                                                        for="nivel-infantil">Infantil</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-fundamental" value="fundamental"
+                                                        name="ensino_nivel[]">
+                                                    <label class="custom-control-label"
+                                                        for="nivel-fundamental">Fundamental</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-nivel" id="nivel-medio"
+                                                        value="medio" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-medio">Médio</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-superior" value="superior" name="ensino_nivel[]">
+                                                    <label class="custom-control-label"
+                                                        for="nivel-superior">Superior</label>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group col-md-4">
+                                                <label class="d-block mb-1">Horário de funcionamento</label>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-horario"
+                                                        id="horario-manha" value="manha" name="ensino_horario[]">
+                                                    <label class="custom-control-label"
+                                                        for="horario-manha">Manhã</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-horario"
+                                                        id="horario-tarde" value="tarde" name="ensino_horario[]">
+                                                    <label class="custom-control-label"
+                                                        for="horario-tarde">Tarde</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox"
+                                                        class="custom-control-input check-ensino-horario"
+                                                        id="horario-noite" value="noite" name="ensino_horario[]">
+                                                    <label class="custom-control-label"
+                                                        for="horario-noite">Noite</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <!-- LISTA DE ZONEAMENTOS (DUAL SELECT) -->
+                                <div class="card-body">
+                                    <div class="dual-list-container">
+                                        <div class="flex-fill">
+                                            <label for="zoneamentos-disponiveis">Zoneamentos disponíveis</label>
+
+                                            <!-- NOVO: campo de pesquisa -->
+                                            <input type="text" class="form-control form-control-sm mb-2"
+                                                id="filtro-zoneamentos-disponiveis"
+                                                placeholder="Pesquisar por nome ou tipo (urbana/rural)...">
+
+                                            <select multiple class="form-control" id="zoneamentos-disponiveis"></select>
+                                        </div>
+
+                                        <div class="dual-list-buttons">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                id="btn-adicionar-zoneamento">&gt;&gt;</button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                id="btn-remover-zoneamento">&lt;&lt;</button>
+                                        </div>
+
+                                        <div class="flex-fill">
+                                            <label for="zoneamentos-selecionados">Zoneamentos vinculados à
+                                                escola</label>
+                                            <select multiple class="form-control"
+                                                id="zoneamentos-selecionados"></select>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted mt-2">
+                                        Use os botões para mover os zoneamentos entre as listas.
+                                    </small>
+                                </div>
+
+
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar escola</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modais padrão de notificações/atalhos (mesmos do zoneamentos.html, se quiser manter) -->
+            <div class="modal fade modal-notif modal-slide" tabindex="-1" role="dialog"
+                aria-labelledby="defaultModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-sm" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="defaultModalLabel">Notifications</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- conteúdo padrão -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal">Clear
+                                All</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade modal-shortcut modal-slide" tabindex="-1" role="dialog"
+                aria-labelledby="defaultModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <!-- conteúdo padrão -->
+                    </div>
+                </div>
+            </div>
+            <!-- MODAL: MENSAGEM DO SISTEMA -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo">
+                            <!-- mensagem aqui -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: CONFIRMAÇÃO DO SISTEMA -->
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo">
+                            <!-- texto de confirmação aqui -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </main>
+    </div>
+
+    <!-- SCRIPTS BASE (mesmos do zoneamentos.html) -->
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/d3.min.js"></script>
+    <script src="../../js/topojson.min.js"></script>
+    <script src="../../js/datamaps.all.min.js"></script>
+    <script src="../../js/datamaps-zoomto.js"></script>
+    <script src="../../js/datamaps.custom.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+
+    <script>
+        // Inicializações genéricas (máscaras, select2, etc.)
+        $('.select2').select2({ theme: 'bootstrap4' });
+        $('.select2-multi').select2({ multiple: true, theme: 'bootstrap4' });
+        $('.drgpicker').daterangepicker({
+            singleDatePicker: true,
+            timePicker: false,
+            showDropdowns: true,
+            locale: { format: 'MM/DD/YYYY' }
+        });
+        $('.time-input').timepicker({ 'scrollDefault': 'now', 'zindex': '9999' });
+        if ($('.datetimes').length) {
+            $('.datetimes').daterangepicker({
+                timePicker: true,
+                startDate: moment().startOf('hour'),
+                endDate: moment().startOf('hour').add(32, 'hour'),
+                locale: { format: 'M/DD hh:mm A' }
+            });
+        }
+        $('.input-zip').mask('00000-000', { placeholder: "____-___" });
+
+        (function () {
+            'use strict';
+            window.addEventListener('load', function () {
+                var forms = document.getElementsByClassName('needs-validation');
+                Array.prototype.filter.call(forms, function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+    </script>
+
+    <script>
+        // --- LÓGICA DE ESCOLAS ---
+        var apiBaseEscolas = '/api/escolas';
+        var apiBaseZoneamentos = '/api/zoneamentos';
+
+        var mapEscolas;
+        var mapEscolaLocalizacao;
+        var zoneamentoLayersEscolas = {};
+        var defaultCenter = [-6.530070, -49.851620];
+        var defaultZoom = 12;
+        var iconeEscola = L.icon({
+            iconUrl: '../../assets/icons/school-marker.png', // coloque seu PNG/SVG aqui
+            iconSize: [32, 32],   // tamanho do ícone
+            iconAnchor: [16, 32],   // ponto do ícone que ficará "sobre" a coordenada
+            popupAnchor: [0, -28]    // onde o popup abre em relação ao ícone
+        });
+        var escolas = [];
+        var escolaMarkers = {};
+        var markerEscolaEdicao = null;
+
+        var zoneamentosCache = [];
+
+        function criarMapaBase(divId) {
+            // Camada Google Hybrid (satélite + rótulos)
+            var googleHybrid = L.tileLayer(
+                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                {
+                    maxZoom: 20,
+                    attribution: '&copy; Google'
+                }
+            );
+
+            // Opcional: manter OSM como alternativa
+            var osm = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }
+            );
+
+            // Inicializa o mapa já com Google Hybrid
+            var map = L.map(divId, {
+                zoomControl: true,
+                center: defaultCenter,
+                zoom: defaultZoom,
+                layers: [googleHybrid] // camada inicial
+            });
+
+            // Controle de camadas (para alternar entre Google e OSM, se quiser)
+            var baseLayers = {
+                'Google Hybrid': googleHybrid,
+                'OpenStreetMap': osm
+            };
+
+            L.control.layers(baseLayers, null, {
+                position: 'topright'
+            }).addTo(map);
+
+            return map;
+        }
+
+        function initMapEscolas() {
+            mapEscolas = criarMapaBase('map-escolas');
+        }
+
+        function initMapEscolaLocalizacao() {
+            mapEscolaLocalizacao = criarMapaBase('mapa-escola-localizacao');
+
+            mapEscolaLocalizacao.on('click', function (e) {
+                definirMarkerEscola(e.latlng.lat, e.latlng.lng, true);
+            });
+        }
+
+        // Preenche os campos de endereço do formulário com o resultado da geocodificação
+        function preencherCamposEndereco(endereco) {
+            if (!endereco) return;
+
+            if (endereco.logradouro) {
+                $('#escola-logradouro').val(endereco.logradouro);
+            }
+            if (endereco.numero) {
+                $('#escola-numero').val(endereco.numero);
+            }
+            if (endereco.bairro) {
+                $('#escola-bairro').val(endereco.bairro);
+            }
+            if (endereco.cep) {
+                $('#escola-cep').val(endereco.cep);
+            }
+            if (endereco.referencia) {
+                $('#escola-referencia').val(endereco.referencia);
+            }
+            // Se quiser usar cidade/uf em outro lugar, também estão disponíveis:
+            // endereco.cidade, endereco.uf
+        }
+
+        // Chama o backend para obter o endereço a partir de lat/lng
+        function buscarEnderecoPorCoordenadas(lat, lng) {
+            if (!lat || !lng) return;
+
+            fetch(apiBaseEscolas + '/geocode/reverse?lat=' +
+                encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng))
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        throw new Error('Erro ao buscar endereço.');
+                    }
+                    return resp.json();
+                })
+                .then(function (data) {
+                    if (data && !data.error) {
+                        preencherCamposEndereco(data);
+                    } else if (data && data.error) {
+                        console.warn('Geocode retornou erro:', data.error);
+                    }
+                })
+                .catch(function (err) {
+                    console.error('Erro na geocodificação reversa:', err);
+                });
+        }
+
+        function definirMarkerEscola(lat, lng, moverMapa) {
+            if (!mapEscolaLocalizacao) return;
+            var latNum = parseFloat(lat);
+            var lngNum = parseFloat(lng);
+            if (isNaN(latNum) || isNaN(lngNum)) return;
+
+            if (markerEscolaEdicao) {
+                mapEscolaLocalizacao.removeLayer(markerEscolaEdicao);
+            }
+            markerEscolaEdicao = L.marker([latNum, lngNum], {
+                icon: iconeEscola,
+                draggable: true
+            }).addTo(mapEscolaLocalizacao);
+
+            $('#escola-lat').val(latNum);
+            $('#escola-lng').val(lngNum);
+
+            // Busca endereço para o ponto inicial
+            buscarEnderecoPorCoordenadas(latNum, lngNum);
+
+            markerEscolaEdicao.on('dragend', function (ev) {
+                var ll = ev.target.getLatLng();
+                $('#escola-lat').val(ll.lat);
+                $('#escola-lng').val(ll.lng);
+
+                // Atualiza endereço ao soltar o marcador
+                buscarEnderecoPorCoordenadas(ll.lat, ll.lng);
+            });
+
+            if (moverMapa) {
+                mapEscolaLocalizacao.setView([latNum, lngNum], 16);
+            }
+        }
+
+        function limparMarkerEscola() {
+            if (markerEscolaEdicao && mapEscolaLocalizacao) {
+                mapEscolaLocalizacao.removeLayer(markerEscolaEdicao);
+            }
+            markerEscolaEdicao = null;
+            $('#escola-lat').val('');
+            $('#escola-lng').val('');
+        }
+
+        function limparMapaEscolas() {
+            if (!mapEscolas) return;
+            Object.keys(escolaMarkers).forEach(function (id) {
+                var m = escolaMarkers[id];
+                if (m && mapEscolas.hasLayer(m)) {
+                    mapEscolas.removeLayer(m);
+                }
+            });
+            escolaMarkers = {};
+        }
+
+        function adicionarEscolaNoMapa(e) {
+            if (!mapEscolas) return;
+            if (!e.localizacao) return;
+
+            // Suporte tanto para lat/lng simples quanto GeoJSON Point
+            var lat, lng;
+            if (e.localizacao.type === 'Point' && Array.isArray(e.localizacao.coordinates)) {
+                lng = e.localizacao.coordinates[0];
+                lat = e.localizacao.coordinates[1];
+            } else if (e.lat && e.lng) {
+                lat = e.lat;
+                lng = e.lng;
+            }
+
+            if (lat == null || lng == null) return;
+
+            var marker = L.marker([lat, lng], { icon: iconeEscola }).addTo(mapEscolas);
+            var popupHtml = '<strong>' + (e.nome || 'Escola') + '</strong><br>' +
+                (e.codigo_inep ? 'INEP: ' + e.codigo_inep + '<br>' : '') +
+                (e.bairro ? 'Bairro: ' + e.bairro + '<br>' : '');
+
+            marker.on('click', function () {
+                // destaca zoneamentos no mapa
+                destacarZoneamentosDaEscola(e);
+
+                // calcula bounds combinando escola + zoneamentos
+                var bounds = L.latLngBounds(marker.getLatLng(), marker.getLatLng());
+
+                if (e.zoneamento_ids && e.zoneamento_ids.length) {
+                    e.zoneamento_ids.forEach(function (idZ) {
+                        var layer = zoneamentoLayersEscolas[idZ];
+                        if (layer && layer.getBounds) {
+                            var b = layer.getBounds();
+                            if (b && b.isValid && b.isValid()) {
+                                bounds.extend(b);
+                            }
+                        }
+                    });
+                }
+
+                // aplica o ajuste de visualização se for válido
+                if (bounds && bounds.isValid && bounds.isValid()) {
+                    mapEscolas.fitBounds(bounds.pad(0.2));
+                } else {
+                    mapEscolas.setView(marker.getLatLng(), 16);
+                }
+            });
+            marker.bindPopup(popupHtml);
+            escolaMarkers[e.id] = marker;
+
+        }
+
+        function atualizarMapaEscolas() {
+            if (!mapEscolas) return;
+            limparMapaEscolas();
+            var bounds = null;
+
+            escolas.forEach(function (e) {
+                adicionarEscolaNoMapa(e);
+                var m = escolaMarkers[e.id];
+                if (m) {
+                    var ll = m.getLatLng();
+                    if (!bounds) {
+                        bounds = L.latLngBounds(ll, ll);
+                    } else {
+                        bounds.extend(ll);
+                    }
+                }
+            });
+
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                mapEscolas.fitBounds(bounds.pad(0.2));
+            } else {
+                mapEscolas.setView(defaultCenter, defaultZoom);
+            }
+        }
+
+        function carregarEscolas() {
+            return fetch(apiBaseEscolas)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar escolas');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    escolas = data || [];
+                    renderizarTabelaEscolas();
+                    atualizarMapaEscolas();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+        }
+
+        function carregarZoneamentosParaSeletores() {
+            return fetch(apiBaseZoneamentos)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar zoneamentos');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    zoneamentosCache = data || [];
+                    preencherSelectZoneamentosDisponiveis([]);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+        }
+
+        function preencherSelectZoneamentosDisponiveis(idsSelecionados) {
+            var selDisp = $('#zoneamentos-disponiveis');
+
+            // termo do campo de pesquisa
+            var termo = ($('#filtro-zoneamentos-disponiveis').val() || '').toLowerCase();
+
+            selDisp.empty();
+            if (!Array.isArray(idsSelecionados)) {
+                idsSelecionados = [];
+            }
+
+            zoneamentosCache.forEach(function (z) {
+                // não listar os já selecionados
+                if (idsSelecionados.indexOf(z.id) !== -1) return;
+
+                var texto = ((z.nome || 'Zoneamento') + ' ' + (z.tipo_zona || '')).toLowerCase();
+
+                // aplica filtro, se houver
+                if (termo && texto.indexOf(termo) === -1) return;
+
+                var opt = $('<option>')
+                    .val(z.id)
+                    .text((z.nome || 'Zoneamento') + ' [' + z.tipo_zona + ']');
+                selDisp.append(opt);
+            });
+        }
+
+        $('#filtro-zoneamentos-disponiveis').on('input', function () {
+            // reaproveita os zoneamentos já vinculados para não sumirem da lista da direita
+            var idsVinculados = obterZoneamentoIdsSelecionados();
+            preencherSelectZoneamentosDisponiveis(idsVinculados);
+        });
+
+        function moverSelecionados(origemId, destinoId) {
+            var origem = $('#' + origemId);
+            var destino = $('#' + destinoId);
+
+            origem.find('option:selected').each(function () {
+                var opt = $(this);
+                var clone = opt.clone();
+                destino.append(clone);
+                opt.remove();
+            });
+        }
+
+        function obterZoneamentoIdsSelecionados() {
+            var ids = [];
+            $('#zoneamentos-selecionados option').each(function () {
+                var val = parseInt($(this).val(), 10);
+                if (!isNaN(val)) ids.push(val);
+            });
+            return ids;
+        }
+
+        function obterResumoEnsino(escola) {
+            var partes = [];
+
+            if (escola.ensino_regime && escola.ensino_regime.length) {
+                partes.push('Reg.: ' + escola.ensino_regime.join(', '));
+            }
+            if (escola.ensino_nivel && escola.ensino_nivel.length) {
+                partes.push('Nív.: ' + escola.ensino_nivel.join(', '));
+            }
+            if (escola.ensino_horario && escola.ensino_horario.length) {
+                partes.push('Hor.: ' + escola.ensino_horario.join(', '));
+            }
+
+            return partes.join(' | ');
+        }
+
+        function renderizarTabelaEscolas() {
+            var tbody = document.getElementById('tbody-escolas');
+            if (!tbody) return;
+
+            var termo = $('#search-escolas').val() || '';
+            var termoLower = termo.toLowerCase();
+
+            tbody.innerHTML = '';
+
+            escolas.forEach(function (e) {
+                var match = true;
+                if (termoLower) {
+                    var t = ((e.nome || '') + ' ' + (e.codigo_inep || '')).toLowerCase();
+                    match = t.indexOf(termoLower) !== -1;
+                }
+                if (!match) return;
+
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', e.id);
+
+                // checkbox
+                var tdCheck = document.createElement('td');
+                var divCheck = document.createElement('div');
+                divCheck.className = 'custom-control custom-checkbox';
+                var inputCheck = document.createElement('input');
+                inputCheck.type = 'checkbox';
+                inputCheck.className = 'custom-control-input';
+                inputCheck.id = 'escola-check-' + e.id;
+                var labelCheck = document.createElement('label');
+                labelCheck.className = 'custom-control-label';
+                labelCheck.setAttribute('for', inputCheck.id);
+                divCheck.appendChild(inputCheck);
+                divCheck.appendChild(labelCheck);
+                tdCheck.appendChild(divCheck);
+                tr.appendChild(tdCheck);
+
+                // id
+                var tdId = document.createElement('td');
+                tdId.textContent = e.id;
+                tr.appendChild(tdId);
+
+                // nome
+                var tdNome = document.createElement('td');
+                tdNome.textContent = e.nome || '';
+                tr.appendChild(tdNome);
+
+                // INEP
+                var tdInep = document.createElement('td');
+                tdInep.textContent = e.codigo_inep || '';
+                tr.appendChild(tdInep);
+
+                // Ensino
+                var tdEnsino = document.createElement('td');
+                tdEnsino.textContent = obterResumoEnsino(e);
+                tr.appendChild(tdEnsino);
+
+                // Zoneamentos
+                var tdZona = document.createElement('td');
+                var qtdZoneamentos = e.zoneamento_ids && e.zoneamento_ids.length ? e.zoneamento_ids.length : 0;
+                tdZona.textContent = qtdZoneamentos + ' vinculados';
+                tr.appendChild(tdZona);
+
+                // Ações
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+                btnDrop.appendChild(spanSr);
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-escola';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', e.id);
+                aEditar.textContent = 'Editar';
+
+                var aVerMapa = document.createElement('a');
+                aVerMapa.className = 'dropdown-item action-ver-mapa-escola';
+                aVerMapa.href = '#';
+                aVerMapa.setAttribute('data-id', e.id);
+                aVerMapa.textContent = 'Visualizar no mapa';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-escola';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', e.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aEditar);
+                menu.appendChild(aVerMapa);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function abrirModalNovaEscola() {
+            $('#modalNovaEscolaLabel').text('Nova escola');
+            $('#escola-id').val('');
+            $('#escola-nome').val('');
+            $('#escola-inep').val('');
+
+            $('#escola-logradouro').val('');
+            $('#escola-numero').val('');
+            $('#escola-complemento').val('');
+            $('#escola-referencia').val('');
+            $('#escola-bairro').val('');
+            $('#escola-cep').val('');
+
+            // limpar checkboxes
+            $('.check-ensino-regime').prop('checked', false);
+            $('.check-ensino-nivel').prop('checked', false);
+            $('.check-ensino-horario').prop('checked', false);
+
+            // limpar selects de zoneamentos
+            $('#zoneamentos-disponiveis').empty();
+            $('#zoneamentos-selecionados').empty();
+            $('#filtro-zoneamentos-disponiveis').val('');
+
+            limparMarkerEscola();
+
+            var form = document.getElementById('form-escola');
+            if (form) form.classList.remove('was-validated');
+
+            // Carrega zoneamentos e preenche lista da esquerda
+            carregarZoneamentosParaSeletores();
+        }
+
+        function abrirModalEditarEscola(id) {
+            var e = escolas.find(function (item) { return String(item.id) === String(id); });
+            if (!e) return;
+
+            $('#modalNovaEscolaLabel').text('Editar escola');
+            $('#escola-id').val(e.id);
+            $('#escola-nome').val(e.nome || '');
+            $('#escola-inep').val(e.codigo_inep || '');
+            $('#filtro-zoneamentos-disponiveis').val('');
+
+            $('#escola-logradouro').val(e.logradouro || '');
+            $('#escola-numero').val(e.numero || '');
+            $('#escola-complemento').val(e.complemento || '');
+            $('#escola-referencia').val(e.referencia || '');
+            $('#escola-bairro').val(e.bairro || '');
+            $('#escola-cep').val(e.cep || '');
+
+            // checkboxes de ensino
+            var regimes = e.ensino_regime || [];
+            var niveis = e.ensino_nivel || [];
+            var horarios = e.ensino_horario || [];
+
+            $('.check-ensino-regime').each(function () {
+                var v = $(this).val();
+                $(this).prop('checked', regimes.indexOf(v) !== -1);
+            });
+            $('.check-ensino-nivel').each(function () {
+                var v = $(this).val();
+                $(this).prop('checked', niveis.indexOf(v) !== -1);
+            });
+            $('.check-ensino-horario').each(function () {
+                var v = $(this).val();
+                $(this).prop('checked', horarios.indexOf(v) !== -1);
+            });
+
+            // coordenadas
+            var lat = null, lng = null;
+            if (e.localizacao && e.localizacao.type === 'Point' && Array.isArray(e.localizacao.coordinates)) {
+                lng = e.localizacao.coordinates[0];
+                lat = e.localizacao.coordinates[1];
+            } else if (e.lat && e.lng) {
+                lat = e.lat;
+                lng = e.lng;
+            }
+            if (lat != null && lng != null) {
+                definirMarkerEscola(lat, lng, false);
+            } else {
+                limparMarkerEscola();
+            }
+
+            var form = document.getElementById('form-escola');
+            if (form) form.classList.remove('was-validated');
+
+            $('#modal-nova-escola').modal('show');
+
+            // carregar zoneamentos e separar disponíveis / vinculados
+            var idsVinculados = e.zoneamento_ids || [];
+            carregarZoneamentosParaSeletores().then(function () {
+                var selSel = $('#zoneamentos-selecionados');
+                selSel.empty();
+                idsVinculados.forEach(function (idZ) {
+                    var z = zoneamentosCache.find(function (zz) { return zz.id === idZ; });
+                    if (z) {
+                        var opt = $('<option>')
+                            .val(z.id)
+                            .text((z.nome || 'Zoneamento') + ' [' + z.tipo_zona + ']');
+                        selSel.append(opt);
+                    }
+                });
+                preencherSelectZoneamentosDisponiveis(idsVinculados);
+            });
+
+            setTimeout(function () {
+                if (mapEscolaLocalizacao) {
+                    mapEscolaLocalizacao.invalidateSize();
+                    if (lat != null && lng != null) {
+                        mapEscolaLocalizacao.setView([lat, lng], 16);
+                    }
+                }
+            }, 200);
+        }
+
+        function centralizarEscolaNoMapa(id) {
+            var marker = escolaMarkers[id];
+            if (!marker || !mapEscolas) return;
+
+            // encontra a escola para conhecer os zoneamentos vinculados
+            var escola = escolas.find(function (e) { return String(e.id) === String(id); });
+
+            // destaca zoneamentos
+            if (escola) {
+                destacarZoneamentosDaEscola(escola);
+            }
+
+            // calcula bounds com escola + zoneamentos
+            var bounds = L.latLngBounds(marker.getLatLng(), marker.getLatLng());
+
+            if (escola && escola.zoneamento_ids && escola.zoneamento_ids.length) {
+                escola.zoneamento_ids.forEach(function (idZ) {
+                    var layer = zoneamentoLayersEscolas[idZ];
+                    if (layer && layer.getBounds) {
+                        var b = layer.getBounds();
+                        if (b && b.isValid && b.isValid()) {
+                            bounds.extend(b);
+                        }
+                    }
+                });
+            }
+
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                mapEscolas.fitBounds(bounds.pad(0.2));
+            } else {
+                mapEscolas.setView(marker.getLatLng(), 16);
+            }
+
+            marker.openPopup();
+        }
+
+        function salvarEscola(event) {
+            event.preventDefault();
+            var form = document.getElementById('form-escola');
+            if (!form.checkValidity()) {
+                event.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+
+            var latStr = $('#escola-lat').val();
+            var lngStr = $('#escola-lng').val();
+            if (!latStr || !lngStr) {
+                mostrarMensagemSistema(
+                    'Localização da escola',
+                    'Marque a localização da escola no mapa antes de salvar.'
+                );
+                return;
+            }
+
+            var lat = parseFloat(latStr);
+            var lng = parseFloat(lngStr);
+            if (isNaN(lat) || isNaN(lng)) {
+                mostrarMensagemSistema(
+                    'Localização inválida',
+                    'As coordenadas da escola são inválidas. Clique novamente no mapa para definir o ponto.'
+                );
+                return;
+            }
+
+            var id = $('#escola-id').val() || null;
+            var nome = $('#escola-nome').val();
+            var codigo_inep = $('#escola-inep').val();
+
+            var logradouro = $('#escola-logradouro').val();
+            var numero = $('#escola-numero').val();
+            var complemento = $('#escola-complemento').val();
+            var referencia = $('#escola-referencia').val();
+            var bairro = $('#escola-bairro').val();
+            var cep = $('#escola-cep').val();
+
+            var ensino_regime = [];
+            $('.check-ensino-regime:checked').each(function () {
+                ensino_regime.push($(this).val());
+            });
+
+            var ensino_nivel = [];
+            $('.check-ensino-nivel:checked').each(function () {
+                ensino_nivel.push($(this).val());
+            });
+
+            var ensino_horario = [];
+            $('.check-ensino-horario:checked').each(function () {
+                ensino_horario.push($(this).val());
+            });
+
+            var zoneamento_ids = obterZoneamentoIdsSelecionados();
+
+            var payload = {
+                nome: nome,
+                codigo_inep: codigo_inep,
+                logradouro: logradouro,
+                numero: numero,
+                complemento: complemento,
+                referencia: referencia,
+                bairro: bairro,
+                cep: cep,
+                localizacao: {
+                    type: 'Point',
+                    coordinates: [lng, lat]
+                },
+                ensino_regime: ensino_regime,
+                ensino_nivel: ensino_nivel,
+                ensino_horario: ensino_horario,
+                zoneamento_ids: zoneamento_ids
+            };
+
+            var url = apiBaseEscolas;
+            var method = 'POST';
+            if (id) {
+                url = apiBaseEscolas + '/' + id;
+                method = 'PUT';
+            }
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().then(function (err) {
+                            throw err;
+                        }).catch(function () {
+                            throw new Error('Erro ao salvar escola');
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-nova-escola').modal('hide');
+                    return carregarEscolas();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar escola.');
+                });
+        }
+
+        function excluirEscola(id) {
+            confirmarAcaoSistema(
+                'Excluir escola',
+                'Deseja realmente excluir esta escola?',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                fetch(apiBaseEscolas + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao excluir escola');
+                        return resp.json();
+                    })
+                    .then(function () {
+                        return carregarEscolas();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir escola.');
+                    });
+            });
+        }
+
+        function obterIdsEscolasSelecionadas() {
+            var ids = [];
+            escolas.forEach(function (e) {
+                var chk = document.getElementById('escola-check-' + e.id);
+                if (chk && chk.checked) {
+                    ids.push(e.id);
+                }
+            });
+            return ids;
+        }
+
+        function estiloZonaEscola(feature) {
+            var tipoZona = feature.properties && feature.properties.tipo_zona ? feature.properties.tipo_zona : 'urbana';
+            var cor = tipoZona === 'rural' ? '#f4c542' : '#28a745';
+            var corBorda = tipoZona === 'rural' ? '#c89b1c' : '#1e7e34';
+
+            return {
+                color: corBorda,
+                weight: 3,
+                fillColor: cor,
+                fillOpacity: 0.35
+            };
+        }
+
+        function limparZoneamentosDestacados() {
+            if (!mapEscolas) return;
+            Object.keys(zoneamentoLayersEscolas).forEach(function (id) {
+                var layer = zoneamentoLayersEscolas[id];
+                if (layer && mapEscolas.hasLayer(layer)) {
+                    mapEscolas.removeLayer(layer);
+                }
+            });
+            zoneamentoLayersEscolas = {};
+        }
+
+        function destacarZoneamentosDaEscola(escola) {
+            if (!mapEscolas) return;
+
+            limparZoneamentosDestacados();
+
+            if (!escola.zoneamento_ids || !escola.zoneamento_ids.length) {
+                return;
+            }
+
+            escola.zoneamento_ids.forEach(function (idZ) {
+                var z = zoneamentosCache.find(function (zz) { return zz.id === idZ; });
+                if (!z || !z.geom) return;
+
+                try {
+                    var geometry = typeof z.geom === 'string' ? JSON.parse(z.geom) : z.geom;
+                    if (!geometry) return;
+
+                    var feature = {
+                        type: 'Feature',
+                        properties: {
+                            id: z.id,
+                            nome: z.nome,
+                            tipo_zona: z.tipo_zona
+                        },
+                        geometry: geometry
+                    };
+
+                    var layer = L.geoJSON(feature, { style: estiloZonaEscola });
+                    layer.addTo(mapEscolas);
+                    zoneamentoLayersEscolas[z.id] = layer;
+                } catch (e) {
+                    console.error('Erro ao desenhar zoneamento no mapa de escolas', e);
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            initMapEscolas();
+            initMapEscolaLocalizacao();
+            carregarEscolas();
+            carregarZoneamentosParaSeletores();
+
+            $('#btn-atualizar-mapa-escolas').on('click', function () {
+                carregarEscolas();
+            });
+
+            $('#search-escolas').on('input', function () {
+                renderizarTabelaEscolas();
+            });
+
+            $('#check-all-escolas').on('change', function () {
+                var checked = this.checked;
+                escolas.forEach(function (e) {
+                    var chk = document.getElementById('escola-check-' + e.id);
+                    if (chk) chk.checked = checked;
+                });
+            });
+
+            $('#btn-abrir-nova-escola').on('click', function () {
+                abrirModalNovaEscola();
+            });
+
+            $('#modal-nova-escola').on('shown.bs.modal', function () {
+                if (mapEscolaLocalizacao) {
+                    setTimeout(function () {
+                        mapEscolaLocalizacao.invalidateSize();
+                        if ($('#escola-lat').val() && $('#escola-lng').val()) {
+                            var lat = parseFloat($('#escola-lat').val());
+                            var lng = parseFloat($('#escola-lng').val());
+                            if (!isNaN(lat) && !isNaN(lng)) {
+                                mapEscolaLocalizacao.setView([lat, lng], 16);
+                            }
+                        } else {
+                            mapEscolaLocalizacao.setView(defaultCenter, defaultZoom);
+                        }
+                    }, 150);
+                }
+            });
+
+            $('#form-escola').on('submit', salvarEscola);
+
+            $('#tbody-escolas').on('click', '.action-editar-escola', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                abrirModalEditarEscola(id);
+            });
+
+            $('#tbody-escolas').on('click', '.action-ver-mapa-escola', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                centralizarEscolaNoMapa(id);
+            });
+
+            $('#tbody-escolas').on('click', '.action-excluir-escola', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                excluirEscola(id);
+            });
+
+            $('#btn-excluir-escolas-selecionadas').on('click', function (e) {
+                e.preventDefault();
+                var ids = obterIdsEscolasSelecionadas();
+                if (!ids.length) {
+                    mostrarMensagemSistema('Atenção', 'Selecione ao menos uma escola.');
+                    return;
+                }
+
+                confirmarAcaoSistema(
+                    'Excluir escolas',
+                    'Deseja realmente excluir as escolas selecionadas?',
+                    'Excluir'
+                ).then(function (confirmado) {
+                    if (!confirmado) return;
+
+                    Promise.all(ids.map(function (id) {
+                        return fetch(apiBaseEscolas + '/' + id, { method: 'DELETE' });
+                    })).then(function () {
+                        carregarEscolas();
+                    }).catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir escolas selecionadas.');
+                    });
+                });
+
+            });
+
+            $('#btn-adicionar-zoneamento').on('click', function () {
+                moverSelecionados('zoneamentos-disponiveis', 'zoneamentos-selecionados');
+            });
+
+            $('#btn-remover-zoneamento').on('click', function () {
+                moverSelecionados('zoneamentos-selecionados', 'zoneamentos-disponiveis');
+            });
+
+        });
+    </script>
+
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+
+</body>
+
+</html>

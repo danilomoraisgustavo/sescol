@@ -1,0 +1,1767 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Zoneamentos</title>
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+    <style>
+        #map-zoneamentos,
+        #mapa-zoneamento-desenho {
+            width: 100%;
+            height: 420px;
+            border-radius: .25rem;
+            overflow: hidden;
+        }
+
+        #mapa-zoneamento-desenho {
+            height: 400px;
+        }
+
+        .leaflet-container {
+            font: inherit;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Zoneamentos</h2>
+                                <p class="text-muted mb-0">
+                                    Visualize no mapa e gerencie todas as zonas urbanas e rurais do transporte escolar.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div>
+                                            <h2 class="h5 mb-0">Mapa de zoneamentos</h2>
+                                            <small class="text-muted">
+                                                Cada zona representa uma área de atendimento escolar urbana ou rural.
+                                            </small>
+                                        </div>
+                                        <div class="ml-auto d-flex align-items-center">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary mr-2"
+                                                id="btn-atualizar-mapa">
+                                                <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar mapa
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Upload de limite municipal (GeoJSON) -->
+                                        <div class="mb-3">
+                                            <form id="form-upload-territorio" class="form-inline">
+                                                <div class="form-group mr-2 mb-2">
+                                                    <label for="arquivo-territorio" class="sr-only">Limite
+                                                        municipal</label>
+                                                    <input type="file" class="form-control-file" id="arquivo-territorio"
+                                                        name="arquivo"
+                                                        accept=".geojson,application/geo+json,application/json">
+                                                </div>
+                                                <button type="submit" class="btn btn-sm btn-outline-primary mb-2">
+                                                    <span class="fe fe-upload-cloud fe-12 mr-1"></span>
+                                                    Enviar limite municipal (GeoJSON)
+                                                </button>
+                                            </form>
+                                            <small class="text-muted">
+                                                O limite territorial do município será usado para análises de alunos
+                                                dentro/fora do município
+                                                e para contextualizar os zoneamentos no mapa.
+                                            </small>
+                                        </div>
+
+                                        <div id="map-zoneamentos"></div>
+                                        <div class="mt-3 small text-muted">
+                                            <span class="badge badge-success mr-2">&nbsp;</span> Zona urbana
+                                            <span class="badge badge-warning text-dark ml-3 mr-2">&nbsp;</span> Zona
+                                            rural
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 my-4">
+                                <h2 class="h4 mb-1">Zoneamentos cadastrados</h2>
+                                <p class="mb-4">
+                                    Lista de todas as zonas de atendimento escolar registradas no sistema.
+                                </p>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-zoneamentos"
+                                                                class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control"
+                                                                id="search-zoneamentos"
+                                                                placeholder="Pesquisar por nome ou ID">
+                                                        </div>
+                                                        <div class="form-group col-auto ml-3">
+                                                            <label class="my-1 mr-2 sr-only" for="filtro-tipo-zona">Tipo
+                                                                de zona</label>
+                                                            <select class="custom-select my-1 mr-sm-2"
+                                                                id="filtro-tipo-zona">
+                                                                <option value="" selected>Todos os tipos</option>
+                                                                <option value="urbana">Urbana</option>
+                                                                <option value="rural">Rural</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="col ml-auto">
+                                                <div class="dropdown float-right">
+                                                    <button class="btn btn-primary float-right ml-3" type="button"
+                                                        data-toggle="modal" data-target="#modal-novo-zoneamento"
+                                                        id="btn-abrir-novo-zoneamento">
+                                                        Novo zoneamento +
+                                                    </button>
+                                                    <button class="btn btn-secondary dropdown-toggle" type="button"
+                                                        id="acoesZoneamentosMenu" data-toggle="dropdown"
+                                                        aria-haspopup="true" aria-expanded="false">
+                                                        Ações
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right"
+                                                        aria-labelledby="acoesZoneamentosMenu">
+                                                        <a class="dropdown-item" href="#"
+                                                            id="btn-exportar-selecionados">Exportar selecionados</a>
+                                                        <a class="dropdown-item text-danger" href="#"
+                                                            id="btn-excluir-selecionados">Excluir selecionados</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0"
+                                                id="tabela-zoneamentos">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width: 40px;">
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                    id="check-all-zoneamentos">
+                                                                <label class="custom-control-label"
+                                                                    for="check-all-zoneamentos"></label>
+                                                            </div>
+                                                        </th>
+                                                        <th style="width: 80px;">ID</th>
+                                                        <th>Nome</th>
+                                                        <th style="width: 200px;">Zona</th>
+                                                        <th style="width: 80px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-zoneamentos"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de zoneamentos" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-zoneamentos">
+                                            </ul>
+                                        </nav>
+
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modal-novo-zoneamento" tabindex="-1" role="dialog"
+                aria-labelledby="modalNovoZoneamentoLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-zoneamento" novalidate>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalNovoZoneamentoLabel">Novo zoneamento</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <input type="hidden" id="zoneamento-id" name="id">
+                                <div class="form-row">
+                                    <div class="form-group col-md-8">
+                                        <label for="zoneamento-nome">Nome do zoneamento</label>
+                                        <input type="text" class="form-control" id="zoneamento-nome" name="nome"
+                                            placeholder="Ex.: Zona Urbana Centro" required>
+                                        <div class="invalid-feedback">
+                                            Informe o nome do zoneamento.
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="zoneamento-tipo">Tipo de zona</label>
+                                        <select class="custom-select" id="zoneamento-tipo" name="tipo_zona" required>
+                                            <option value="" selected disabled>Selecione...</option>
+                                            <option value="urbana">Urbana</option>
+                                            <option value="rural">Rural</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Selecione o tipo de zona.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="zoneamento-geom-tipo">Tipo de delimitação</label>
+                                        <select class="custom-select" id="zoneamento-geom-tipo" name="tipo_geometria"
+                                            required>
+                                            <option value="" selected disabled>Selecione...</option>
+                                            <option value="polygon">Área (polígono) – bairros / áreas</option>
+                                            <option value="line">Via (linha) – estradas, vicinais, etc.</option>
+                                        </select>
+                                        <div class="invalid-feedback">
+                                            Selecione se será área (polígono) ou via (linha).
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card border mb-0">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                        <span class="small font-weight-bold text-uppercase">Desenhar zoneamento no
+                                            mapa</span>
+                                        <div class="btn-group btn-group-sm" role="group"
+                                            aria-label="Ferramentas de desenho">
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                id="btn-desenhar-poligono">
+                                                Polígono
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                id="btn-desenhar-linha">
+                                                Linha
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary"
+                                                id="btn-limpar-geom">
+                                                Limpar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="mapa-zoneamento-desenho"></div>
+                                    </div>
+                                    <div class="card-footer small text-muted">
+                                        Desenhe no mapa o perímetro (polígono) ou o eixo da via (linha) deste
+                                        zoneamento. A geometria será armazenada para envio ao banco de dados.
+                                    </div>
+                                </div>
+
+                                <input type="hidden" id="zoneamento-geom" name="geom">
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar zoneamento</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade modal-notif modal-slide" tabindex="-1" role="dialog"
+                aria-labelledby="defaultModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-sm" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="defaultModalLabel">Notifications</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="list-group list-group-flush my-n3">
+                                <div class="list-group-item bg-transparent">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <span class="fe fe-box fe-24"></span>
+                                        </div>
+                                        <div class="col">
+                                            <small><strong>Package has uploaded successfull</strong></small>
+                                            <div class="my-0 text-muted small">Package is zipped and uploaded</div>
+                                            <small class="badge badge-pill badge-light text-muted">1m ago</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="list-group-item bg-transparent">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <span class="fe fe-download fe-24"></span>
+                                        </div>
+                                        <div class="col">
+                                            <small><strong>Widgets are updated successfull</strong></small>
+                                            <div class="my-0 text-muted small">Just create new layout Index, form, table
+                                            </div>
+                                            <small class="badge badge-pill badge-light text-muted">2m ago</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="list-group-item bg-transparent">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <span class="fe fe-inbox fe-24"></span>
+                                        </div>
+                                        <div class="col">
+                                            <small><strong>Notifications have been sent</strong></small>
+                                            <div class="my-0 text-muted small">Fusce dapibus, tellus ac cursus commodo
+                                            </div>
+                                            <small class="badge badge-pill badge-light text-muted">30m ago</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="list-group-item bg-transparent">
+                                    <div class="row align-items-center">
+                                        <div class="col-auto">
+                                            <span class="fe fe-link fe-24"></span>
+                                        </div>
+                                        <div class="col">
+                                            <small><strong>Link was attached to menu</strong></small>
+                                            <div class="my-0 text-muted small">New layout has been attached to the menu
+                                            </div>
+                                            <small class="badge badge-pill badge-light text-muted">1h ago</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary btn-block" data-dismiss="modal">Clear
+                                All</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- MODAL: MENSAGEM DO SISTEMA -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo">
+                            <!-- mensagem aqui -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: CONFIRMAÇÃO DO SISTEMA -->
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo">
+                            <!-- texto de confirmação aqui -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/d3.min.js"></script>
+    <script src="../../js/topojson.min.js"></script>
+    <script src="../../js/datamaps.all.min.js"></script>
+    <script src="../../js/datamaps-zoomto.js"></script>
+    <script src="../../js/datamaps.custom.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script>
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+
+    <script>
+        $('.select2').select2({ theme: 'bootstrap4' });
+        $('.select2-multi').select2({ multiple: true, theme: 'bootstrap4' });
+        $('.drgpicker').daterangepicker({ singleDatePicker: true, timePicker: false, showDropdowns: true, locale: { format: 'MM/DD/YYYY' } });
+        $('.time-input').timepicker({ 'scrollDefault': 'now', 'zindex': '9999' });
+        if ($('.datetimes').length) {
+            $('.datetimes').daterangepicker({
+                timePicker: true,
+                startDate: moment().startOf('hour'),
+                endDate: moment().startOf('hour').add(32, 'hour'),
+                locale: { format: 'M/DD hh:mm A' }
+            });
+        }
+        var start = moment().subtract(29, 'days');
+        var end = moment();
+        function cb(start, end) {
+            $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+        }
+        $('#reportrange').daterangepicker({
+            startDate: start,
+            endDate: end,
+            ranges: {
+                'Today': [moment(), moment()],
+                'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+                'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+                'This Month': [moment().startOf('month'), moment().endOf('month')],
+                'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        }, cb);
+        cb(start, end);
+        $('.input-placeholder').mask("00/00/0000", { placeholder: "__/__/____" });
+        $('.input-zip').mask('00000-000', { placeholder: "____-___" });
+        $('.input-money').mask("#.##0,00", { reverse: true });
+        $('.input-phoneus').mask('(000) 000-0000');
+        $('.input-mixed').mask('AAA 000-S0S');
+        $('.input-ip').mask('0ZZ.0ZZ.0ZZ.0ZZ', {
+            translation: { 'Z': { pattern: /[0-9]/, optional: true } },
+            placeholder: "___.___.___.___"
+        });
+        var editor = document.getElementById('editor');
+        if (editor) {
+            var toolbarOptions = [
+                [{ 'font': [] }],
+                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                ['blockquote', 'code-block'],
+                [{ 'header': 1 }, { 'header': 2 }],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                [{ 'script': 'sub' }, { 'script': 'super' }],
+                [{ 'indent': '-1' }, { 'indent': '+1' }],
+                [{ 'direction': 'rtl' }],
+                [{ 'color': [] }, { 'background': [] }],
+                [{ 'align': [] }],
+                ['clean']
+            ];
+            var quill = new Quill(editor, { modules: { toolbar: toolbarOptions }, theme: 'snow' });
+        }
+        (function () {
+            'use strict';
+            window.addEventListener('load', function () {
+                var forms = document.getElementsByClassName('needs-validation');
+                Array.prototype.filter.call(forms, function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+        var uptarg = document.getElementById('drag-drop-area');
+        if (uptarg) {
+            var uppy = Uppy.Core().use(Uppy.Dashboard, {
+                inline: true,
+                target: uptarg,
+                proudlyDisplayPoweredByUppy: false,
+                theme: 'dark',
+                width: 770,
+                height: 210,
+                plugins: ['Webcam']
+            }).use(Uppy.Tus, { endpoint: 'https://master.tus.io/files/' });
+            uppy.on('complete', function (result) {
+                console.log('Upload complete! We’ve uploaded these files:', result.successful);
+            });
+        }
+    </script>
+
+    <script>
+        var apiBaseZoneamentos = '/api/zoneamentos';
+
+
+        // =========================
+        // AUTH helper (JWT)
+        // =========================
+        function parseCookies(cookieHeader) {
+            var cookies = {};
+            if (!cookieHeader) return cookies;
+            String(cookieHeader).split(';').forEach(function (part) {
+                var idx = part.indexOf('=');
+                if (idx === -1) return;
+                var key = part.slice(0, idx).trim();
+                var val = part.slice(idx + 1).trim();
+                if (!key) return;
+                try {
+                    cookies[key] = decodeURIComponent(val);
+                } catch (e) {
+                    cookies[key] = val;
+                }
+            });
+            return cookies;
+        }
+
+        function getAuthToken() {
+            // 1) localStorage (padrões comuns no projeto)
+            try {
+                var keys = ['token', 'authToken', 'access_token', 'jwt', 'accessToken', 'setrane_token'];
+                for (var i = 0; i < keys.length; i++) {
+                    var v = localStorage.getItem(keys[i]);
+                    if (v) return v;
+                }
+            } catch (e) { }
+
+            // 2) cookie (caso esteja usando cookie httpOnly ou não)
+            var cookies = parseCookies(document.cookie || '');
+            return (
+                cookies.token ||
+                cookies.authToken ||
+                cookies.access_token ||
+                cookies.jwt ||
+                cookies.accessToken ||
+                cookies['setrane_token'] ||
+                ''
+            );
+        }
+
+        function handleUnauthorized() {
+            try {
+                ['token', 'authToken', 'access_token', 'jwt', 'accessToken', 'setrane_token'].forEach(function (k) {
+                    try { localStorage.removeItem(k); } catch (e) { }
+                });
+            } catch (e) { }
+
+            // tenta levar o usuário para a tela de login
+            var next = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = 'auth-login.html?next=' + next;
+        }
+
+        function apiFetch(url, options) {
+            options = options || {};
+            var headers = options.headers || {};
+            var token = getAuthToken();
+
+            // Normaliza headers para objeto simples (evita quebrar quando headers for Headers)
+            var normalized = {};
+            try {
+                if (headers && typeof headers.forEach === 'function') {
+                    headers.forEach(function (value, key) {
+                        normalized[key] = value;
+                    });
+                } else {
+                    normalized = Object.assign({}, headers);
+                }
+            } catch (e) {
+                normalized = Object.assign({}, headers);
+            }
+
+            if (token && !normalized.Authorization && !normalized.authorization) {
+                normalized.Authorization = 'Bearer ' + token;
+            }
+
+            // Para chamadas same-origin, cookies são enviados por padrão, mas deixamos explícito
+            var merged = Object.assign({}, options, {
+                credentials: 'same-origin',
+                headers: normalized
+            });
+
+            return window.fetch(url, merged).then(function (resp) {
+                if (resp.status === 401) {
+                    handleUnauthorized();
+                }
+                return resp;
+            });
+        }
+
+        var mapZoneamentos;
+        var mapDesenho;
+        var drawnItems;
+        var drawPolygon;
+        var drawPolyline;
+        var zoneamentos = [];
+        var zoneamentoLayers = {};
+        var defaultCenter = [-6.530070, -49.851620];
+        var defaultZoom = 12;
+
+        var paginaAtualZoneamentos = 1;
+        var totalPaginasZoneamentos = 1;
+        var tamanhoPaginaZoneamentos = 20;
+
+        // Camadas de território municipal (limite do município)
+        var camadaTerritorioMunicipioZoneamentos = null;
+        var camadaTerritorioMunicipioDesenho = null;
+
+        // Mapa base com Google Hybrid + opção de OSM
+        function criarMapaBase(divId) {
+            var googleHybrid = L.tileLayer(
+                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                {
+                    maxZoom: 20,
+                    attribution: '&copy; Google'
+                }
+            );
+
+            var osm = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }
+            );
+
+            var map = L.map(divId, {
+                zoomControl: true,
+                center: defaultCenter,
+                zoom: defaultZoom,
+                layers: [googleHybrid]
+            });
+
+            var baseLayers = {
+                'Google Hybrid': googleHybrid,
+                'OpenStreetMap': osm
+            };
+
+            L.control.layers(baseLayers, null, {
+                position: 'topright'
+            }).addTo(map);
+
+            return map;
+        }
+
+        function initMapZoneamentos() {
+            mapZoneamentos = criarMapaBase('map-zoneamentos');
+        }
+
+        function atualizarGeomOcultaAPartirDoDesenho() {
+            if (!drawnItems) return;
+
+            var layers = drawnItems.getLayers();
+            if (!layers.length) {
+                $('#zoneamento-geom').val('');
+                return;
+            }
+
+            var fc = drawnItems.toGeoJSON();
+            if (!fc || !fc.features || !fc.features.length) return;
+
+            var geometry = fc.features[0].geometry;
+            $('#zoneamento-geom').val(JSON.stringify(geometry));
+
+            if (geometry && geometry.type) {
+                if (geometry.type === 'Polygon' || geometry.type === 'MultiPolygon') {
+                    $('#zoneamento-geom-tipo').val('polygon');
+                } else if (geometry.type === 'LineString' || geometry.type === 'MultiLineString') {
+                    $('#zoneamento-geom-tipo').val('line');
+                }
+            }
+        }
+
+        function initMapDesenho() {
+            mapDesenho = criarMapaBase('mapa-zoneamento-desenho');
+
+            drawnItems = new L.FeatureGroup();
+            mapDesenho.addLayer(drawnItems);
+
+            drawPolygon = new L.Draw.Polygon(mapDesenho, {
+                allowIntersection: false,
+                showArea: true
+            });
+
+            drawPolyline = new L.Draw.Polyline(mapDesenho, {});
+
+            mapDesenho.on(L.Draw.Event.CREATED, function (e) {
+                drawnItems.clearLayers();
+                var layer = e.layer;
+                drawnItems.addLayer(layer);
+
+                if (layer.editing && layer.editing.enable) {
+                    layer.editing.enable();
+                    layer.on('edit', atualizarGeomOcultaAPartirDoDesenho);
+                }
+
+                atualizarGeomOcultaAPartirDoDesenho();
+            });
+        }
+
+        // Carrega limite municipal no mapa principal
+        function carregarTerritorioMunicipioPrincipal() {
+            if (!mapZoneamentos) return;
+
+            apiFetch(apiBaseZoneamentos + '/territorio/geo')
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        throw new Error('Território municipal não cadastrado.');
+                    }
+                    return resp.json();
+                })
+                .then(function (feature) {
+                    // Remove camada anterior, se existir
+                    if (camadaTerritorioMunicipioZoneamentos) {
+                        mapZoneamentos.removeLayer(camadaTerritorioMunicipioZoneamentos);
+                    }
+
+                    camadaTerritorioMunicipioZoneamentos = L.geoJSON(feature, {
+                        style: {
+                            weight: 2,
+                            color: '#ffffff',
+                            fillColor: '#3388ff',
+                            fillOpacity: 0.05
+                        }
+                    }).addTo(mapZoneamentos);
+
+                    // Recalcula bounds incluindo o território
+                    atualizarMapaZoneamentos();
+                })
+                .catch(function (err) {
+                    console.warn('Aviso ao carregar território municipal (mapa principal):', err.message);
+                });
+        }
+
+        // Carrega limite municipal no mapa de desenho de zoneamento
+        function carregarTerritorioMunicipioDesenho() {
+            if (!mapDesenho) return;
+
+            apiFetch(apiBaseZoneamentos + '/territorio/geo')
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        throw new Error('Território municipal não cadastrado.');
+                    }
+                    return resp.json();
+                })
+                .then(function (feature) {
+                    if (camadaTerritorioMunicipioDesenho) {
+                        mapDesenho.removeLayer(camadaTerritorioMunicipioDesenho);
+                    }
+
+                    camadaTerritorioMunicipioDesenho = L.geoJSON(feature, {
+                        style: {
+                            weight: 2,
+                            color: '#ffffff',
+                            fillColor: '#3388ff',
+                            fillOpacity: 0.03
+                        }
+                    }).addTo(mapDesenho);
+
+                    var b = camadaTerritorioMunicipioDesenho.getBounds();
+                    if (b && b.isValid && b.isValid()) {
+                        // Só centraliza pelo território se ainda não há desenho do zoneamento
+                        if (drawnItems && drawnItems.getLayers().length === 0) {
+                            mapDesenho.fitBounds(b.pad(0.1));
+                        }
+                    }
+                })
+                .catch(function (err) {
+                    console.warn('Aviso ao carregar território municipal (mapa de desenho):', err.message);
+                });
+        }
+
+        function limparDesenho() {
+            if (drawPolygon) drawPolygon.disable();
+            if (drawPolyline) drawPolyline.disable();
+
+            if (drawnItems) {
+                drawnItems.clearLayers();
+            }
+            $('#zoneamento-geom').val('');
+        }
+
+        function estiloZona(feature) {
+            var tipoZona = feature.properties && feature.properties.tipo_zona ? feature.properties.tipo_zona : 'urbana';
+            var cor = tipoZona === 'rural' ? '#f4c542' : '#28a745';
+            var corBorda = tipoZona === 'rural' ? '#c89b1c' : '#1e7e34';
+
+            return {
+                color: corBorda,
+                weight: 2,
+                fillColor: cor,
+                fillOpacity: 0.25
+            };
+        }
+
+        function adicionarZoneamentoNoMapa(z) {
+            if (!z.geom) return;
+
+            try {
+                var geometry = typeof z.geom === 'string' ? JSON.parse(z.geom) : z.geom;
+
+                var geojson = {
+                    type: 'Feature',
+                    properties: {
+                        id: z.id,
+                        nome: z.nome,
+                        tipo_zona: z.tipo_zona,
+                        tipo_geometria: z.tipo_geometria
+                    },
+                    geometry: geometry
+                };
+
+                var layer = L.geoJSON(geojson, { style: estiloZona });
+                layer.addTo(mapZoneamentos);
+                zoneamentoLayers[z.id] = layer;
+
+                layer.bindPopup(
+                    '<strong>' + z.nome + '</strong><br>Zona: ' +
+                    (z.tipo_zona === 'rural' ? 'Rural' : 'Urbana')
+                );
+            } catch (e) {
+                console.error('Erro ao adicionar zoneamento no mapa', e);
+            }
+        }
+
+        function limparMapaZoneamentos() {
+            Object.keys(zoneamentoLayers).forEach(function (id) {
+                var layer = zoneamentoLayers[id];
+                if (layer && mapZoneamentos.hasLayer(layer)) {
+                    mapZoneamentos.removeLayer(layer);
+                }
+            });
+            zoneamentoLayers = {};
+        }
+
+        function atualizarPaginacaoZoneamentos() {
+            var ul = document.getElementById('paginacao-zoneamentos');
+            if (!ul) return;
+
+            ul.innerHTML = '';
+
+            var liPrev = document.createElement('li');
+            liPrev.className = 'page-item' + (paginaAtualZoneamentos <= 1 ? ' disabled' : '');
+
+            var aPrev = document.createElement('a');
+            aPrev.className = 'page-link';
+            aPrev.href = '#';
+            aPrev.textContent = 'Anterior';
+            aPrev.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualZoneamentos > 1) {
+                    irParaPaginaZoneamentos(paginaAtualZoneamentos - 1);
+                }
+            });
+
+            liPrev.appendChild(aPrev);
+            ul.appendChild(liPrev);
+
+            var liInfo = document.createElement('li');
+            liInfo.className = 'page-item disabled';
+
+            var aInfo = document.createElement('a');
+            aInfo.className = 'page-link';
+            aInfo.href = '#';
+            aInfo.textContent = paginaAtualZoneamentos + ' / ' + totalPaginasZoneamentos;
+
+            liInfo.appendChild(aInfo);
+            ul.appendChild(liInfo);
+
+            var liNext = document.createElement('li');
+            liNext.className = 'page-item' + (paginaAtualZoneamentos >= totalPaginasZoneamentos ? ' disabled' : '');
+
+            var aNext = document.createElement('a');
+            aNext.className = 'page-link';
+            aNext.href = '#';
+            aNext.textContent = 'Próxima';
+            aNext.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualZoneamentos < totalPaginasZoneamentos) {
+                    irParaPaginaZoneamentos(paginaAtualZoneamentos + 1);
+                }
+            });
+
+            liNext.appendChild(aNext);
+            ul.appendChild(liNext);
+        }
+
+        function irParaPaginaZoneamentos(pagina) {
+            if (pagina < 1 || pagina > totalPaginasZoneamentos) return;
+            paginaAtualZoneamentos = pagina;
+            renderizarTabelaZoneamentos();
+        }
+
+        function carregarZoneamentos() {
+            return apiFetch(apiBaseZoneamentos)
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        throw new Error('Erro ao buscar zoneamentos');
+                    }
+                    return resp.json();
+                })
+                .then(function (data) {
+                    zoneamentos = data || [];
+                    paginaAtualZoneamentos = 1;
+                    renderizarTabelaZoneamentos();
+                    atualizarMapaZoneamentos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+        }
+
+        function renderizarTabelaZoneamentos() {
+            var tbody = document.getElementById('tbody-zoneamentos');
+            if (!tbody) return;
+
+            var termo = $('#search-zoneamentos').val() || '';
+            var filtroTipo = $('#filtro-tipo-zona').val() || '';
+            var termoLower = termo.toLowerCase();
+
+            var checkAll = document.getElementById('check-all-zoneamentos');
+            if (checkAll) {
+                checkAll.checked = false;
+            }
+
+            var filtrados = zoneamentos.filter(function (z) {
+                var matchTermo = true;
+                if (termoLower) {
+                    var texto = (String(z.id) + ' ' + (z.nome || '')).toLowerCase();
+                    matchTermo = texto.indexOf(termoLower) !== -1;
+                }
+
+                var matchTipo = true;
+                if (filtroTipo) {
+                    matchTipo = z.tipo_zona === filtroTipo;
+                }
+
+                return matchTermo && matchTipo;
+            });
+
+            totalPaginasZoneamentos = Math.max(
+                1,
+                Math.ceil(filtrados.length / tamanhoPaginaZoneamentos)
+            );
+
+            if (paginaAtualZoneamentos > totalPaginasZoneamentos) {
+                paginaAtualZoneamentos = totalPaginasZoneamentos;
+            }
+            if (paginaAtualZoneamentos < 1) {
+                paginaAtualZoneamentos = 1;
+            }
+
+            var inicio = (paginaAtualZoneamentos - 1) * tamanhoPaginaZoneamentos;
+            var fim = inicio + tamanhoPaginaZoneamentos;
+            var paginaItens = filtrados.slice(inicio, fim);
+
+            tbody.innerHTML = '';
+
+            paginaItens.forEach(function (z) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', z.id);
+
+                var tdCheck = document.createElement('td');
+                var divCheck = document.createElement('div');
+                divCheck.className = 'custom-control custom-checkbox';
+
+                var inputCheck = document.createElement('input');
+                inputCheck.type = 'checkbox';
+                inputCheck.className = 'custom-control-input';
+                inputCheck.id = 'zoneamento-check-' + z.id;
+
+                var labelCheck = document.createElement('label');
+                labelCheck.className = 'custom-control-label';
+                labelCheck.setAttribute('for', inputCheck.id);
+
+                divCheck.appendChild(inputCheck);
+                divCheck.appendChild(labelCheck);
+                tdCheck.appendChild(divCheck);
+                tr.appendChild(tdCheck);
+
+                var tdId = document.createElement('td');
+                tdId.textContent = z.id;
+                tr.appendChild(tdId);
+
+                var tdNome = document.createElement('td');
+                tdNome.textContent = z.nome || '';
+                tr.appendChild(tdNome);
+
+                var tdZona = document.createElement('td');
+                var spanZona = document.createElement('span');
+                if (z.tipo_zona === 'rural') {
+                    spanZona.className = 'badge badge-warning text-dark';
+                    spanZona.textContent = 'Rural';
+                } else {
+                    spanZona.className = 'badge badge-success';
+                    spanZona.textContent = 'Urbana';
+                }
+                tdZona.appendChild(spanZona);
+                tr.appendChild(tdZona);
+
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+
+                btnDrop.appendChild(spanSr);
+
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-zoneamento';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', z.id);
+                aEditar.textContent = 'Editar';
+
+                var aVerMapa = document.createElement('a');
+                aVerMapa.className = 'dropdown-item action-ver-mapa-zoneamento';
+                aVerMapa.href = '#';
+                aVerMapa.setAttribute('data-id', z.id);
+                aVerMapa.textContent = 'Visualizar no mapa';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-zoneamento';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', z.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aEditar);
+                menu.appendChild(aVerMapa);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarPaginacaoZoneamentos();
+        }
+
+        function atualizarMapaZoneamentos() {
+            if (!mapZoneamentos) return;
+
+            limparMapaZoneamentos();
+
+            var bounds = null;
+
+            zoneamentos.forEach(function (z) {
+                adicionarZoneamentoNoMapa(z);
+                var layer = zoneamentoLayers[z.id];
+
+                if (layer) {
+                    var lb = layer.getBounds ? layer.getBounds() : null;
+                    if (lb && lb.isValid && lb.isValid()) {
+                        if (!bounds) {
+                            bounds = lb;
+                        } else {
+                            bounds = bounds.extend(lb);
+                        }
+                    }
+                }
+            });
+
+            // Inclui o limite municipal no cálculo de bounds, se existir
+            if (camadaTerritorioMunicipioZoneamentos) {
+                var tb = camadaTerritorioMunicipioZoneamentos.getBounds();
+                if (tb && tb.isValid && tb.isValid()) {
+                    if (!bounds) {
+                        bounds = tb;
+                    } else {
+                        bounds = bounds.extend(tb);
+                    }
+                }
+            }
+
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                mapZoneamentos.fitBounds(bounds.pad(0.2));
+            } else {
+                mapZoneamentos.setView(defaultCenter, defaultZoom);
+            }
+        }
+
+        function abrirModalNovoZoneamento() {
+            $('#modalNovoZoneamentoLabel').text('Novo zoneamento');
+            $('#zoneamento-id').val('');
+            $('#zoneamento-nome').val('');
+            $('#zoneamento-tipo').val('');
+            $('#zoneamento-geom-tipo').val('');
+            $('#zoneamento-geom').val('');
+
+            limparDesenho();
+
+            $('#form-zoneamento')[0].classList.remove('was-validated');
+        }
+
+        function abrirModalEditarZoneamento(id) {
+            var z = zoneamentos.find(function (item) { return String(item.id) === String(id); });
+            if (!z) return;
+
+            $('#modalNovoZoneamentoLabel').text('Editar zoneamento');
+            $('#zoneamento-id').val(z.id);
+            $('#zoneamento-nome').val(z.nome || '');
+            $('#zoneamento-tipo').val(z.tipo_zona || '');
+            $('#zoneamento-geom-tipo').val(z.tipo_geometria || '');
+            $('#zoneamento-geom').val('');
+
+            limparDesenho();
+
+            $('#form-zoneamento')[0].classList.remove('was-validated');
+
+            $('#modal-novo-zoneamento').modal('show');
+
+            setTimeout(function () {
+                if (mapDesenho) {
+                    mapDesenho.invalidateSize();
+
+                    if (z.geom) {
+                        try {
+                            var geometry = typeof z.geom === 'string' ? JSON.parse(z.geom) : z.geom;
+
+                            var feature = {
+                                type: 'Feature',
+                                properties: {},
+                                geometry: geometry
+                            };
+
+                            var geoLayer = L.geoJSON(feature);
+                            drawnItems.clearLayers();
+
+                            geoLayer.eachLayer(function (l) {
+                                drawnItems.addLayer(l);
+                                if (l.editing && l.editing.enable) {
+                                    l.editing.enable();
+                                    l.on('edit', atualizarGeomOcultaAPartirDoDesenho);
+                                }
+                            });
+
+                            if (drawnItems.getLayers().length) {
+                                var b = drawnItems.getBounds();
+                                if (b && b.isValid && b.isValid()) {
+                                    mapDesenho.fitBounds(b.pad(0.1));
+                                }
+                            }
+
+                            atualizarGeomOcultaAPartirDoDesenho();
+                        } catch (e) {
+                            console.error('Erro ao carregar geometria para edição', e);
+                        }
+                    }
+                }
+            }, 200);
+        }
+
+        function centralizarZoneamentoNoMapa(id) {
+            var layer = zoneamentoLayers[id];
+            if (!layer || !mapZoneamentos) return;
+
+            var bounds = layer.getBounds && layer.getBounds();
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                mapZoneamentos.fitBounds(bounds.pad(0.3));
+            }
+
+            if (layer.getLayers && layer.getLayers().length > 0) {
+                var l = layer.getLayers()[0];
+                if (l.openPopup) l.openPopup();
+            }
+        }
+
+        function salvarZoneamento(event) {
+            event.preventDefault();
+
+            var form = document.getElementById('form-zoneamento');
+            if (!form.checkValidity()) {
+                event.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+
+            var id = $('#zoneamento-id').val() || null;
+            var nome = $('#zoneamento-nome').val();
+            var tipo_zona = $('#zoneamento-tipo').val();
+            var tipo_geometria = $('#zoneamento-geom-tipo').val();
+            var geomStr = $('#zoneamento-geom').val();
+
+            if (!geomStr) {
+                mostrarMensagemSistema(
+                    'Desenhar zoneamento',
+                    'Desenhe a geometria do zoneamento no mapa antes de salvar.'
+                );
+                return;
+            }
+
+            var geom;
+            try {
+                geom = JSON.parse(geomStr);
+            } catch (e) {
+                mostrarMensagemSistema(
+                    'Geometria inválida',
+                    'A geometria do zoneamento é inválida. Limpe o desenho e desenhe novamente no mapa antes de salvar.'
+                );
+                return;
+            }
+
+            var payload = {
+                nome: nome,
+                tipo_zona: tipo_zona,
+                tipo_geometria: tipo_geometria,
+                geom: geom
+            };
+
+            var url = apiBaseZoneamentos;
+            var method = 'POST';
+            if (id) {
+                url = apiBaseZoneamentos + '/' + id;
+                method = 'PUT';
+            }
+
+            apiFetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().then(function (err) {
+                            throw err;
+                        }).catch(function () {
+                            throw new Error('Erro ao salvar zoneamento');
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-novo-zoneamento').modal('hide');
+                    return carregarZoneamentos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar zoneamento.');
+                });
+        }
+
+        function excluirZoneamento(id) {
+            confirmarAcaoSistema(
+                'Excluir zoneamento',
+                'Deseja realmente excluir este zoneamento?',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                apiFetch(apiBaseZoneamentos + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) {
+                            throw new Error('Erro ao excluir zoneamento');
+                        }
+                        return resp.json();
+                    })
+                    .then(function () {
+                        return carregarZoneamentos();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir zoneamento.');
+                    });
+            });
+        }
+
+        function obterIdsSelecionados() {
+            var ids = [];
+            zoneamentos.forEach(function (z) {
+                var chk = document.getElementById('zoneamento-check-' + z.id);
+                if (chk && chk.checked) {
+                    ids.push(z.id);
+                }
+            });
+            return ids;
+        }
+
+        $(document).ready(function () {
+            initMapZoneamentos();
+            initMapDesenho();
+
+            carregarZoneamentos();
+            carregarTerritorioMunicipioPrincipal();
+            carregarTerritorioMunicipioDesenho();
+
+            $('#btn-atualizar-mapa').on('click', function () {
+                carregarZoneamentos();
+                carregarTerritorioMunicipioPrincipal();
+            });
+
+            // Upload do limite municipal (GeoJSON)
+            $('#form-upload-territorio').on('submit', function (e) {
+                e.preventDefault();
+
+                var input = document.getElementById('arquivo-territorio');
+                if (!input || !input.files || !input.files[0]) {
+                    mostrarMensagemSistema(
+                        'Limite municipal',
+                        'Selecione um arquivo GeoJSON para enviar.'
+                    );
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append('arquivo', input.files[0]);
+                formData.append('nome', 'Território municipal');
+
+                apiFetch(apiBaseZoneamentos + '/territorio/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(async function (resp) {
+                        var text = await resp.text();
+
+                        var data;
+                        try {
+                            data = JSON.parse(text);
+                        } catch (e) {
+                            console.error('Resposta não JSON ao enviar território:', text);
+                            throw new Error('Servidor retornou uma resposta inválida ao enviar o território municipal.');
+                        }
+
+                        if (!resp.ok || data.error) {
+                            var msg = data && data.error ? data.error : 'Erro ao enviar território municipal.';
+                            throw new Error(msg);
+                        }
+
+                        return data;
+                    })
+                    .then(function () {
+                        // Limpa input
+                        $('#arquivo-territorio').val('');
+                        mostrarMensagemSistema(
+                            'Limite municipal',
+                            'Território municipal atualizado com sucesso.'
+                        );
+                        carregarTerritorioMunicipioPrincipal();
+                        carregarTerritorioMunicipioDesenho();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema(
+                            'Erro ao enviar limite municipal',
+                            err.message || 'Erro ao enviar território municipal.'
+                        );
+                    });
+            });
+
+            $('#search-zoneamentos').on('input', function () {
+                paginaAtualZoneamentos = 1;
+                renderizarTabelaZoneamentos();
+            });
+
+            $('#filtro-tipo-zona').on('change', function () {
+                paginaAtualZoneamentos = 1;
+                renderizarTabelaZoneamentos();
+            });
+
+            $('#check-all-zoneamentos').on('change', function () {
+                var checked = this.checked;
+                zoneamentos.forEach(function (z) {
+                    var chk = document.getElementById('zoneamento-check-' + z.id);
+                    if (chk) chk.checked = checked;
+                });
+            });
+
+            $('#btn-abrir-novo-zoneamento').on('click', function () {
+                abrirModalNovoZoneamento();
+            });
+
+            $('#modal-novo-zoneamento').on('shown.bs.modal', function () {
+                if (mapDesenho) {
+                    setTimeout(function () {
+                        mapDesenho.invalidateSize();
+                        // Recarrega o território no mapa de desenho (caso tenha sido atualizado)
+                        carregarTerritorioMunicipioDesenho();
+                    }, 150);
+                }
+            });
+
+            $('#btn-desenhar-poligono').on('click', function () {
+                if (!mapDesenho || !drawPolygon) return;
+                if (drawPolyline) drawPolyline.disable();
+
+                limparDesenho();
+                $('#zoneamento-geom-tipo').val('polygon');
+                drawPolygon.enable();
+            });
+
+            $('#btn-desenhar-linha').on('click', function () {
+                if (!mapDesenho || !drawPolyline) return;
+                if (drawPolygon) drawPolygon.disable();
+
+                limparDesenho();
+                $('#zoneamento-geom-tipo').val('line');
+                drawPolyline.enable();
+            });
+
+            $('#btn-limpar-geom').on('click', function () {
+                limparDesenho();
+            });
+
+            $('#form-zoneamento').on('submit', salvarZoneamento);
+
+            $('#tbody-zoneamentos').on('click', '.action-editar-zoneamento', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                abrirModalEditarZoneamento(id);
+            });
+
+            $('#tbody-zoneamentos').on('click', '.action-ver-mapa-zoneamento', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                centralizarZoneamentoNoMapa(id);
+            });
+
+            $('#tbody-zoneamentos').on('click', '.action-excluir-zoneamento', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                excluirZoneamento(id);
+            });
+
+            $('#btn-excluir-selecionados').on('click', function (e) {
+                e.preventDefault();
+
+                var ids = obterIdsSelecionados();
+                if (!ids.length) {
+                    mostrarMensagemSistema('Atenção', 'Selecione ao menos um zoneamento.');
+                    return;
+                }
+
+                confirmarAcaoSistema(
+                    'Excluir zoneamentos',
+                    'Deseja realmente excluir os zoneamentos selecionados?',
+                    'Excluir'
+                ).then(function (confirmado) {
+                    if (!confirmado) return;
+
+                    Promise.all(ids.map(function (id) {
+                        return apiFetch(apiBaseZoneamentos + '/' + id, { method: 'DELETE' });
+                    })).then(function () {
+                        carregarZoneamentos();
+                    }).catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir zoneamentos selecionados.');
+                    });
+                });
+            });
+
+            $('#btn-exportar-selecionados').on('click', function (e) {
+                e.preventDefault();
+
+                var ids = obterIdsSelecionados();
+                if (!ids.length) {
+                    mostrarMensagemSistema(
+                        'Exportar zoneamentos',
+                        'Selecione ao menos um zoneamento para exportar.'
+                    );
+                    return;
+                }
+
+                var selecionados = zoneamentos.filter(function (z) {
+                    return ids.indexOf(z.id) !== -1;
+                });
+
+                var blob = new Blob(
+                    [JSON.stringify(selecionados, null, 2)],
+                    { type: 'application/json;charset=utf-8;' }
+                );
+
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = 'zoneamentos_selecionados.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
+    </script>
+
+
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+</body>
+
+</html>

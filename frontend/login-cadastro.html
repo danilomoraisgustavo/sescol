@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Login e Cadastro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="/css/login.css" />
+
+    <link rel="shortcut icon" href="/assets/img/pydenadmin/favicon.png" type="image/x-icon" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+
+    <style>
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Ajuste para o botão de toggle de senha (se necessário) */
+        /* O CSS original pode precisar de um ajuste para o <i> dentro do span/button */
+        .input-field .toggle-password-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            /* Garante que ocupe a 3ª coluna do grid */
+            grid-column: 3 / 4;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="forms-container">
+            <div class="signin-signup">
+
+                <form id="loginForm" class="sign-in-form" aria-labelledby="login-title">
+                    <a href="/" aria-label="Página Inicial">
+                        <img src="/assets/images/logo_light.png" alt="logo" class="form-logo" />
+                    </a>
+                    <h2 class="title" id="login-title">Login</h2>
+
+                    <div class="input-field">
+                        <i class="fas fa-envelope"></i>
+                        <label for="login_email" class="sr-only">E-mail</label>
+                        <input type="email" name="email" id="login_email" autocomplete="email" placeholder="E-mail"
+                            required />
+                    </div>
+
+                    <div class="input-field">
+                        <i class="fas fa-lock"></i>
+                        <label for="id_password" class="sr-only">Senha</label>
+                        <input type="password" name="senha" autocomplete="current-password" placeholder="Senha"
+                            id="id_password" required />
+                        <i class="far fa-eye" id="togglePassword" style="cursor: pointer;" role="button" tabindex="0"
+                            aria-label="Mostrar/Ocultar senha"></i>
+                    </div>
+
+                    <p class="form-links" style="text-align:center; margin: .25rem 0 .75rem;">
+                        <a class="pass" href="/politicaprivacidade">Política de Privacidade</a>
+                        <span class="sep">|</span>
+                        <a class="pass" href="/termos">Termos de Serviço</a>
+                    </p>
+                    <p class="form-links" style="text-align:center; margin-bottom: .5rem;">
+                        <a class="pass" href="/redefinir-senha.html" style="display:inline-block;">Esqueci minha
+                            senha</a>
+                    </p>
+
+                    <input type="submit" value="Entrar" class="btn solid" />
+                </form>
+
+                <form id="signUpForm" class="sign-up-form" aria-labelledby="signup-title">
+                    <a href="/" aria-label="Página Inicial">
+                        <img src="/assets/images/logo_light.png" alt="logo" class="form-logo" />
+                    </a>
+                    <h2 class="title" id="signup-title">Cadastre-se</h2>
+
+                    <div class="input-field">
+                        <i class="fas fa-user"></i>
+                        <label for="reg_nome_completo" class="sr-only">Nome Completo</label>
+                        <input type="text" name="nome_completo" id="reg_nome_completo"
+                            placeholder="Digite seu nome completo" required />
+                    </div>
+
+                    <div class="input-field">
+                        <i class="fas fa-id-card"></i>
+                        <label for="docInput" class="sr-only">CPF ou CNPJ</label>
+                        <input type="text" name="cpf_cnpj" placeholder="Digite CPF ou CNPJ" required id="docInput" />
+                    </div>
+
+
+                    <div class="input-field">
+                        <i class="fas fa-key"></i>
+                        <label for="tenantCodeInput" class="sr-only">Código do Tenant</label>
+                        <input type="text" name="tenant_codigo" id="tenantCodeInput" inputmode="numeric" maxlength="7"
+                            placeholder="Código do Tenant (7 dígitos)" required />
+                    </div>
+
+
+                    <div class="input-field">
+                        <i class="fas fa-phone"></i>
+                        <label for="telInput" class="sr-only">Telefone</label>
+                        <input type="text" name="telefone" placeholder="Digite seu Telefone" required id="telInput" />
+                    </div>
+
+                    <div class="input-field">
+                        <i class="fas fa-envelope"></i>
+                        <label for="reg_email" class="sr-only">E-mail</label>
+                        <input type="email" name="email" id="reg_email" placeholder="Endereço de e-mail" required />
+                    </div>
+
+                    <div class="input-field">
+                        <i class="fas fa-lock"></i>
+                        <label for="id_password2" class="sr-only">Senha</label>
+                        <input type="password" name="senha" placeholder="Senha" id="id_password2" required />
+                        <i class="far fa-eye" id="togglePassword2" style="cursor: pointer;" role="button" tabindex="0"
+                            aria-label="Mostrar/Ocultar senha"></i>
+                    </div>
+
+                    <input type="submit" value="Solicitar Cadastro" class="btn solid" style="width: 250px;" />
+                </form>
+            </div>
+        </div>
+
+        <div class="panels-container">
+            <div class="panel left-panel">
+                <div class="content">
+                    <h3>Você ainda não tem uma conta?</h3>
+                    <p>Crie agora uma conta para você e desfrute de todos os nossos benefícios</p>
+                    <button class="btn transparent" id="sign-up-btn">Cadastre-se</button>
+                </div>
+            </div>
+            <div class="panel right-panel">
+                <div class="content">
+                    <h3>Já tem uma conta?</h3>
+                    <p>Faça login agora para acessar seus dados</p>
+                    <button class="btn transparent" id="sign-in-btn">Entrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/vanilla-masker/build/vanilla-masker.min.js"></script>
+
+    <script>
+        function showToast(type, message) {
+            let bgColor = "linear-gradient(to right, #00b09b, #96c93d)";
+            if (type === "danger" || type === "error") {
+                bgColor = "linear-gradient(to right, #de1f1f, #c40606)";
+            } else if (type === "warning") {
+                bgColor = "linear-gradient(to right, #FFA900, #FF7700)";
+            } else if (type === "info") {
+                bgColor = "linear-gradient(to right, #0080ff, #00c6ff)";
+            }
+
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                style: { background: bgColor },
+            }).showToast();
+        }
+
+        function aplicarMascaraCpfCnpj(valor) {
+            const soNumeros = valor.replace(/\D/g, '');
+            if (soNumeros.length <= 11) {
+                return VMasker.toPattern(soNumeros, "999.999.999-99");
+            } else {
+                return VMasker.toPattern(soNumeros, "99.999.999/9999-99");
+            }
+        }
+
+        // Adiciona funcionalidade de "Enter" para os ícones com role="button"
+        function handleKeydownAsClick(event) {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                event.target.click();
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const sign_in_btn = document.querySelector("#sign-in-btn");
+            const sign_up_btn = document.querySelector("#sign-up-btn");
+            const container = document.querySelector(".container");
+
+            if (sign_up_btn) {
+                sign_up_btn.addEventListener("click", () => {
+                    container.classList.add("sign-up-mode");
+                });
+            }
+            if (sign_in_btn) {
+                sign_in_btn.addEventListener("click", () => {
+                    container.classList.remove("sign-up-mode");
+                });
+            }
+
+            const togglePasswords = document.querySelectorAll("#togglePassword, #togglePassword2");
+            const passwordElem1 = document.getElementById("id_password");
+            const passwordElem2 = document.getElementById("id_password2");
+
+            togglePasswords.forEach((toggle) => {
+                // Evento de clique (como no original)
+                toggle.addEventListener("click", function () {
+                    if (!this || !this.id) return;
+                    let targetElem = null;
+                    if (this.id === "togglePassword" && passwordElem1) {
+                        targetElem = passwordElem1;
+                    } else if (this.id === "togglePassword2" && passwordElem2) {
+                        targetElem = passwordElem2;
+                    }
+                    if (targetElem) {
+                        const type = targetElem.getAttribute("type") === "password" ? "text" : "password";
+                        targetElem.setAttribute("type", type);
+                        this.classList.toggle("fa-eye");
+                        this.classList.toggle("fa-eye-slash");
+                    }
+                });
+
+                // Novo evento para acessibilidade (tecla Enter/Espaço)
+                toggle.addEventListener("keydown", handleKeydownAsClick);
+            });
+
+            const docInput = document.getElementById("docInput");
+            if (docInput) {
+                docInput.addEventListener("input", function () {
+                    this.value = aplicarMascaraCpfCnpj(this.value);
+                });
+            }
+
+            const telInput = document.getElementById("telInput");
+            if (telInput) {
+                telInput.addEventListener("input", function () {
+                    const onlyNums = this.value.replace(/\D/g, '');
+                    this.value = VMasker.toPattern(onlyNums, "(99) 99999-9999");
+                });
+            }
+
+
+            const tenantCodeInput = document.getElementById("tenantCodeInput");
+            if (tenantCodeInput) {
+                tenantCodeInput.addEventListener("input", function () {
+                    // apenas números, máximo 7 dígitos
+                    const onlyNums = this.value.replace(/\D/g, '').slice(0, 7);
+                    this.value = onlyNums;
+                });
+            }
+
+            const signUpForm = document.getElementById("signUpForm");
+            if (signUpForm) {
+                signUpForm.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const formData = new FormData(signUpForm);
+                    const data = {
+                        nome_completo: formData.get("nome_completo"),
+                        cpf_cnpj: formData.get("cpf_cnpj"),
+                        telefone: formData.get("telefone"),
+                        email: formData.get("email"),
+                        senha: formData.get("senha"),
+                        tenant_codigo: formData.get("tenant_codigo"),
+                    };
+
+                    const codigoTenant = String(data.tenant_codigo || "").replace(/\D/g, "");
+                    if (codigoTenant.length !== 7) {
+                        showToast("danger", "Informe o Código do Tenant com 7 dígitos.");
+                        return;
+                    }
+                    data.tenant_codigo = codigoTenant;
+
+                    fetch("/api/cadastrar-usuario", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                    })
+                        .then(response => response.json())
+                        .then(res => {
+                            if (res.success) {
+                                showToast("success", res.message || "Cadastro realizado com sucesso!");
+                                signUpForm.reset();
+                                container.classList.remove("sign-up-mode");
+                            } else {
+                                showToast("danger", res.message || "Erro ao cadastrar.");
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Erro ao cadastrar:", err);
+                            showToast("danger", "Erro interno ao cadastrar usuário!");
+                        });
+                });
+            }
+
+            const loginForm = document.getElementById("loginForm");
+            if (loginForm) {
+                loginForm.addEventListener("submit", function (e) {
+                    e.preventDefault();
+                    const formData = new FormData(loginForm);
+                    const data = {
+                        email: formData.get("email"),
+                        senha: formData.get("senha"),
+                        tenant_codigo: formData.get("tenant_codigo"),
+                    };
+
+                    fetch("/api/login", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data),
+                    })
+                        .then(async (response) => {
+                            const contentType = response.headers.get("content-type") || "";
+                            if (!contentType.includes("application/json")) {
+                                const text = await response.text();
+                                throw new Error(`Resposta não-JSON do servidor (status ${response.status}). Primeiro trecho: ${text.slice(0, 120)}`);
+                            }
+                            return response.json();
+                        })
+                        .then(res => {
+                            if (res.success) {
+                                // armazena token e contexto
+                                if (res.token) localStorage.setItem("auth_token", res.token);
+                                if (res.user) localStorage.setItem("auth_user", JSON.stringify(res.user));
+
+                                showToast("success", res.message || "Login bem-sucedido!");
+                                window.location.href = res.redirectUrl || "/dashboard";
+                            } else {
+                                showToast("danger", res.error || res.message || "Falha no login.");
+                            }
+                        })
+                        .catch(err => {
+                            console.error("Erro ao efetuar login:", err);
+                            showToast("danger", "Erro interno ao efetuar login.");
+                        });
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

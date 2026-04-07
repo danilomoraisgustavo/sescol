@@ -1,0 +1,1731 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Motoristas</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <style>
+        .badge-cnh-ok {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .badge-cnh-vencida {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .badge-cnh-perto {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .small-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: .03em;
+            color: #6c757d;
+        }
+
+        .table-cursos td {
+            vertical-align: middle;
+        }
+
+        #modal-motorista .modal-body {
+            max-height: calc(80vh - 120px);
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Motoristas de transporte escolar</h2>
+                                <p class="text-muted mb-0">
+                                    Cadastre, gerencie e acompanhe a situação de CNH, cursos obrigatórios e o vínculo
+                                    com fornecedores dos motoristas do transporte escolar.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- RESUMO RÁPIDO -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Total de motoristas</span>
+                                        <h3 class="mb-0" id="resumo-total-motoristas">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Ativos</span>
+                                        <h3 class="mb-0" id="resumo-motoristas-ativos">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">CNH perto do vencimento</span>
+                                        <h3 class="mb-0" id="resumo-cnh-perto-vencer">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Cursos pendentes</span>
+                                        <h3 class="mb-0" id="resumo-cursos-pendentes">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE MOTORISTAS -->
+                        <div class="row">
+                            <div class="col-12 my-4">
+                                <div class="d-flex mb-2 align-items-center">
+                                    <div>
+                                        <h2 class="h4 mb-1">Motoristas cadastrados</h2>
+                                        <p class="mb-0 text-muted">
+                                            Lista de motoristas com situação de CNH, cursos obrigatórios, fornecedor
+                                            vinculado e status operacional.
+                                        </p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <button class="btn btn-primary" type="button" id="btn-novo-motorista">
+                                            Novo motorista +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col-md-6">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-motoristas"
+                                                                class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control"
+                                                                id="search-motoristas"
+                                                                placeholder="Pesquisar por nome, CPF ou fornecedor">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                                                <div class="form-inline justify-content-md-end">
+                                                    <div class="form-group mr-2">
+                                                        <label class="mr-1 small-label"
+                                                            for="filtro-status-motorista">Status</label>
+                                                        <select id="filtro-status-motorista"
+                                                            class="form-control form-control-sm">
+                                                            <option value="">Todos</option>
+                                                            <option value="ativo">Ativo</option>
+                                                            <option value="inativo">Inativo</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="mr-1 small-label" for="filtro-cnh">CNH</label>
+                                                        <select id="filtro-cnh" class="form-control form-control-sm">
+                                                            <option value="">Qualquer</option>
+                                                            <option value="ok">Válida</option>
+                                                            <option value="perto">Perto de vencer</option>
+                                                            <option value="vencida">Vencida</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0" id="tabela-motoristas">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width:70px;">ID</th>
+                                                        <th>Nome</th>
+                                                        <th style="width:150px;">CPF</th>
+                                                        <th style="width:190px;">Situação CNH</th>
+                                                        <th style="width:180px;">Cursos obrigatórios</th>
+                                                        <th style="width:220px;">Fornecedor</th>
+                                                        <th style="width:120px;">CNH (arquivo)</th>
+                                                        <th style="width:140px;">Certificados</th>
+                                                        <th style="width:110px;">Status</th>
+                                                        <th style="width:220px;">Rota Associada</th>
+                                                        <th style="width:120px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-motoristas"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de motoristas" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-motoristas">
+                                            </ul>
+                                        </nav>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL CADASTRO/EDIÇÃO DE MOTORISTA -->
+            <div class="modal fade" id="modal-motorista" tabindex="-1" role="dialog"
+                aria-labelledby="modalMotoristaLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-motorista" novalidate>
+                            <input type="hidden" id="motorista-id">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalMotoristaLabel">Novo motorista</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <!-- DADOS PESSOAIS -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small-label">Dados pessoais</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="motorista-nome">Nome completo</label>
+                                                <input type="text" class="form-control" id="motorista-nome" required>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-cpf">CPF</label>
+                                                <input type="text" class="form-control input-cpf" id="motorista-cpf"
+                                                    required>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-rg">RG</label>
+                                                <input type="text" class="form-control" id="motorista-rg">
+                                            </div>
+                                        </div>
+
+                                        <!-- FORNECEDOR (RELACIONAMENTO OBRIGATÓRIO) -->
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="motorista-fornecedor">
+                                                    Fornecedor / empresa contratada
+                                                    <span class="text-danger">*</span>
+                                                </label>
+                                                <select id="motorista-fornecedor" class="form-control" required>
+                                                    <option value="">Selecione um fornecedor</option>
+                                                </select>
+                                                <small class="form-text text-muted">
+                                                    Obrigatório: o motorista deve estar vinculado a um fornecedor
+                                                    cadastrado e ativo.
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-data-nascimento">Data de nascimento</label>
+                                                <input type="date" class="form-control" id="motorista-data-nascimento">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-telefone">Telefone</label>
+                                                <input type="text" class="form-control input-phone"
+                                                    id="motorista-telefone">
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="motorista-email">E-mail</label>
+                                                <input type="email" class="form-control" id="motorista-email">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label for="motorista-endereco">Endereço</label>
+                                                <input type="text" class="form-control" id="motorista-endereco">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-bairro">Bairro</label>
+                                                <input type="text" class="form-control" id="motorista-bairro">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-cidade">Cidade</label>
+                                                <input type="text" class="form-control" id="motorista-cidade">
+                                            </div>
+                                            <div class="form-group col-md-1">
+                                                <label for="motorista-uf">UF</label>
+                                                <input type="text" class="form-control" id="motorista-uf" maxlength="2">
+                                            </div>
+                                            <div class="form-group col-md-1">
+                                                <label for="motorista-cep">CEP</label>
+                                                <input type="text" class="form-control input-cep" id="motorista-cep">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- DADOS DA CNH -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small-label">Dados da CNH</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-numero-cnh">Número da CNH</label>
+                                                <input type="text" class="form-control" id="motorista-numero-cnh"
+                                                    required>
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="motorista-categoria-cnh">Categoria</label>
+                                                <select id="motorista-categoria-cnh" class="form-control" required>
+                                                    <option value=""></option>
+                                                    <option value="B">B</option>
+                                                    <option value="C">C</option>
+                                                    <option value="D">D</option>
+                                                    <option value="E">E</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="motorista-validade-cnh">Validade da CNH</label>
+                                                <input type="date" class="form-control" id="motorista-validade-cnh"
+                                                    required>
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="motorista-orgao-cnh">Órgão emissor</label>
+                                                <input type="text" class="form-control" id="motorista-orgao-cnh">
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="motorista-status">Status</label>
+                                                <select id="motorista-status" class="form-control" required>
+                                                    <option value="ativo" selected>Ativo</option>
+                                                    <option value="inativo">Inativo</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- CURSOS OBRIGATÓRIOS -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                        <span class="small-label">Cursos e certificações obrigatórios</span>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                id="btn-adicionar-curso">
+                                                Adicionar curso
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0 table-cursos">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width:220px;">Tipo de curso</th>
+                                                        <th style="width:150px;">Data de conclusão</th>
+                                                        <th style="width:150px;">Validade</th>
+                                                        <th>Observações</th>
+                                                        <th style="width:220px;">Arquivo (certificado)</th>
+                                                        <th style="width:60px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-cursos">
+                                                    <!-- linhas de cursos -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="p-2 small text-muted">
+                                            Exemplos: Curso de transporte escolar, direção defensiva, primeiros
+                                            socorros, relações humanas,
+                                            entre outros exigidos pela legislação local.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ANEXO DA CNH -->
+                                <div class="card border mb-0">
+                                    <div class="card-header py-2">
+                                        <span class="small-label">Arquivo da CNH</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="motorista-arquivo-cnh">Anexar CNH (frente e verso)</label>
+                                                <input type="file" class="form-control-file" id="motorista-arquivo-cnh"
+                                                    accept="image/*,.pdf">
+                                                <small class="form-text text-muted">
+                                                    Envie um arquivo nítido com todos os dados importantes e a validade
+                                                    visível.
+                                                </small>
+                                                <div id="cnh-arquivo-atual" class="small text-muted mt-1"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar motorista</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- MODAL ASSOCIAR ROTAS AO MOTORISTA -->
+            <div class="modal fade" id="modal-rotas-motorista" tabindex="-1" role="dialog"
+                aria-labelledby="modalRotasMotoristaLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <form id="form-rotas-motorista">
+                            <input type="hidden" id="rotas-motorista-id">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalRotasMotoristaLabel">Associar rotas ao motorista</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="alert alert-info py-2">
+                                    Selecione uma ou mais rotas escolares para associar ao motorista.
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="rotas-motorista-select">Rotas escolares</label>
+                                    <select id="rotas-motorista-select" class="form-control"
+                                        multiple="multiple"></select>
+                                    <small class="form-text text-muted">
+                                        Dica: você pode digitar para buscar pelo nome da rota.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar associação</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAIS GLOBAIS DE SISTEMA -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/d3.min.js"></script>
+    <script src="../../js/topojson.min.js"></script>
+    <script src="../../js/datamaps.all.min.js"></script>
+    <script src="../../js/datamaps-zoomto.js"></script>
+    <script src="../../js/datamaps.custom.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script>
+        // Helpers globais de modais de sistema
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+
+    <script>
+        var apiBaseMotoristas = '/api/motoristas';
+        var apiBaseFornecedores = '/api/fornecedores';
+
+        var motoristas = [];
+        var fornecedores = [];
+        var paginaAtualMotoristas = 1;
+        var totalPaginasMotoristas = 1;
+        var tamanhoPaginaMotoristas = 20;
+
+        // UTILITÁRIOS
+
+        function calcularSituacaoCNH(validadeStr) {
+            if (!validadeStr) return { codigo: 'desconhecida', rotulo: 'Sem informação' };
+            var hoje = new Date();
+            var validade = new Date(validadeStr + 'T00:00:00');
+            var diffMs = validade - hoje;
+            var diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffDias < 0) {
+                return { codigo: 'vencida', rotulo: 'Vencida' };
+            } else if (diffDias <= 60) {
+                return { codigo: 'perto', rotulo: 'Perto de vencer' };
+            }
+            return { codigo: 'ok', rotulo: 'Válida' };
+        }
+
+        function badgeSituacaoCNH(m) {
+            var sit = calcularSituacaoCNH(m.validade_cnh);
+            var classe = 'badge-secondary';
+            if (sit.codigo === 'ok') classe = 'badge-cnh-ok';
+            if (sit.codigo === 'perto') classe = 'badge-cnh-perto';
+            if (sit.codigo === 'vencida') classe = 'badge-cnh-vencida';
+
+            var cat = m.categoria_cnh ? 'Cat. ' + m.categoria_cnh : '';
+            var validade = m.validade_cnh ? ' até ' + moment(m.validade_cnh).format('DD/MM/YYYY') : '';
+
+            return '<span class="badge ' + classe + '">' + sit.rotulo + (cat ? ' | ' + cat : '') + validade + '</span>';
+        }
+
+        function resumoCursos(m) {
+            if (m.cursos_obrigatorios_ok) {
+                return '<span class="badge badge-success">Todos em dia</span>';
+            }
+            if (typeof m.cursos_pendentes === 'number' && m.cursos_pendentes > 0) {
+                return '<span class="badge badge-warning text-dark">' + m.cursos_pendentes + ' pendente(s)</span>';
+            }
+            if (m.cursos_resumo) {
+                return m.cursos_resumo;
+            }
+            return '<span class="text-muted">Não informado</span>';
+        }
+
+        function obterFornecedorNome(m) {
+            // tenta vários formatos para suportar a API
+            if (m.fornecedor_nome_fantasia) return m.fornecedor_nome_fantasia;
+            if (m.fornecedor_razao_social) return m.fornecedor_razao_social;
+            if (m.fornecedor && (m.fornecedor.nome_fantasia || m.fornecedor.razao_social)) {
+                return m.fornecedor.nome_fantasia || m.fornecedor.razao_social;
+            }
+            return '';
+        }
+
+        function obterFornecedorCnpj(m) {
+            if (m.fornecedor_cnpj) return m.fornecedor_cnpj;
+            if (m.fornecedor && m.fornecedor.cnpj) return m.fornecedor.cnpj;
+            return '';
+        }
+
+        // RESUMO RÁPIDO
+        function atualizarResumo() {
+            var total = motoristas.length;
+            var ativos = motoristas.filter(function (m) {
+                return m.status === 'ativo';
+            }).length;
+            var cnhPerto = motoristas.filter(function (m) {
+                return calcularSituacaoCNH(m.validade_cnh).codigo === 'perto';
+            }).length;
+            var cursosPendentes = motoristas.reduce(function (acc, m) {
+                if (typeof m.cursos_pendentes === 'number') return acc + m.cursos_pendentes;
+                return acc;
+            }, 0);
+
+            $('#resumo-total-motoristas').text(total);
+            $('#resumo-motoristas-ativos').text(ativos);
+            $('#resumo-cnh-perto-vencer').text(cnhPerto);
+            $('#resumo-cursos-pendentes').text(cursosPendentes);
+        }
+
+        // LISTAGEM / PAGINAÇÃO
+
+        function atualizarPaginacaoMotoristas() {
+            var ul = document.getElementById('paginacao-motoristas');
+            if (!ul) return;
+
+            ul.innerHTML = '';
+
+            var liPrev = document.createElement('li');
+            liPrev.className = 'page-item' + (paginaAtualMotoristas <= 1 ? ' disabled' : '');
+            var aPrev = document.createElement('a');
+            aPrev.className = 'page-link';
+            aPrev.href = '#';
+            aPrev.textContent = 'Anterior';
+            aPrev.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualMotoristas > 1) {
+                    irParaPaginaMotoristas(paginaAtualMotoristas - 1);
+                }
+            });
+            liPrev.appendChild(aPrev);
+            ul.appendChild(liPrev);
+
+            var liInfo = document.createElement('li');
+            liInfo.className = 'page-item disabled';
+            var aInfo = document.createElement('a');
+            aInfo.className = 'page-link';
+            aInfo.href = '#';
+            aInfo.textContent = paginaAtualMotoristas + ' / ' + totalPaginasMotoristas;
+            liInfo.appendChild(aInfo);
+            ul.appendChild(liInfo);
+
+            var liNext = document.createElement('li');
+            liNext.className = 'page-item' + (paginaAtualMotoristas >= totalPaginasMotoristas ? ' disabled' : '');
+            var aNext = document.createElement('a');
+            aNext.className = 'page-link';
+            aNext.href = '#';
+            aNext.textContent = 'Próxima';
+            aNext.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualMotoristas < totalPaginasMotoristas) {
+                    irParaPaginaMotoristas(paginaAtualMotoristas + 1);
+                }
+            });
+            liNext.appendChild(aNext);
+            ul.appendChild(liNext);
+        }
+
+        function irParaPaginaMotoristas(pagina) {
+            if (pagina < 1 || pagina > totalPaginasMotoristas) return;
+            paginaAtualMotoristas = pagina;
+            renderizarTabelaMotoristas();
+        }
+
+        function carregarMotoristas() {
+            return fetch(apiBaseMotoristas)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar motoristas');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    motoristas = data || [];
+                    paginaAtualMotoristas = 1;
+                    renderizarTabelaMotoristas();
+                    atualizarResumo();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de motoristas.');
+                });
+        }
+
+        function renderizarTabelaMotoristas() {
+            var tbody = document.getElementById('tbody-motoristas');
+            if (!tbody) return;
+
+            var termo = ($('#search-motoristas').val() || '').toLowerCase();
+            var filtroStatus = $('#filtro-status-motorista').val();
+            var filtroCnh = $('#filtro-cnh').val();
+
+            var filtrados = motoristas.filter(function (m) {
+                var fornecedorNome = obterFornecedorNome(m);
+                var fornecedorCnpj = obterFornecedorCnpj(m);
+
+                var textoBusca = [
+                    m.nome || '',
+                    m.cpf || '',
+                    fornecedorNome || '',
+                    fornecedorCnpj || ''
+                ].join(' ').toLowerCase();
+
+                if (termo && textoBusca.indexOf(termo) === -1) return false;
+
+                if (filtroStatus && m.status !== filtroStatus) return false;
+
+                if (filtroCnh) {
+                    var sit = calcularSituacaoCNH(m.validade_cnh).codigo;
+                    if (sit !== filtroCnh) return false;
+                }
+
+                return true;
+            });
+
+            totalPaginasMotoristas = Math.max(1, Math.ceil(filtrados.length / tamanhoPaginaMotoristas));
+            if (paginaAtualMotoristas > totalPaginasMotoristas) {
+                paginaAtualMotoristas = totalPaginasMotoristas;
+            }
+            if (paginaAtualMotoristas < 1) {
+                paginaAtualMotoristas = 1;
+            }
+
+            var inicio = (paginaAtualMotoristas - 1) * tamanhoPaginaMotoristas;
+            var fim = inicio + tamanhoPaginaMotoristas;
+            var paginaItens = filtrados.slice(inicio, fim);
+
+            tbody.innerHTML = '';
+
+            paginaItens.forEach(function (m) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', m.id);
+                if (m.fornecedor_id) {
+                    tr.setAttribute('data-fornecedor-id', m.fornecedor_id);
+                }
+
+                var tdId = document.createElement('td');
+                tdId.textContent = m.id;
+                tr.appendChild(tdId);
+
+                var tdNome = document.createElement('td');
+                var nomeHtml = '<strong>' + (m.nome || '') + '</strong>';
+                if (m.telefone) {
+                    nomeHtml += '<br><small class="text-muted">' + m.telefone + '</small>';
+                }
+                tdNome.innerHTML = nomeHtml;
+                tr.appendChild(tdNome);
+
+                var tdCpf = document.createElement('td');
+                tdCpf.textContent = m.cpf || '';
+                tr.appendChild(tdCpf);
+
+                var tdCnhSituacao = document.createElement('td');
+                tdCnhSituacao.innerHTML = badgeSituacaoCNH(m);
+                tr.appendChild(tdCnhSituacao);
+
+                var tdCursos = document.createElement('td');
+                tdCursos.innerHTML = resumoCursos(m);
+                tr.appendChild(tdCursos);
+
+                var tdFornecedor = document.createElement('td');
+                var fornecedorNome = obterFornecedorNome(m);
+                var fornecedorCnpj = obterFornecedorCnpj(m);
+                if (fornecedorNome) {
+                    var fornecedorHtml = '<strong>' + fornecedorNome + '</strong>';
+                    if (fornecedorCnpj) {
+                        fornecedorHtml += '<br><small class="text-muted">CNPJ ' + fornecedorCnpj + '</small>';
+                    }
+                    tdFornecedor.innerHTML = fornecedorHtml;
+                } else {
+                    tdFornecedor.innerHTML = '<span class="text-muted">Não vinculado</span>';
+                }
+                tr.appendChild(tdFornecedor);
+
+                var tdCnhArquivo = document.createElement('td');
+                if (m.arquivo_cnh_url) {
+                    tdCnhArquivo.innerHTML =
+                        '<a href="' + m.arquivo_cnh_url +
+                        '" target="_blank" class="btn btn-sm btn-outline-primary">Ver CNH</a>';
+                } else {
+                    tdCnhArquivo.innerHTML = '<span class="text-muted">–</span>';
+                }
+                tr.appendChild(tdCnhArquivo);
+
+                var tdCertificados = document.createElement('td');
+                tdCertificados.innerHTML =
+                    '<button type="button" class="btn btn-sm btn-outline-secondary action-ver-certificados" data-id="' +
+                    m.id + '">Certificados</button>';
+                tr.appendChild(tdCertificados);
+
+                var tdStatus = document.createElement('td');
+                var spanStatus = document.createElement('span');
+                if (m.status === 'ativo') {
+                    spanStatus.className = 'badge badge-success';
+                    spanStatus.textContent = 'Ativo';
+                } else {
+                    spanStatus.className = 'badge badge-secondary';
+                    spanStatus.textContent = 'Inativo';
+                }
+                tdStatus.appendChild(spanStatus);
+                tr.appendChild(tdStatus);
+                var tdRotas = document.createElement('td');
+                if (m.rotas_qtd && Number(m.rotas_qtd) > 0) {
+                    var nomes = (m.rotas_nomes || '').toString().trim();
+                    var badge = '<span class="badge badge-primary mr-1">' + m.rotas_qtd + '</span>';
+                    tdRotas.innerHTML = badge + (nomes ? '<small>' + nomes + '</small>' : '');
+                } else {
+                    tdRotas.innerHTML = '<span class="text-muted">–</span>';
+                }
+                tr.appendChild(tdRotas);
+
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+                btnDrop.appendChild(spanSr);
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-motorista';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', m.id);
+                aEditar.textContent = 'Ver / editar';
+
+                var aToggle = document.createElement('a');
+                aToggle.className = 'dropdown-item text-warning action-toggle-status';
+                aToggle.href = '#';
+                aToggle.setAttribute('data-id', m.id);
+                aToggle.textContent = m.status === 'ativo' ? 'Desativar' : 'Ativar';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-motorista';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', m.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aEditar);
+                var aAssocRotas = document.createElement('a');
+                aAssocRotas.className = 'dropdown-item action-associar-rotas-motorista';
+                aAssocRotas.href = '#';
+                aAssocRotas.setAttribute('data-id', m.id);
+                aAssocRotas.textContent = 'Associar à rota escolar';
+
+                menu.appendChild(aAssocRotas);
+
+                menu.appendChild(aToggle);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarPaginacaoMotoristas();
+        }
+
+        // FORNECEDORES
+
+        function preencherSelectFornecedores(selectedId) {
+            var $select = $('#motorista-fornecedor');
+            if (!$select.length) return;
+
+            var currentSelected = selectedId || $select.data('fornecedor-id') || '';
+
+            $select.empty();
+            $select.append('<option value="">Selecione um fornecedor</option>');
+
+            fornecedores.forEach(function (f) {
+                var nome = f.nome_fantasia || f.razao_social || ('Fornecedor #' + f.id);
+                var cnpj = f.cnpj ? ' - CNPJ ' + f.cnpj : '';
+                $select.append(
+                    '<option value="' + f.id + '">' +
+                    nome + cnpj +
+                    '</option>'
+                );
+            });
+
+            if (currentSelected) {
+                $select.val(String(currentSelected));
+            }
+        }
+
+        function carregarFornecedores() {
+            // opcionalmente pode filtrar somente ativos via querystring
+            return fetch(apiBaseFornecedores + '?status=ativo')
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar fornecedores');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    fornecedores = data || [];
+                    preencherSelectFornecedores();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema(
+                        'Aviso',
+                        'Não foi possível carregar a lista de fornecedores. Verifique a conexão ou tente novamente.'
+                    );
+                });
+        }
+
+        // FORMULÁRIO / MODAL
+
+        function limparFormMotorista() {
+            $('#motorista-id').val('');
+            $('#motorista-nome').val('');
+            $('#motorista-cpf').val('');
+            $('#motorista-rg').val('');
+            $('#motorista-data-nascimento').val('');
+            $('#motorista-telefone').val('');
+            $('#motorista-email').val('');
+            $('#motorista-endereco').val('');
+            $('#motorista-bairro').val('');
+            $('#motorista-cidade').val('');
+            $('#motorista-uf').val('');
+            $('#motorista-cep').val('');
+
+            $('#motorista-fornecedor').data('fornecedor-id', '').val('');
+            preencherSelectFornecedores('');
+
+            $('#motorista-numero-cnh').val('');
+            $('#motorista-categoria-cnh').val('');
+            $('#motorista-validade-cnh').val('');
+            $('#motorista-orgao-cnh').val('');
+            $('#motorista-status').val('ativo');
+
+            $('#motorista-arquivo-cnh').val('');
+            $('#cnh-arquivo-atual').empty();
+
+            $('#tbody-cursos').empty();
+            adicionarLinhaCurso();
+        }
+
+        function preencherFormMotorista(dados) {
+            $('#motorista-id').val(dados.id || '');
+            $('#motorista-nome').val(dados.nome || '');
+            $('#motorista-cpf').val(dados.cpf || '');
+            $('#motorista-rg').val(dados.rg || '');
+            $('#motorista-data-nascimento').val(dados.data_nascimento || '');
+            $('#motorista-telefone').val(dados.telefone || '');
+            $('#motorista-email').val(dados.email || '');
+            $('#motorista-endereco').val(dados.endereco || '');
+            $('#motorista-bairro').val(dados.bairro || '');
+            $('#motorista-cidade').val(dados.cidade || '');
+            $('#motorista-uf').val(dados.uf || '');
+            $('#motorista-cep').val(dados.cep || '');
+
+            var fornecedorId = dados.fornecedor_id ||
+                (dados.fornecedor && dados.fornecedor.id) ||
+                '';
+            $('#motorista-fornecedor').data('fornecedor-id', fornecedorId);
+            preencherSelectFornecedores(fornecedorId);
+
+            $('#motorista-numero-cnh').val(dados.numero_cnh || '');
+            $('#motorista-categoria-cnh').val(dados.categoria_cnh || '');
+            $('#motorista-validade-cnh').val(dados.validade_cnh || '');
+            $('#motorista-orgao-cnh').val(dados.orgao_emissor_cnh || '');
+            $('#motorista-status').val(dados.status || 'ativo');
+
+            $('#motorista-arquivo-cnh').val('');
+            if (dados.arquivo_cnh_url) {
+                $('#cnh-arquivo-atual').html(
+                    'Arquivo atual: <a href="' + dados.arquivo_cnh_url +
+                    '" target="_blank">ver CNH enviada</a>'
+                );
+            } else {
+                $('#cnh-arquivo-atual').empty();
+            }
+
+            $('#tbody-cursos').empty();
+            if (Array.isArray(dados.cursos) && dados.cursos.length) {
+                dados.cursos.forEach(function (c) {
+                    adicionarLinhaCurso(c);
+                });
+            } else {
+                adicionarLinhaCurso();
+            }
+        }
+
+        function abrirModalNovoMotorista() {
+            limparFormMotorista();
+            $('#modalMotoristaLabel').text('Novo motorista');
+            aplicarRestricaoFornecedorSelect();
+            $('#modal-motorista').modal('show');
+        }
+
+        function abrirModalEditarMotorista(id) {
+            fetch(apiBaseMotoristas + '/' + id)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar motorista');
+                    return resp.json();
+                })
+                .then(function (dados) {
+                    limparFormMotorista();
+                    preencherFormMotorista(dados || {});
+                    $('#modalMotoristaLabel').text('Editar motorista #' + id);
+                    aplicarRestricaoFornecedorSelect();
+                    $('#modal-motorista').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar os dados do motorista.');
+                });
+        }
+
+        // CURSOS
+
+        function htmlLinhaCurso(curso) {
+            curso = curso || {};
+            var tipo = curso.tipo || '';
+            var dataConclusao = curso.data_conclusao || '';
+            var validade = curso.validade || '';
+            var observacoes = curso.observacoes || '';
+
+            return `
+        <tr>
+          <td>
+            <select class="form-control form-control-sm curso-tipo">
+              <option value=""></option>
+              <option value="transporte_escolar" ${tipo === 'transporte_escolar' ? 'selected' : ''}>Transporte escolar</option>
+              <option value="direcao_defensiva" ${tipo === 'direcao_defensiva' ? 'selected' : ''}>Direção defensiva</option>
+              <option value="primeiros_socorros" ${tipo === 'primeiros_socorros' ? 'selected' : ''}>Primeiros socorros</option>
+              <option value="relacoes_humanas" ${tipo === 'relacoes_humanas' ? 'selected' : ''}>Relações humanas</option>
+              <option value="outro" ${tipo === 'outro' ? 'selected' : ''}>Outro</option>
+            </select>
+          </td>
+          <td>
+            <input type="date" class="form-control form-control-sm curso-data-conclusao" value="${dataConclusao}">
+          </td>
+          <td>
+            <input type="date" class="form-control form-control-sm curso-validade" value="${validade}">
+          </td>
+          <td>
+            <input type="text" class="form-control form-control-sm curso-observacoes" value="${observacoes}" placeholder="Observações">
+          </td>
+          <td>
+            <input type="file" class="form-control-file curso-arquivo" accept="image/*,.pdf">
+            ${curso.arquivo_url ? `<small class="text-muted d-block mt-1">Atual: <a href="${curso.arquivo_url}" target="_blank">ver certificado</a></small>` : ''}
+          </td>
+          <td class="text-center">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remover-curso">
+              <span class="fe fe-trash-2"></span>
+            </button>
+          </td>
+        </tr>
+      `;
+        }
+
+        function adicionarLinhaCurso(curso) {
+            $('#tbody-cursos').append(htmlLinhaCurso(curso));
+        }
+
+        // SALVAR / ALTERAR / EXCLUIR
+
+        function salvarMotorista(event) {
+            event.preventDefault();
+
+            var nome = $('#motorista-nome').val().trim();
+            var cpf = $('#motorista-cpf').val().trim();
+            var numeroCnh = $('#motorista-numero-cnh').val().trim();
+            var categoriaCnh = $('#motorista-categoria-cnh').val();
+            var validadeCnh = $('#motorista-validade-cnh').val();
+            var fornecedorId = $('#motorista-fornecedor').val();
+
+            if (!nome || !cpf || !numeroCnh || !categoriaCnh || !validadeCnh || !fornecedorId) {
+                mostrarMensagemSistema(
+                    'Dados incompletos',
+                    'Preencha pelo menos nome, CPF, dados obrigatórios da CNH e selecione um fornecedor.'
+                );
+                return;
+            }
+
+            var id = $('#motorista-id').val() || null;
+
+            var dadosMotorista = {
+                nome: nome,
+                cpf: cpf,
+                rg: $('#motorista-rg').val().trim() || null,
+                data_nascimento: $('#motorista-data-nascimento').val() || null,
+                telefone: $('#motorista-telefone').val().trim() || null,
+                email: $('#motorista-email').val().trim() || null,
+                endereco: $('#motorista-endereco').val().trim() || null,
+                bairro: $('#motorista-bairro').val().trim() || null,
+                cidade: $('#motorista-cidade').val().trim() || null,
+                uf: $('#motorista-uf').val().trim() || null,
+                cep: $('#motorista-cep').val().trim() || null,
+                numero_cnh: numeroCnh,
+                categoria_cnh: categoriaCnh,
+                validade_cnh: validadeCnh,
+                orgao_emissor_cnh: $('#motorista-orgao-cnh').val().trim() || null,
+                status: $('#motorista-status').val(),
+                // campo que o backend deve usar para registrar na tabela motorista_fornecedor
+                fornecedor_id: fornecedorId ? parseInt(fornecedorId, 10) : null
+            };
+
+            var formData = new FormData();
+            formData.append('dados', JSON.stringify(dadosMotorista));
+
+            $('#tbody-cursos tr').each(function (index) {
+                var $tr = $(this);
+                var tipo = $tr.find('.curso-tipo').val();
+                var dtConc = $tr.find('.curso-data-conclusao').val();
+                var dtVal = $tr.find('.curso-validade').val();
+                var obs = $tr.find('.curso-observacoes').val();
+                var inputArquivo = $tr.find('.curso-arquivo')[0];
+
+                if (!tipo && !dtConc && !dtVal && (!inputArquivo || !inputArquivo.files.length)) {
+                    return;
+                }
+
+                formData.append('cursos[' + index + '][tipo]', tipo || '');
+                formData.append('cursos[' + index + '][data_conclusao]', dtConc || '');
+                formData.append('cursos[' + index + '][validade]', dtVal || '');
+                formData.append('cursos[' + index + '][observacoes]', obs || '');
+
+                if (inputArquivo && inputArquivo.files[0]) {
+                    formData.append('cursos[' + index + '][arquivo]', inputArquivo.files[0]);
+                }
+            });
+
+            var inputCnhArquivo = document.getElementById('motorista-arquivo-cnh');
+            if (inputCnhArquivo && inputCnhArquivo.files && inputCnhArquivo.files[0]) {
+                formData.append('arquivo_cnh', inputCnhArquivo.files[0]);
+            }
+
+            var method = id ? 'PUT' : 'POST';
+            var url = apiBaseMotoristas + (id ? '/' + id : '');
+
+            fetch(url, {
+                method: method,
+                body: formData
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao salvar motorista');
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-motorista').modal('hide');
+                    return carregarMotoristas();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar os dados do motorista.');
+                });
+        }
+
+        function alterarStatusMotorista(id, novoStatus) {
+            fetch(apiBaseMotoristas + '/' + id + '/status', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: novoStatus })
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao alterar status');
+                    return resp.json();
+                })
+                .then(function () {
+                    carregarMotoristas();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao alterar status do motorista.');
+                });
+        }
+
+        function excluirMotorista(id) {
+            confirmarAcaoSistema(
+                'Excluir motorista',
+                'Deseja realmente excluir este motorista? Esta ação não poderá ser desfeita.',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                fetch(apiBaseMotoristas + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao excluir motorista');
+                        return resp.json();
+                    })
+                    .then(function () {
+                        carregarMotoristas();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir o motorista.');
+                    });
+            });
+        }
+
+        // Mapear tipo de curso para rótulo amigável
+        function rotuloTipoCurso(tipo) {
+            switch (tipo) {
+                case 'transporte_escolar':
+                    return 'Transporte escolar';
+                case 'direcao_defensiva':
+                    return 'Direção defensiva';
+                case 'primeiros_socorros':
+                    return 'Primeiros socorros';
+                case 'relacoes_humanas':
+                    return 'Relações humanas';
+                case 'outro':
+                    return 'Outro curso';
+                default:
+                    return tipo || 'Certificado';
+            }
+        }
+
+        // CONTEXTO DO USUÁRIO (para travar fornecedor no cargo FORNECEDOR_ESCOLAR)
+        var __ME_CACHE = null;
+
+        function obterMeUsuario() {
+            if (window.__ME) { __ME_CACHE = window.__ME; return Promise.resolve(__ME_CACHE); }
+            if (__ME_CACHE) return Promise.resolve(__ME_CACHE);
+            return fetch('/api/me', { credentials: 'include' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (me) {
+                    __ME_CACHE = me;
+                    if (me) window.__ME = me;
+                    return me;
+                })
+                .catch(function () { return null; });
+        }
+
+        function aplicarRestricaoFornecedorSelect() {
+            return obterMeUsuario().then(function (me) {
+                if (!me) return;
+                var cargo = String(me.cargo || '').toUpperCase();
+                if (cargo !== 'FORNECEDOR_ESCOLAR') return;
+                var fornecedorId = me.fornecedor_id;
+                if (!fornecedorId) return;
+
+                var $sel = $('#motorista-fornecedor');
+                // Garante que a opção exista
+                var hasOpt = $sel.find('option[value="' + fornecedorId + '"]').length > 0;
+                if (!hasOpt) {
+                    $sel.append($('<option>', { value: fornecedorId }).text('Fornecedor #' + fornecedorId));
+                }
+                $sel.val(String(fornecedorId)).trigger('change');
+                $sel.prop('disabled', true);
+            });
+        }
+
+
+
+
+        // ===================================================================
+        // ROTAS ESCOLARES: associação do MOTORISTA (N:N)
+        // ===================================================================
+
+        function safeSelect2Destroy($el) {
+            try {
+                if ($el && $el.length && $el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        function carregarRotasEscolaresParaAssociacaoMotorista() {
+            // filtros opcionais via querystring
+            var status = 'ativo';
+            var tipo = ''; // municipal/exclusiva/estadual se quiser filtrar
+            var qs = '?status=' + encodeURIComponent(status);
+            if (tipo) qs += '&tipo=' + encodeURIComponent(tipo);
+
+            return fetch(apiBaseMotoristas + '/rotas-escolares' + qs)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar rotas escolares');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    return Array.isArray(data) ? data : [];
+                });
+        }
+
+        function abrirModalAssociarRotasMotorista(motoristaId) {
+            $('#rotas-motorista-id').val(String(motoristaId));
+
+            var $select = $('#rotas-motorista-select');
+
+            // limpa + destroy select2 se já estiver ativo
+            safeSelect2Destroy($select);
+            $select.empty();
+
+            Promise.all([
+                carregarRotasEscolaresParaAssociacaoMotorista(),
+                fetch(apiBaseMotoristas + '/' + motoristaId + '/rotas').then(function (r) {
+                    if (!r.ok) throw new Error('Erro ao buscar rotas associadas');
+                    return r.json();
+                }).catch(function () { return { rota_ids: [] }; })
+            ])
+                .then(function (arr) {
+                    var rotas = arr[0] || [];
+                    var assoc = arr[1] || {};
+                    var idsSelecionados = Array.isArray(assoc.rota_ids) ? assoc.rota_ids.map(String) : [];
+
+                    rotas.forEach(function (r) {
+                        var label = (r.nome || ('Rota #' + r.id));
+                        if (r.tipo) label += ' (' + r.tipo + ')';
+                        var opt = new Option(label, String(r.id), false, idsSelecionados.indexOf(String(r.id)) >= 0);
+                        $select.append(opt);
+                    });
+
+                    $select.select2({
+                        width: '100%',
+                        dropdownParent: $('#modal-rotas-motorista'),
+                        placeholder: 'Selecione as rotas'
+                    });
+
+                    $('#modal-rotas-motorista').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar as rotas para associação.');
+                });
+        }
+
+        function salvarAssociacaoRotasMotorista(e) {
+            if (e && e.preventDefault) e.preventDefault();
+
+            var motoristaId = $('#rotas-motorista-id').val();
+            if (!motoristaId) return;
+
+            var rotaIds = $('#rotas-motorista-select').val() || [];
+            rotaIds = rotaIds.map(function (x) { return parseInt(x, 10); }).filter(function (n) { return Number.isInteger(n) && n > 0; });
+
+            fetch(apiBaseMotoristas + '/' + motoristaId + '/rotas', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rota_ids: rotaIds })
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao salvar (HTTP ' + resp.status + ')');
+                    return resp.json().catch(function () { return {}; });
+                })
+                .then(function () {
+                    $('#modal-rotas-motorista').modal('hide');
+                    // recarrega lista para atualizar coluna "Rota Associada"
+                    carregarMotoristas();
+                    mostrarMensagemSistema('Sucesso', 'Associação de rotas salva com sucesso.');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', err.message || 'Erro ao salvar associação de rotas.');
+                });
+        }
+
+
+        $(document).ready(function () {
+            // Máscaras básicas
+            $('.input-cpf').mask('000.000.000-00', { placeholder: "___.___.___-__" });
+            $('.input-cep').mask('00000-000', { placeholder: "_____-___" });
+            $('.input-phone').mask('(00) 00000-0000', { placeholder: "(__) _____-____" });
+
+            // Carregar listas iniciais
+            carregarFornecedores().then(function () { return aplicarRestricaoFornecedorSelect(); });
+            carregarMotoristas();
+
+            // opcional: aplicar select2 no fornecedor para melhorar busca
+            $('#motorista-fornecedor').select2({
+                width: '100%',
+                dropdownParent: $('#modal-motorista')
+            });
+
+            // Filtros e busca
+            $('#search-motoristas').on('input', function () {
+                paginaAtualMotoristas = 1;
+                renderizarTabelaMotoristas();
+            });
+            $('#filtro-status-motorista, #filtro-cnh').on('change', function () {
+                paginaAtualMotoristas = 1;
+                renderizarTabelaMotoristas();
+            });
+
+            // Botões do header
+            $('#btn-novo-motorista').on('click', function () {
+                abrirModalNovoMotorista();
+            });
+
+            // Formulário e modal
+            $('#form-motorista').on('submit', salvarMotorista);
+
+
+            $('#modal-motorista').on('shown.bs.modal', function () { aplicarRestricaoFornecedorSelect(); });
+            // Cursos
+            $('#btn-adicionar-curso').on('click', function () {
+                adicionarLinhaCurso();
+            });
+
+            $('#tbody-cursos').on('click', '.btn-remover-curso', function () {
+                $(this).closest('tr').remove();
+                if (!$('#tbody-cursos tr').length) {
+                    adicionarLinhaCurso();
+                }
+            });
+
+            // Ações na tabela
+            $('#tbody-motoristas').on('click', '.action-editar-motorista', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    abrirModalEditarMotorista(id);
+                }
+            });
+
+
+            $('#tbody-motoristas').on('click', '.action-associar-rotas-motorista', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) abrirModalAssociarRotasMotorista(id);
+            });
+
+            $('#form-rotas-motorista').on('submit', salvarAssociacaoRotasMotorista);
+
+            $('#tbody-motoristas').on('click', '.action-toggle-status', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (!id) return;
+                var motorista = motoristas.find(function (m) {
+                    return m.id === id;
+                });
+                if (!motorista) return;
+
+                var novoStatus = motorista.status === 'ativo' ? 'inativo' : 'ativo';
+                var mensagem = novoStatus === 'inativo'
+                    ? 'O motorista será marcado como inativo e não poderá ser alocado em novas rotas. Deseja continuar?'
+                    : 'O motorista será reativado e poderá voltar a ser alocado. Deseja continuar?';
+
+                confirmarAcaoSistema(
+                    'Alterar status do motorista',
+                    mensagem,
+                    novoStatus === 'inativo' ? 'Desativar' : 'Ativar'
+                ).then(function (confirmado) {
+                    if (!confirmado) return;
+                    alterarStatusMotorista(id, novoStatus);
+                });
+            });
+
+            $('#tbody-motoristas').on('click', '.action-excluir-motorista', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    excluirMotorista(id);
+                }
+            });
+
+            // Ver certificados - abre links em nova guia dentro do modal de mensagem
+            $('#tbody-motoristas').on('click', '.action-ver-certificados', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (!id) return;
+
+                fetch(apiBaseMotoristas + '/' + id)
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao buscar certificados');
+                        return resp.json();
+                    })
+                    .then(function (dados) {
+                        if (!Array.isArray(dados.cursos) || !dados.cursos.length) {
+                            mostrarMensagemSistema('Certificados', 'Nenhum certificado cadastrado para este motorista.');
+                            return;
+                        }
+
+                        var html = '<ul class="mb-0">';
+                        var temArquivo = false;
+                        dados.cursos.forEach(function (c, idx) {
+                            if (c.arquivo_url) {
+                                temArquivo = true;
+                                var rotulo = rotuloTipoCurso(c.tipo);
+                                html += '<li><a href="' + c.arquivo_url + '" target="_blank">' +
+                                    rotulo + '</a></li>';
+                            }
+                        });
+                        html += '</ul>';
+
+                        if (!temArquivo) {
+                            mostrarMensagemSistema('Certificados', 'Cursos cadastrados, porém sem arquivos de certificados.');
+                        } else {
+                            mostrarMensagemSistema('Certificados do motorista #' + id, html);
+                        }
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Não foi possível carregar os certificados deste motorista.');
+                    });
+            });
+        });
+    </script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+</body>
+
+</html>

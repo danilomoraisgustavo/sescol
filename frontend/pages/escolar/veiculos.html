@@ -1,0 +1,1430 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Veículos</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <style>
+        .small-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: .03em;
+            color: #6c757d;
+        }
+
+        .table-docs td {
+            vertical-align: middle;
+        }
+
+        .badge-alvara-ok {
+            background-color: #28a745;
+            color: #fff;
+        }
+
+        .badge-alvara-vencido {
+            background-color: #dc3545;
+            color: #fff;
+        }
+
+        .badge-alvara-perto {
+            background-color: #ffc107;
+            color: #212529;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Veículos de transporte escolar</h2>
+                                <p class="text-muted mb-0">
+                                    Cadastre os veículos, sua lotação e documentos obrigatórios (documento do veículo e
+                                    alvará de transporte).
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- RESUMO RÁPIDO -->
+                        <div class="row mb-4">
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Total de veículos</span>
+                                        <h3 class="mb-0" id="resumo-total-veiculos">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Ativos</span>
+                                        <h3 class="mb-0" id="resumo-veiculos-ativos">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <span class="small-label d-block mb-1">Capacidade total (assentos)</span>
+                                        <h3 class="mb-0" id="resumo-capacidade-total">0</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE VEÍCULOS -->
+                        <div class="row">
+                            <div class="col-12 my-4">
+                                <div class="d-flex mb-2 align-items-center">
+                                    <div>
+                                        <h2 class="h4 mb-1">Veículos cadastrados</h2>
+                                        <p class="mb-0 text-muted">
+                                            Lista de veículos com lotação, situação de documentos, fornecedor e status
+                                            operacional.
+                                        </p>
+                                    </div>
+                                    <div class="ml-auto">
+                                        <button class="btn btn-primary" type="button" id="btn-novo-veiculo">
+                                            Novo veículo +
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col-md-6">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-veiculos"
+                                                                class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control" id="search-veiculos"
+                                                                placeholder="Pesquisar por placa, prefixo, modelo ou fornecedor">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="col-md-6 text-md-right mt-2 mt-md-0">
+                                                <div class="form-inline justify-content-md-end">
+                                                    <div class="form-group mr-2">
+                                                        <label class="mr-1 small-label"
+                                                            for="filtro-status-veiculo">Status</label>
+                                                        <select id="filtro-status-veiculo"
+                                                            class="form-control form-control-sm">
+                                                            <option value="">Todos</option>
+                                                            <option value="ativo">Ativo</option>
+                                                            <option value="inativo">Inativo</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0" id="tabela-veiculos">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width:70px;">ID</th>
+                                                        <th style="width:130px;">Placa</th>
+                                                        <th>Identificação</th>
+                                                        <th style="width:130px;">Lotação</th>
+                                                        <th style="width:220px;">Fornecedor</th>
+                                                        <th style="width:240px;">Rota escolar</th>
+                                                        <th style="width:160px;">Documento do veículo</th>
+                                                        <th style="width:180px;">Alvará de transporte</th>
+                                                        <th style="width:110px;">Status</th>
+                                                        <th style="width:120px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-veiculos"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de veículos" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-veiculos">
+                                            </ul>
+                                        </nav>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL CADASTRO/EDIÇÃO DE VEÍCULO -->
+            <div class="modal fade" id="modal-veiculo" tabindex="-1" role="dialog" aria-labelledby="modalVeiculoLabel"
+                aria-hidden="true">
+                <div class="modal-dialog modal-lg" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-veiculo" novalidate>
+                            <input type="hidden" id="veiculo-id">
+
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalVeiculoLabel">Novo veículo</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <!-- DADOS PRINCIPAIS -->
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small-label">Dados principais</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-placa">Placa</label>
+                                                <input type="text" class="form-control" id="veiculo-placa" required>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-prefixo">Prefixo / código interno</label>
+                                                <input type="text" class="form-control" id="veiculo-prefixo">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-renavam">RENAVAM</label>
+                                                <input type="text" class="form-control" id="veiculo-renavam">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-status">Status</label>
+                                                <select id="veiculo-status" class="form-control" required>
+                                                    <option value="ativo" selected>Ativo</option>
+                                                    <option value="inativo">Inativo</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-marca">Marca</label>
+                                                <input type="text" class="form-control" id="veiculo-marca">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-modelo">Modelo</label>
+                                                <input type="text" class="form-control" id="veiculo-modelo">
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="veiculo-ano-fabricacao">Ano fabricação</label>
+                                                <input type="number" class="form-control" id="veiculo-ano-fabricacao"
+                                                    min="1900" max="2100">
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="veiculo-ano-modelo">Ano modelo</label>
+                                                <input type="number" class="form-control" id="veiculo-ano-modelo"
+                                                    min="1900" max="2100">
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="veiculo-combustivel">Combustível</label>
+                                                <input type="text" class="form-control" id="veiculo-combustivel"
+                                                    placeholder="Diesel, flex...">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-lotacao">Lotação (assentos)</label>
+                                                <input type="number" class="form-control" id="veiculo-lotacao" min="1"
+                                                    required>
+                                            </div>
+                                            <div class="form-group col-md-9">
+                                                <label for="veiculo-fornecedor">Fornecedor responsável</label>
+                                                <select id="veiculo-fornecedor" class="form-control" required>
+                                                    <option value="">Carregando fornecedores...</option>
+                                                </select>
+                                                <small class="form-text text-muted">
+                                                    Selecione o fornecedor ao qual este veículo está vinculado.
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <div class="custom-control custom-checkbox mt-4">
+                                                    <input type="checkbox" class="custom-control-input"
+                                                        id="veiculo-possui-adaptacao">
+                                                    <label class="custom-control-label"
+                                                        for="veiculo-possui-adaptacao">Tem adaptação</label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <div class="custom-control custom-checkbox mt-4">
+                                                    <input type="checkbox" class="custom-control-input"
+                                                        id="veiculo-possui-plataforma">
+                                                    <label class="custom-control-label"
+                                                        for="veiculo-possui-plataforma">Tem plataforma</label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="veiculo-adaptacao-descricao">Especificar adaptações</label>
+                                                <input type="text" class="form-control" id="veiculo-adaptacao-descricao"
+                                                    placeholder="Ex.: elevador, cinto 5 pontos, espaço para cadeira de rodas">
+                                                <small class="form-text text-muted">
+                                                    Use para indicar adaptações/itens para atender alunos com
+                                                    deficiência física.
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <!-- DOCUMENTOS OBRIGATÓRIOS -->
+                                <div class="card border mb-0">
+                                    <div class="card-header py-2">
+                                        <span class="small-label">Documentos obrigatórios</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="veiculo-arquivo-documento">Documento do veículo (CRLV ou
+                                                    similar)</label>
+                                                <input type="file" class="form-control-file"
+                                                    id="veiculo-arquivo-documento" accept="image/*,.pdf">
+                                                <small class="form-text text-muted">
+                                                    Envie o documento vigente do veículo.
+                                                </small>
+                                                <div id="veiculo-documento-atual" class="small text-muted mt-1"></div>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-documento-validade">Validade do documento</label>
+                                                <input type="date" class="form-control" id="veiculo-documento-validade">
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="veiculo-arquivo-alvara">Alvará de transporte</label>
+                                                <input type="file" class="form-control-file" id="veiculo-arquivo-alvara"
+                                                    accept="image/*,.pdf">
+                                                <small class="form-text text-muted">
+                                                    O alvará de transporte normalmente tem validade de 6 meses.
+                                                    Informe sempre o alvará vigente.
+                                                </small>
+                                                <div id="veiculo-alvara-atual" class="small text-muted mt-1"></div>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="veiculo-alvara-validade">Validade do alvará</label>
+                                                <input type="date" class="form-control" id="veiculo-alvara-validade">
+                                                <small class="form-text text-muted">
+                                                    Data de vencimento (ex.: emissão + 6 meses).
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar veículo</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL MENSAGEM DE SISTEMA -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-md" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo">
+                            <!-- conteúdo dinâmico -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL CONFIRMAÇÃO DE SISTEMA -->
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-md" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo">
+                            <!-- conteúdo dinâmico -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger"
+                                id="btnSistemaConfirmacaoConfirmar">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script>
+        // Helpers globais de modais de sistema
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+
+    <script>
+        var apiBaseVeiculos = '/api/veiculos';
+        var apiBaseFornecedores = '/api/fornecedores';
+
+        var veiculos = [];
+        var fornecedores = [];
+        var paginaAtualVeiculos = 1;
+        var totalPaginasVeiculos = 1;
+        var tamanhoPaginaVeiculos = 20;
+
+        // Helper para formatar datas em dd/mm/aaaa
+        function formatarDataBR(dataStr) {
+            if (!dataStr) return '';
+
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataStr)) {
+                return dataStr;
+            }
+
+            var somenteData = dataStr.split('T')[0];
+            var partes = somenteData.split('-'); // [yyyy, mm, dd]
+            if (partes.length === 3) {
+                var ano = partes[0];
+                var mes = partes[1];
+                var dia = partes[2];
+                return dia.padStart(2, '0') + '/' + mes.padStart(2, '0') + '/' + ano;
+            }
+
+            var d = new Date(dataStr);
+            if (isNaN(d.getTime())) return dataStr;
+
+            var dia2 = String(d.getDate()).padStart(2, '0');
+            var mes2 = String(d.getMonth() + 1).padStart(2, '0');
+            var ano2 = d.getFullYear();
+            return dia2 + '/' + mes2 + '/' + ano2;
+        }
+
+        // RESUMO RÁPIDO
+        function atualizarResumoVeiculos() {
+            var total = veiculos.length;
+            var ativos = veiculos.filter(function (v) {
+                return v.status === 'ativo';
+            }).length;
+            var capacidadeTotal = veiculos.reduce(function (acc, v) {
+                var cap = parseInt(v.capacidade_lotacao, 10);
+                if (!isNaN(cap)) return acc + cap;
+                return acc;
+            }, 0);
+
+            $('#resumo-total-veiculos').text(total);
+            $('#resumo-veiculos-ativos').text(ativos);
+            $('#resumo-capacidade-total').text(capacidadeTotal);
+        }
+
+        function resumoAlvaraVeiculo(v) {
+            if (!v.alvara_status || !v.alvara_resumo) {
+                return '<span class="text-muted">Não informado</span>';
+            }
+            var cls;
+            switch (v.alvara_status) {
+                case 'em_dia':
+                    cls = 'badge-alvara-ok';
+                    break;
+                case 'perto_vencer':
+                    cls = 'badge-alvara-perto';
+                    break;
+                case 'vencido':
+                    cls = 'badge-alvara-vencido';
+                    break;
+                default:
+                    return '<span class="text-muted">' + v.alvara_resumo + '</span>';
+            }
+            return '<span class="badge ' + cls + '">' + v.alvara_resumo + '</span>';
+        }
+
+        function obterDescricaoFornecedor(v) {
+            if (!v.fornecedor_id) {
+                return '<span class="text-muted">Não vinculado</span>';
+            }
+            var nome = v.fornecedor_nome_fantasia || v.fornecedor_razao_social || ('Fornecedor #' + v.fornecedor_id);
+            var cnpj = v.fornecedor_cnpj || '';
+            (v.possui_adaptacao ? 'adaptado' : ''),
+                (v.possui_plataforma ? 'plataforma' : ''),
+                v.adaptacao_descricao || '';
+            var html = '<strong>' + nome + '</strong>';
+            if (cnpj) {
+                html += '<br><small class="text-muted">CNPJ: ' + cnpj + '</small>';
+            }
+            return html;
+        }
+
+        function escapeHtml(valor) {
+            if (valor == null) return '';
+            return String(valor)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function obterDescricaoRotaEscolar(v) {
+            if (!v || !v.rota_vinculada || !v.rotas_escolares_texto) {
+                return '<span class="text-muted">Sem rota</span>';
+            }
+
+            // Exibe o texto já agregado no backend (ex.: "1-A (municipal) | 3-B (exclusiva)")
+            var texto = escapeHtml(v.rotas_escolares_texto);
+
+            // Pequena melhoria visual quando há várias rotas
+            return '<span class="badge badge-success mr-1">Vinculado</span><span>' + texto + '</span>';
+        }
+
+        // PAGINAÇÃO / LISTAGEM
+
+        function atualizarPaginacaoVeiculos() {
+            var ul = document.getElementById('paginacao-veiculos');
+            if (!ul) return;
+
+            ul.innerHTML = '';
+
+            var liPrev = document.createElement('li');
+            liPrev.className = 'page-item' + (paginaAtualVeiculos <= 1 ? ' disabled' : '');
+            var aPrev = document.createElement('a');
+            aPrev.className = 'page-link';
+            aPrev.href = '#';
+            aPrev.textContent = 'Anterior';
+            aPrev.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualVeiculos > 1) {
+                    irParaPaginaVeiculos(paginaAtualVeiculos - 1);
+                }
+            });
+            liPrev.appendChild(aPrev);
+            ul.appendChild(liPrev);
+
+            var liInfo = document.createElement('li');
+            liInfo.className = 'page-item disabled';
+            var aInfo = document.createElement('a');
+            aInfo.className = 'page-link';
+            aInfo.href = '#';
+            aInfo.textContent = paginaAtualVeiculos + ' / ' + totalPaginasVeiculos;
+            liInfo.appendChild(aInfo);
+            ul.appendChild(liInfo);
+
+            var liNext = document.createElement('li');
+            liNext.className = 'page-item' + (paginaAtualVeiculos >= totalPaginasVeiculos ? ' disabled' : '');
+            var aNext = document.createElement('a');
+            aNext.className = 'page-link';
+            aNext.href = '#';
+            aNext.textContent = 'Próxima';
+            aNext.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualVeiculos < totalPaginasVeiculos) {
+                    irParaPaginaVeiculos(paginaAtualVeiculos + 1);
+                }
+            });
+            liNext.appendChild(aNext);
+            ul.appendChild(liNext);
+        }
+
+        function irParaPaginaVeiculos(pagina) {
+            if (pagina < 1 || pagina > totalPaginasVeiculos) return;
+            paginaAtualVeiculos = pagina;
+            renderizarTabelaVeiculos();
+        }
+
+        function carregarVeiculos() {
+            return fetch(apiBaseVeiculos)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar veículos');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    veiculos = data || [];
+                    paginaAtualVeiculos = 1;
+                    renderizarTabelaVeiculos();
+                    atualizarResumoVeiculos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de veículos.');
+                });
+        }
+
+        function renderizarTabelaVeiculos() {
+            var tbody = document.getElementById('tbody-veiculos');
+            if (!tbody) return;
+
+            var termo = ($('#search-veiculos').val() || '').toLowerCase();
+            var filtroStatus = $('#filtro-status-veiculo').val();
+
+            var filtrados = veiculos.filter(function (v) {
+                var textoBusca = [
+                    v.placa || '',
+                    v.prefixo || '',
+                    v.marca || '',
+                    v.modelo || '',
+                    v.fornecedor_nome_fantasia || '',
+                    v.fornecedor_razao_social || '',
+                    v.fornecedor_cnpj || '',
+                    (v.possui_adaptacao ? 'adaptado' : ''),
+                    (v.possui_plataforma ? 'plataforma' : ''),
+                    v.adaptacao_descricao || '',
+                    v.rotas_escolares_texto || ''
+                ].join(' ').toLowerCase();
+
+                if (termo && textoBusca.indexOf(termo) === -1) return false;
+                if (filtroStatus && v.status !== filtroStatus) return false;
+
+                return true;
+            });
+
+            totalPaginasVeiculos = Math.max(1, Math.ceil(filtrados.length / tamanhoPaginaVeiculos));
+            if (paginaAtualVeiculos > totalPaginasVeiculos) {
+                paginaAtualVeiculos = totalPaginasVeiculos;
+            }
+            if (paginaAtualVeiculos < 1) {
+                paginaAtualVeiculos = 1;
+            }
+
+            var inicio = (paginaAtualVeiculos - 1) * tamanhoPaginaVeiculos;
+            var fim = inicio + tamanhoPaginaVeiculos;
+            var paginaItens = filtrados.slice(inicio, fim);
+
+            tbody.innerHTML = '';
+
+            paginaItens.forEach(function (v) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', v.id);
+
+                var tdId = document.createElement('td');
+                tdId.textContent = v.id;
+                tr.appendChild(tdId);
+
+                var tdPlaca = document.createElement('td');
+                tdPlaca.textContent = v.placa || '';
+                tr.appendChild(tdPlaca);
+
+                var tdIdent = document.createElement('td');
+                var identHtml = '';
+                if (v.prefixo) {
+                    identHtml += '<strong>' + v.prefixo + '</strong><br>';
+                }
+                identHtml += (v.marca || '') + ' ' + (v.modelo || '');
+                if (v.ano_modelo || v.ano_fabricacao) {
+                    identHtml += '<br><small class="text-muted">Ano: ' +
+                        (v.ano_modelo || v.ano_fabricacao || '') + '</small>';
+                }
+
+                // Acessibilidade / adaptação
+                var badges = [];
+                if (v.possui_adaptacao) badges.push('<span class="badge badge-info mr-1">Adaptado</span>');
+                if (v.possui_plataforma) badges.push('<span class="badge badge-primary mr-1">Plataforma</span>');
+                if (badges.length) {
+                    identHtml += '<br>' + badges.join(' ');
+                }
+                if (v.adaptacao_descricao) {
+                    identHtml += '<br><small class="text-muted">' + String(v.adaptacao_descricao) + '</small>';
+                }
+
+                tdIdent.innerHTML = identHtml;
+                tr.appendChild(tdIdent);
+
+                var tdLotacao = document.createElement('td');
+                tdLotacao.textContent = v.capacidade_lotacao ? v.capacidade_lotacao + ' assentos' : '–';
+                tr.appendChild(tdLotacao);
+
+                var tdFornecedor = document.createElement('td');
+                tdFornecedor.innerHTML = obterDescricaoFornecedor(v);
+                tr.appendChild(tdFornecedor);
+
+                var tdRota = document.createElement('td');
+                tdRota.innerHTML = obterDescricaoRotaEscolar(v);
+                tr.appendChild(tdRota);
+
+                var tdDoc = document.createElement('td');
+                if (v.documento_url) {
+                    tdDoc.innerHTML =
+                        '<button type="button" class="btn btn-sm btn-outline-primary action-ver-documentos-veiculo" data-id="' +
+                        v.id + '">Documentos</button>';
+                } else {
+                    tdDoc.innerHTML =
+                        '<button type="button" class="btn btn-sm btn-outline-secondary action-ver-documentos-veiculo" data-id="' +
+                        v.id + '">Documentos</button>';
+                }
+                tr.appendChild(tdDoc);
+
+                var tdAlvara = document.createElement('td');
+                tdAlvara.innerHTML = resumoAlvaraVeiculo(v);
+                tr.appendChild(tdAlvara);
+
+                var tdStatus = document.createElement('td');
+                var spanStatus = document.createElement('span');
+                if (v.status === 'ativo') {
+                    spanStatus.className = 'badge badge-success';
+                    spanStatus.textContent = 'Ativo';
+                } else {
+                    spanStatus.className = 'badge badge-secondary';
+                    spanStatus.textContent = 'Inativo';
+                }
+                tdStatus.appendChild(spanStatus);
+                tr.appendChild(tdStatus);
+
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+                btnDrop.appendChild(spanSr);
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-veiculo';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', v.id);
+                aEditar.textContent = 'Ver / editar';
+
+                var aToggle = document.createElement('a');
+                aToggle.className = 'dropdown-item text-warning action-toggle-status-veiculo';
+                aToggle.href = '#';
+                aToggle.setAttribute('data-id', v.id);
+                aToggle.textContent = v.status === 'ativo' ? 'Desativar' : 'Ativar';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-veiculo';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', v.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aEditar);
+                menu.appendChild(aToggle);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarPaginacaoVeiculos();
+        }
+
+        // FORNECEDORES
+
+        function preencherSelectFornecedores() {
+            var $sel = $('#veiculo-fornecedor');
+            $sel.empty();
+            $sel.append('<option value="">Selecione o fornecedor...</option>');
+
+            fornecedores.forEach(function (f) {
+                var label = f.nome_fantasia || f.razao_social || ('Fornecedor #' + f.id);
+                if (f.cnpj) {
+                    label += ' - ' + f.cnpj;
+                }
+                $sel.append(
+                    $('<option>', { value: f.id }).text(label)
+                );
+            });
+
+            $sel.trigger('change.select2');
+        }
+
+        function carregarFornecedores() {
+            return fetch(apiBaseFornecedores)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar fornecedores');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    fornecedores = data || [];
+                    preencherSelectFornecedores();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar a lista de fornecedores.');
+                });
+        }
+
+        // FORM / MODAL
+
+        function limparFormVeiculo() {
+            $('#veiculo-id').val('');
+            $('#veiculo-placa').val('');
+            $('#veiculo-prefixo').val('');
+            $('#veiculo-renavam').val('');
+            $('#veiculo-marca').val('');
+            $('#veiculo-modelo').val('');
+            $('#veiculo-ano-fabricacao').val('');
+            $('#veiculo-ano-modelo').val('');
+            $('#veiculo-combustivel').val('');
+            $('#veiculo-lotacao').val('');
+            $('#veiculo-status').val('ativo');
+
+            $('#veiculo-fornecedor').val('').trigger('change');
+
+            $('#veiculo-arquivo-documento').val('');
+            $('#veiculo-arquivo-alvara').val('');
+
+            $('#veiculo-documento-validade').val('');
+            $('#veiculo-alvara-validade').val('');
+
+            $('#veiculo-possui-adaptacao').prop('checked', false);
+            $('#veiculo-possui-plataforma').prop('checked', false);
+            $('#veiculo-adaptacao-descricao').val('');
+
+            $('#veiculo-documento-atual').empty();
+            $('#veiculo-alvara-atual').empty();
+        }
+
+        function preencherFormVeiculo(dados) {
+            $('#veiculo-id').val(dados.id || '');
+            $('#veiculo-placa').val(dados.placa || '');
+            $('#veiculo-prefixo').val(dados.prefixo || '');
+            $('#veiculo-renavam').val(dados.renavam || '');
+            $('#veiculo-marca').val(dados.marca || '');
+            $('#veiculo-modelo').val(dados.modelo || '');
+            $('#veiculo-ano-fabricacao').val(dados.ano_fabricacao || '');
+            $('#veiculo-ano-modelo').val(dados.ano_modelo || '');
+            $('#veiculo-combustivel').val(dados.tipo_combustivel || '');
+            $('#veiculo-lotacao').val(dados.capacidade_lotacao || '');
+            $('#veiculo-status').val(dados.status || 'ativo');
+
+            $('#veiculo-possui-adaptacao').prop('checked', !!dados.possui_adaptacao);
+            $('#veiculo-possui-plataforma').prop('checked', !!dados.possui_plataforma);
+            $('#veiculo-adaptacao-descricao').val(dados.adaptacao_descricao || '');
+
+
+            $('#veiculo-fornecedor').val(
+                dados.fornecedor_id ? String(dados.fornecedor_id) : ''
+            ).trigger('change');
+
+            $('#veiculo-documento-validade').val(
+                dados.documento_validade ? dados.documento_validade.split('T')[0] : ''
+            );
+            $('#veiculo-alvara-validade').val(
+                dados.alvara_validade ? dados.alvara_validade.split('T')[0] : ''
+            );
+
+            $('#veiculo-arquivo-documento').val('');
+            $('#veiculo-arquivo-alvara').val('');
+
+            if (dados.documento_url) {
+                $('#veiculo-documento-atual').html(
+                    'Documento atual: <a href="' + dados.documento_url + '" target="_blank">ver documento</a>'
+                );
+            } else {
+                $('#veiculo-documento-atual').empty();
+            }
+
+            if (dados.alvara_url) {
+                $('#veiculo-alvara-atual').html(
+                    'Alvará atual: <a href="' + dados.alvara_url + '" target="_blank">ver alvará</a>'
+                );
+            } else {
+                $('#veiculo-alvara-atual').empty();
+            }
+        }
+
+        function abrirModalNovoVeiculo() {
+            limparFormVeiculo();
+            $('#modalVeiculoLabel').text('Novo veículo');
+            aplicarRestricaoFornecedorSelect();
+            $('#modal-veiculo').modal('show');
+        }
+
+        function abrirModalEditarVeiculo(id) {
+            fetch(apiBaseVeiculos + '/' + id)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar veículo');
+                    return resp.json();
+                })
+                .then(function (dados) {
+                    limparFormVeiculo();
+                    preencherFormVeiculo(dados || {});
+                    $('#modalVeiculoLabel').text('Editar veículo #' + id);
+                    aplicarRestricaoFornecedorSelect();
+                    $('#modal-veiculo').modal('show');
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar os dados do veículo.');
+                });
+        }
+
+        // SALVAR / ALTERAR / EXCLUIR
+
+        function salvarVeiculo(event) {
+            event.preventDefault();
+
+            if (!$('#veiculo-placa').val().trim() ||
+                !$('#veiculo-lotacao').val().trim()) {
+                mostrarMensagemSistema('Dados incompletos', 'Preencha pelo menos placa e lotação do veículo.');
+                return;
+            }
+
+            if (!$('#veiculo-fornecedor').val()) {
+                mostrarMensagemSistema('Dados incompletos', 'Selecione o fornecedor responsável pelo veículo.');
+                return;
+            }
+
+            var id = $('#veiculo-id').val() || null;
+
+            var dadosVeiculo = {
+                placa: $('#veiculo-placa').val().trim(),
+                prefixo: $('#veiculo-prefixo').val().trim() || null,
+                renavam: $('#veiculo-renavam').val().trim() || null,
+                marca: $('#veiculo-marca').val().trim() || null,
+                modelo: $('#veiculo-modelo').val().trim() || null,
+                ano_fabricacao: $('#veiculo-ano-fabricacao').val() || null,
+                ano_modelo: $('#veiculo-ano-modelo').val() || null,
+                capacidade_lotacao: $('#veiculo-lotacao').val() || null,
+                tipo_combustivel: $('#veiculo-combustivel').val().trim() || null,
+                status: $('#veiculo-status').val(),
+                possui_adaptacao: $('#veiculo-possui-adaptacao').is(':checked'),
+                possui_plataforma: $('#veiculo-possui-plataforma').is(':checked'),
+                adaptacao_descricao: ($('#veiculo-adaptacao-descricao').val() || '').trim() || null,
+                documento_validade: $('#veiculo-documento-validade').val() || null,
+                alvara_validade: $('#veiculo-alvara-validade').val() || null,
+                fornecedor_id: $('#veiculo-fornecedor').val() || null
+            };
+
+            var formData = new FormData();
+            formData.append('dados', JSON.stringify(dadosVeiculo));
+
+            var inputDoc = document.getElementById('veiculo-arquivo-documento');
+            if (inputDoc && inputDoc.files && inputDoc.files[0]) {
+                formData.append('arquivo_documento', inputDoc.files[0]);
+            }
+
+            var inputAlvara = document.getElementById('veiculo-arquivo-alvara');
+            if (inputAlvara && inputAlvara.files && inputAlvara.files[0]) {
+                formData.append('arquivo_alvara', inputAlvara.files[0]);
+            }
+
+            var method = id ? 'PUT' : 'POST';
+            var url = apiBaseVeiculos + (id ? '/' + id : '');
+
+            fetch(url, {
+                method: method,
+                body: formData
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao salvar veículo');
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-veiculo').modal('hide');
+                    return carregarVeiculos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar os dados do veículo.');
+                });
+        }
+
+        function alterarStatusVeiculo(id, novoStatus) {
+            fetch(apiBaseVeiculos + '/' + id + '/status', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: novoStatus })
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao alterar status');
+                    return resp.json();
+                })
+                .then(function () {
+                    carregarVeiculos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao alterar status do veículo.');
+                });
+        }
+
+        function excluirVeiculo(id) {
+            confirmarAcaoSistema(
+                'Excluir veículo',
+                'Deseja realmente excluir este veículo? Esta ação não poderá ser desfeita.',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                fetch(apiBaseVeiculos + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao excluir veículo');
+                        return resp.json();
+                    })
+                    .then(function () {
+                        carregarVeiculos();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir o veículo.');
+                    });
+            });
+        }
+
+        // Ver documentos do veículo em modal
+        function mostrarDocumentosVeiculo(id) {
+            fetch(apiBaseVeiculos + '/' + id)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar documentos do veículo');
+                    return resp.json();
+                })
+                .then(function (v) {
+                    var html = '<ul class="mb-0">';
+                    var temAlgo = false;
+
+                    if (v.documento_url) {
+                        temAlgo = true;
+                        var docVal = v.documento_validade ? formatarDataBR(v.documento_validade) : '';
+                        html += '<li><a href="' + v.documento_url +
+                            '" target="_blank">Documento do veículo</a>' +
+                            (docVal ? ' <small class="text-muted">(Validade: ' + docVal + ')</small>' : '') +
+                            '</li>';
+                    }
+
+                    if (v.alvara_url) {
+                        temAlgo = true;
+                        var alvVal = v.alvara_validade ? formatarDataBR(v.alvara_validade) : '';
+                        html += '<li><a href="' + v.alvara_url +
+                            '" target="_blank">Alvará de transporte</a>' +
+                            (alvVal ? ' <small class="text-muted">(Validade: ' + alvVal + ')</small>' : '') +
+                            '</li>';
+                    }
+
+                    html += '</ul>';
+
+                    if (!temAlgo) {
+                        mostrarMensagemSistema('Documentos', 'Nenhum documento anexado para este veículo.');
+                    } else {
+                        mostrarMensagemSistema('Documentos do veículo #' + id, html);
+                    }
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar os documentos deste veículo.');
+                });
+        }
+
+        // CONTEXTO DO USUÁRIO (para travar fornecedor no cargo FORNECEDOR_ESCOLAR)
+        var __ME_CACHE = null;
+
+        function obterMeUsuario() {
+            if (window.__ME) { __ME_CACHE = window.__ME; return Promise.resolve(__ME_CACHE); }
+            if (__ME_CACHE) return Promise.resolve(__ME_CACHE);
+            return fetch('/api/me', { credentials: 'include' })
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (me) {
+                    __ME_CACHE = me;
+                    if (me) window.__ME = me;
+                    return me;
+                })
+                .catch(function () { return null; });
+        }
+
+        function aplicarRestricaoFornecedorSelect() {
+            return obterMeUsuario().then(function (me) {
+                if (!me) return;
+                var cargo = String(me.cargo || '').toUpperCase();
+                if (cargo !== 'FORNECEDOR_ESCOLAR') return;
+                var fornecedorId = me.fornecedor_id;
+                if (!fornecedorId) return;
+
+                var $sel = $('#veiculo-fornecedor');
+                // Garante que a opção exista
+                var hasOpt = $sel.find('option[value="' + fornecedorId + '"]').length > 0;
+                if (!hasOpt) {
+                    $sel.append($('<option>', { value: fornecedorId }).text('Fornecedor #' + fornecedorId));
+                }
+                $sel.val(String(fornecedorId)).trigger('change');
+                $sel.prop('disabled', true);
+            });
+        }
+
+
+
+        $(document).ready(function () {
+            // Máscara para placa (se quiser usar, adicione classe input-placa no input)
+            $('.input-placa').mask('AAA-0A00');
+
+            // Select2 no fornecedor (dropdown dentro da modal)
+            $('#veiculo-fornecedor').select2({
+                width: '100%',
+                dropdownParent: $('#modal-veiculo')
+            });
+
+            // Carregar fornecedores e veículos
+            Promise.all([
+                carregarFornecedores(),
+                carregarVeiculos()
+            ]);
+
+            // Filtros e busca
+            $('#search-veiculos').on('input', function () {
+                paginaAtualVeiculos = 1;
+                renderizarTabelaVeiculos();
+            });
+            $('#filtro-status-veiculo').on('change', function () {
+                paginaAtualVeiculos = 1;
+                renderizarTabelaVeiculos();
+            });
+
+            // Botões do header
+            $('#btn-novo-veiculo').on('click', function () {
+                abrirModalNovoVeiculo();
+            });
+
+            // Formulário e modal
+            $('#form-veiculo').on('submit', salvarVeiculo);
+
+
+            $('#modal-veiculo').on('shown.bs.modal', function () { aplicarRestricaoFornecedorSelect(); });
+            // Ações na tabela
+            $('#tbody-veiculos').on('click', '.action-editar-veiculo', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    abrirModalEditarVeiculo(id);
+                }
+            });
+
+            $('#tbody-veiculos').on('click', '.action-toggle-status-veiculo', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (!id) return;
+                var veiculo = veiculos.find(function (v) { return v.id === id; });
+                if (!veiculo) return;
+
+                var novoStatus = veiculo.status === 'ativo' ? 'inativo' : 'ativo';
+                var mensagem = novoStatus === 'inativo'
+                    ? 'O veículo será marcado como inativo. Deseja continuar?'
+                    : 'O veículo será reativado. Deseja continuar?';
+
+                confirmarAcaoSistema(
+                    'Alterar status do veículo',
+                    mensagem,
+                    novoStatus === 'inativo' ? 'Desativar' : 'Ativar'
+                ).then(function (confirmado) {
+                    if (!confirmado) return;
+                    alterarStatusVeiculo(id, novoStatus);
+                });
+            });
+
+            $('#tbody-veiculos').on('click', '.action-excluir-veiculo', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (id) {
+                    excluirVeiculo(id);
+                }
+            });
+
+            $('#tbody-veiculos').on('click', '.action-ver-documentos-veiculo', function (e) {
+                e.preventDefault();
+                var id = parseInt($(this).data('id'), 10);
+                if (!id) return;
+                mostrarDocumentosVeiculo(id);
+            });
+        });
+    </script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+</body>
+
+</html>

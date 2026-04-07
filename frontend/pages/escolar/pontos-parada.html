@@ -1,0 +1,2443 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Sistema de Gestão de Transporte Escolar">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Pontos de parada</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/select2.css">
+    <link rel="stylesheet" href="../../css/dropzone.css">
+    <link rel="stylesheet" href="../../css/uppy.min.css">
+    <link rel="stylesheet" href="../../css/jquery.steps.css">
+    <link rel="stylesheet" href="../../css/jquery.timepicker.css">
+    <link rel="stylesheet" href="../../css/quill.snow.css">
+    <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        #map-pontos-parada,
+        #mapa-pontos-modal,
+        #mapa-editar-ponto {
+            width: 100%;
+            height: 420px;
+            border-radius: .25rem;
+            overflow: hidden;
+        }
+
+        #mapa-pontos-modal {
+            height: 400px;
+        }
+
+        .leaflet-container {
+            font: inherit;
+        }
+
+        .planejamento-toolbar .btn {
+            white-space: nowrap;
+        }
+
+        .planejamento-resumo {
+            font-size: .875rem;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search"
+                    placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-shortcut">
+                        <span class="fe fe-grid fe-16"></span>
+                    </a>
+                </li>
+                <li class="nav-item nav-notif">
+                    <a class="nav-link text-muted my-2" href="#" data-toggle="modal" data-target=".modal-notif">
+                        <span class="fe fe-bell fe-16"></span>
+                        <span class="dot dot-md bg-success"></span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink"
+                        role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="pages/sistema/perfil.html">Meu Perfil</a>
+                        <a class="dropdown-item" href="sistema/configuracoes">Configurações</a>
+                        <a class="dropdown-item" href="pages/sistema/atividades.html">Atividades</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+
+                <!-- ===================== -->
+                <!-- ESCOLAR -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Escolar</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fe fe-home fe-16"></i>
+                            <span class="ml-3 item-text">Painel</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-cadastros" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-layers fe-16"></i>
+                            <span class="ml-3 item-text">Cadastros</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-cadastros">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/zoneamentos"><span
+                                        class="ml-1 item-text">Zoneamentos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/escolas"><span
+                                        class="ml-1 item-text">Escolas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/alunos"><span
+                                        class="ml-1 item-text">Alunos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/pontos-parada"><span
+                                        class="ml-1 item-text">Pontos de parada</span></a></li>
+
+                            <li class="nav-item dropdown">
+                                <a href="#escolar-rotas-escolares" data-toggle="collapse" aria-expanded="false"
+                                    class="dropdown-toggle nav-link pl-3">
+                                    <span class="ml-1 item-text">Rotas escolares</span>
+                                </a>
+                                <ul class="collapse list-unstyled pl-4 w-100" id="escolar-rotas-escolares">
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-municipais"><span
+                                                class="ml-1 item-text">Rotas Municipais</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-exclusivas"><span
+                                                class="ml-1 item-text">Rotas Exclusivas</span></a></li>
+                                    <li class="nav-item"><a class="nav-link pl-3" href="/rotas-estaduais"><span
+                                                class="ml-1 item-text">Rotas Estaduais</span></a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-item dropdown">
+                        <a href="#escolar-operacao" data-toggle="collapse" aria-expanded="false"
+                            class="dropdown-toggle nav-link">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Operação</span>
+                        </a>
+                        <ul class="collapse list-unstyled pl-4 w-100" id="escolar-operacao">
+                            <li class="nav-item"><a class="nav-link pl-3" href="/motoristas"><span
+                                        class="ml-1 item-text">Motoristas</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/monitores"><span
+                                        class="ml-1 item-text">Monitores</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/veiculos"><span
+                                        class="ml-1 item-text">Veículos</span></a></li>
+                            <li class="nav-item"><a class="nav-link pl-3" href="/fornecedores"><span
+                                        class="ml-1 item-text">Fornecedores</span></a></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <!-- ===================== -->
+                <!-- INTERNO -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Interno</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/motoristas">
+                            <i class="fe fe-user-check fe-16"></i>
+                            <span class="ml-3 item-text">Motoristas Internos</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/interno/veiculos">
+                            <i class="fe fe-truck fe-16"></i>
+                            <span class="ml-3 item-text">Veículos Internos</span>
+                        </a>
+                    </li>
+
+                </ul>
+
+                <!-- ===================== -->
+                <!-- SISTEMA -->
+                <!-- ===================== -->
+                <p class="text-muted nav-heading mt-4 mb-1"><span>Sistema</span></p>
+                <ul class="navbar-nav flex-fill w-100 mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/sistema/configuracoes">
+                            <i class="fe fe-settings fe-16"></i>
+                            <span class="ml-3 item-text">Configurações</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/auth-logout.html">
+                            <i class="fe fe-log-out fe-16"></i>
+                            <span class="ml-3 item-text">Sair</span>
+                        </a>
+                    </li>
+                </ul>
+
+            </nav>
+        </aside>
+
+
+
+
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <h2 class="h4 mb-1">Pontos de parada</h2>
+                                <p class="text-muted mb-0">
+                                    Cadastre e gerencie os pontos de parada do transporte escolar, com localização
+                                    geográfica e vínculo
+                                    aos zoneamentos.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- MAPA DE PONTOS -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-header d-flex align-items-center">
+                                        <div>
+                                            <h2 class="h5 mb-0">Mapa de pontos de parada</h2>
+                                            <small class="text-muted">
+                                                Cada marcador representa um ponto oficial de embarque/desembarque dos
+                                                alunos.
+                                            </small>
+                                        </div>
+                                        <div class="ml-auto">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                id="btn-atualizar-mapa-pontos">
+                                                <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar mapa
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="map-pontos-parada"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE PONTOS -->
+                        <div class="row">
+                            <div class="col-md-12 my-4">
+                                <h2 class="h4 mb-1">Pontos cadastrados</h2>
+                                <p class="mb-4">
+                                    Lista de pontos de parada urbanos e rurais com endereço, CEP e zoneamento associado.
+                                </p>
+
+                                <div class="card shadow">
+                                    <div class="card-body">
+                                        <div class="toolbar row mb-3">
+                                            <div class="col">
+                                                <form class="form-inline">
+                                                    <div class="form-row">
+                                                        <div class="form-group col-auto">
+                                                            <label for="search-pontos" class="sr-only">Pesquisar</label>
+                                                            <input type="text" class="form-control" id="search-pontos"
+                                                                placeholder="Pesquisar por logradouro, bairro ou CEP">
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="col ml-auto">
+                                                <div class="dropdown float-right">
+                                                    <button class="btn btn-primary float-right ml-3" type="button"
+                                                        data-toggle="modal" data-target="#modal-novos-pontos"
+                                                        id="btn-abrir-novos-pontos">
+                                                        Novo(s) ponto(s) +
+                                                    </button>
+                                                    <button class="btn btn-secondary dropdown-toggle" type="button"
+                                                        id="acoesPontosMenu" data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
+                                                        Ações
+                                                    </button>
+                                                    <div class="dropdown-menu dropdown-menu-right"
+                                                        aria-labelledby="acoesPontosMenu">
+                                                        <a class="dropdown-item" href="#"
+                                                            id="btn-associar-pontos-zoneamentos">
+                                                            Associar pontos aos zoneamentos
+                                                        </a>
+                                                        <a class="dropdown-item text-danger" href="#"
+                                                            id="btn-excluir-pontos-selecionados">
+                                                            Excluir selecionados
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-hover mb-0" id="tabela-pontos">
+                                                <thead class="thead-light">
+                                                    <tr role="row">
+                                                        <th style="width: 40px;">
+                                                            <div class="custom-control custom-checkbox">
+                                                                <input type="checkbox" class="custom-control-input"
+                                                                    id="check-all-pontos">
+                                                                <label class="custom-control-label"
+                                                                    for="check-all-pontos"></label>
+                                                            </div>
+                                                        </th>
+                                                        <th style="width:80px;">ID</th>
+                                                        <th>Área</th>
+                                                        <th style="width:120px;">Status</th>
+                                                        <th>Endereço</th>
+                                                        <th style="width:110px;">CEP</th>
+                                                        <th style="width:180px;">Zoneamento</th>
+                                                        <th style="width:80px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-pontos"></tbody>
+                                            </table>
+                                        </div>
+
+                                        <nav aria-label="Paginação de pontos" class="mt-3 mb-0 text-muted">
+                                            <ul class="pagination justify-content-end mb-0" id="paginacao-pontos"></ul>
+                                        </nav>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL CADASTRO EM LOTE DE PONTOS -->
+            <div class="modal fade" id="modal-novos-pontos" tabindex="-1" role="dialog"
+                aria-labelledby="modalNovosPontosLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-pontos" novalidate>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalNovosPontosLabel">Cadastrar pontos de parada</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2">
+                                        <span class="small font-weight-bold text-uppercase">Planejamento com alunos no
+                                            mapa</span>
+                                    </div>
+                                    <div class="card-body planejamento-toolbar">
+                                        <div class="form-row align-items-end">
+                                            <div class="form-group col-md-6 mb-2">
+                                                <label for="filtro-planejamento-escola">Filtrar alunos por
+                                                    escola</label>
+                                                <select class="form-control" id="filtro-planejamento-escola">
+                                                    <option value="">Todas as escolas</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-6 mb-2 d-flex flex-wrap align-items-center">
+                                                <button type="button" class="btn btn-outline-primary mr-2 mb-2"
+                                                    id="btn-planejamento-mostrar-alunos">
+                                                    <span class="fe fe-users mr-1"></span> Mostrar alunos
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary mr-2 mb-2"
+                                                    id="btn-planejamento-limpar-alunos">
+                                                    <span class="fe fe-x-circle mr-1"></span> Limpar alunos
+                                                </button>
+                                                <button type="button" class="btn btn-outline-info mr-2 mb-2"
+                                                    id="btn-planejamento-mostrar-pontos">
+                                                    <span class="fe fe-map-pin mr-1"></span> Mostrar pontos
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary mr-2 mb-2"
+                                                    id="btn-planejamento-limpar-pontos">
+                                                    <span class="fe fe-trash-2 mr-1"></span> Limpar pontos
+                                                </button>
+                                                <button type="button" class="btn btn-success mb-2"
+                                                    id="btn-planejamento-associar-alunos-ponto-proximo">
+                                                    <span class="fe fe-link mr-1"></span> Associar alunos ao ponto mais
+                                                    próximo
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="planejamento-resumo text-muted" id="planejamento-alunos-resumo">
+                                            Selecione uma escola e use “Mostrar alunos”, “Mostrar pontos” ou associe os
+                                            alunos filtrados ao ponto de parada mais próximo.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                        <span class="small font-weight-bold text-uppercase">
+                                            Clique no mapa para adicionar pontos de parada
+                                        </span>
+                                        <small class="text-muted">
+                                            Cada clique adiciona um ponto à lista abaixo. É possível remover pontos
+                                            antes de salvar.
+                                        </small>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="mapa-pontos-modal"></div>
+                                    </div>
+                                    <div class="card-footer small text-muted">
+                                        O sistema tentará associar automaticamente cada ponto a um zoneamento, com base
+                                        na geometria
+                                        existente.
+                                    </div>
+                                </div>
+
+                                <div class="card border mb-0">
+                                    <div class="card-header py-2">
+                                        <span class="small font-weight-bold text-uppercase">
+                                            Pontos a serem cadastrados
+                                        </span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th style="width:40px;">#</th>
+                                                        <th style="width:130px;">Área</th>
+                                                        <th>Logradouro / Número / Complemento / Referência</th>
+                                                        <th style="width:120px;">CEP</th>
+                                                        <th style="width:220px;">Zoneamento (auto)</th>
+                                                        <th style="width:70px;">Ações</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="tbody-pontos-novos">
+                                                    <!-- linhas de pontos em edição -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="p-2 small text-muted">
+                                            Preencha os dados de endereço de cada ponto. Você pode remover linhas antes
+                                            de salvar.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar pontos</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL EDIÇÃO DE PONTO -->
+            <div class="modal fade" id="modal-editar-ponto" tabindex="-1" role="dialog"
+                aria-labelledby="modalEditarPontoLabel" aria-hidden="true">
+                <div class="modal-dialog modal-xl" role="document">
+                    <div class="modal-content">
+                        <form class="needs-validation" id="form-editar-ponto" novalidate>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalEditarPontoLabel">Editar ponto de parada</h5>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+
+                            <div class="modal-body">
+                                <input type="hidden" id="editar-ponto-id" />
+
+                                <div class="card border mb-3">
+                                    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                        <span class="small font-weight-bold text-uppercase">
+                                            Ajuste a localização (arraste o marcador ou clique no mapa)
+                                        </span>
+                                        <small class="text-muted" id="editar-ponto-coords">Lat: - / Lng: -</small>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div id="mapa-editar-ponto"></div>
+                                    </div>
+                                </div>
+
+                                <div class="card border mb-0">
+                                    <div class="card-header py-2">
+                                        <span class="small font-weight-bold text-uppercase">Dados do ponto</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-3">
+                                                <label for="editar-area">Área</label>
+                                                <select class="form-control" id="editar-area" required>
+                                                    <option value=""></option>
+                                                    <option value="urbana">Urbana</option>
+                                                    <option value="rural">Rural</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label for="editar-status">Status</label>
+                                                <select class="form-control" id="editar-status" required>
+                                                    <option value="ativo">Ativo</option>
+                                                    <option value="inativo">Inativo</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-6">
+                                                <label for="editar-zoneamento">Zoneamento</label>
+                                                <select class="form-control" id="editar-zoneamento">
+                                                    <option value="">Não associado</option>
+                                                </select>
+                                                <small class="text-muted">Se estiver vazio, o sistema pode associar
+                                                    automaticamente.</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="editar-logradouro">Logradouro</label>
+                                                <input type="text" class="form-control" id="editar-logradouro" required>
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="editar-numero">Número</label>
+                                                <input type="text" class="form-control" id="editar-numero" required>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="editar-complemento">Complemento</label>
+                                                <input type="text" class="form-control" id="editar-complemento">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="editar-referencia">Referência</label>
+                                                <input type="text" class="form-control" id="editar-referencia">
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="editar-bairro">Bairro</label>
+                                                <input type="text" class="form-control" id="editar-bairro" required>
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="editar-cep">CEP</label>
+                                                <input type="text" class="form-control input-zip" id="editar-cep"
+                                                    required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-outline-secondary"
+                                    data-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Salvar alterações</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAIS GLOBAIS DE SISTEMA -->
+            <div class="modal fade" id="modal-sistema-mensagem" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaMensagemTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaMensagemTitulo">Aviso</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaMensagemCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modal-sistema-confirmacao" tabindex="-1" role="dialog"
+                aria-labelledby="modalSistemaConfirmacaoTitulo" aria-hidden="true">
+                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalSistemaConfirmacaoTitulo">Confirmar ação</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="modalSistemaConfirmacaoCorpo"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" id="btnSistemaConfirmacaoCancelar"
+                                data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="btnSistemaConfirmacaoConfirmar">
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/moment.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/daterangepicker.js"></script>
+    <script src="../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/d3.min.js"></script>
+    <script src="../../js/topojson.min.js"></script>
+    <script src="../../js/datamaps.all.min.js"></script>
+    <script src="../../js/datamaps-zoomto.js"></script>
+    <script src="../../js/datamaps.custom.js"></script>
+    <script src="../../js/Chart.min.js"></script>
+    <script>
+        Chart.defaults.global.defaultFontFamily = base.defaultFontFamily;
+        Chart.defaults.global.defaultFontColor = colors.mutedColor;
+    </script>
+    <script src="../../js/gauge.min.js"></script>
+    <script src="../../js/jquery.sparkline.min.js"></script>
+    <script src="../../js/apexcharts.min.js"></script>
+    <script src="../../js/apexcharts.custom.js"></script>
+    <script src="../../js/jquery.mask.min.js"></script>
+    <script src="../../js/select2.min.js"></script>
+    <script src="../../js/jquery.steps.min.js"></script>
+    <script src="../../js/jquery.validate.min.js"></script>
+    <script src="../../js/jquery.timepicker.js"></script>
+    <script src="../../js/dropzone.min.js"></script>
+    <script src="../../js/uppy.min.js"></script>
+    <script src="../../js/quill.min.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // Helpers globais de modais de sistema
+        function mostrarMensagemSistema(titulo, mensagem) {
+            $('#modalSistemaMensagemTitulo').text(titulo || 'Aviso');
+            $('#modalSistemaMensagemCorpo').html(mensagem || '');
+            $('#modal-sistema-mensagem').modal('show');
+        }
+
+        function confirmarAcaoSistema(titulo, mensagem, textoBotaoConfirmar) {
+            return new Promise(function (resolve) {
+                var resolvido = false;
+
+                $('#modalSistemaConfirmacaoTitulo').text(titulo || 'Confirmar ação');
+                $('#modalSistemaConfirmacaoCorpo').html(mensagem || '');
+                $('#btnSistemaConfirmacaoConfirmar').text(textoBotaoConfirmar || 'Confirmar');
+
+                var $modal = $('#modal-sistema-confirmacao');
+
+                function finalizar(valor) {
+                    if (resolvido) return;
+                    resolvido = true;
+                    resolve(valor);
+                }
+
+                $('#btnSistemaConfirmacaoConfirmar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(true);
+                });
+
+                $('#btnSistemaConfirmacaoCancelar').off('click').on('click', function () {
+                    $modal.modal('hide');
+                    finalizar(false);
+                });
+
+                $modal.off('hidden.bs.modal').on('hidden.bs.modal', function () {
+                    finalizar(false);
+                });
+
+                $modal.modal('show');
+            });
+        }
+    </script>
+    <script>
+        var apiBasePontos = '/api/pontos-parada';
+        var apiBaseZoneamentos = '/api/zoneamentos';
+        var apiBaseEscolas = '/api/escolas';
+
+        var mapPontos;
+        var mapPontosModal;
+
+        // mesmo centro padrão da página de escolas
+        var defaultCenter = [-6.530070, -49.851620];
+        var defaultZoom = 12;
+
+        var pontos = [];
+        var pontoMarkers = {};
+
+        var zoneamentosCache = [];
+
+        var paginaAtualPontos = 1;
+        var totalPaginasPontos = 1;
+        var tamanhoPaginaPontos = 20;
+
+        // Ícones personalizados
+        var iconPontoAtivo = L.icon({
+            iconUrl: '../../assets/icons/ponto-ativo.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        var iconPontoInativo = L.icon({
+            iconUrl: '../../assets/icons/ponto-inativo.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+
+        var iconAlunoMunicipal = L.icon({
+            iconUrl: '../../assets/icons/aluno-municipal.png',
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
+        });
+
+        var pontosPendentes = []; // { tempId, lat, lng, zoneamento_id, marker }
+        var nextTempId = 1;
+        var planejamentoAlunosLayer = null;
+        var planejamentoAlunosMarkers = [];
+        var planejamentoPontosLayer = null;
+        var planejamentoPontosMarkers = [];
+        var escolasPlanejamentoCarregadas = false;
+
+        // MESMO PADRÃO DA PÁGINA DE ESCOLAS (Google Hybrid + OSM)
+        function criarMapaBase(divId) {
+            var googleHybrid = L.tileLayer(
+                'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+                {
+                    maxZoom: 20,
+                    attribution: '&copy; Google'
+                }
+            );
+
+            var osm = L.tileLayer(
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }
+            );
+
+            var map = L.map(divId, {
+                zoomControl: true,
+                center: defaultCenter,
+                zoom: defaultZoom,
+                layers: [googleHybrid]
+            });
+
+            var baseLayers = {
+                'Google Hybrid': googleHybrid,
+                'OpenStreetMap': osm
+            };
+
+            L.control.layers(baseLayers, null, {
+                position: 'topright'
+            }).addTo(map);
+
+            return map;
+        }
+
+        // --- Reverse geocoding (logradouro, número, CEP e referência) ---
+        // Usa Nominatim (OSM) e, como reforço, Overpass para buscar POI/ruas próximas.
+        function fetchComTimeout(url, options, timeoutMs) {
+            timeoutMs = timeoutMs || 9000;
+            var controller = new AbortController();
+            var id = setTimeout(function () { controller.abort(); }, timeoutMs);
+            options = options || {};
+            options.signal = controller.signal;
+            return fetch(url, options).finally(function () { clearTimeout(id); });
+        }
+
+        function normalizarTexto(v) {
+            return (v || '').toString().trim();
+        }
+
+        function setIfEmptyOrAuto($el, valor) {
+            valor = normalizarTexto(valor);
+            if (!valor) return;
+            var atual = normalizarTexto($el.val());
+            var isAuto = $el.attr('data-autofill') === '1';
+            if (!atual || isAuto) {
+                $el.val(valor);
+                $el.attr('data-autofill', '1');
+                $el.trigger('change');
+            }
+        }
+
+        function habilitarProtecaoEdicaoManual($container) {
+            // Se o usuário digitar, desmarca o autofill para não sobrescrever depois
+            $container.find('input, select, textarea')
+                .off('input.autofill change.autofill')
+                .on('input.autofill', function () {
+                    // input é sempre ação do usuário
+                    $(this).attr('data-autofill', '0');
+                })
+                .on('change.autofill', function (e) {
+                    // só marca como "manual" quando o change veio do usuário (ex.: select)
+                    if (e && e.originalEvent) {
+                        $(this).attr('data-autofill', '0');
+                    }
+                });
+        }
+
+        function haversineMeters(lat1, lon1, lat2, lon2) {
+            function toRad(x) { return x * Math.PI / 180; }
+            var R = 6371000;
+            var dLat = toRad(lat2 - lat1);
+            var dLon = toRad(lon2 - lon1);
+            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function reverseNominatim(lat, lng) {
+            var url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2'
+                + '&lat=' + encodeURIComponent(lat)
+                + '&lon=' + encodeURIComponent(lng)
+                + '&zoom=18&addressdetails=1&namedetails=1&extratags=1&accept-language=pt-BR';
+            return fetchComTimeout(url, { headers: { 'Accept': 'application/json' } }, 9000)
+                .then(function (r) { if (!r.ok) throw new Error('reverse geocode falhou'); return r.json(); });
+        }
+
+        function overpassQuery(query) {
+            var url = 'https://overpass-api.de/api/interpreter';
+            return fetchComTimeout(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=UTF-8', 'Accept': 'application/json' },
+                body: query
+            }, 12000).then(function (r) { if (!r.ok) throw new Error('overpass falhou'); return r.json(); });
+        }
+
+        function buscarPOIProximo(lat, lng) {
+            var q = '[out:json][timeout:10];('
+                + 'node(around:80,' + lat + ',' + lng + ')[name][amenity];'
+                + 'node(around:80,' + lat + ',' + lng + ')[name][shop];'
+                + 'node(around:80,' + lat + ',' + lng + ')[name][office];'
+                + 'node(around:80,' + lat + ',' + lng + ')[name][tourism];'
+                + 'way(around:80,' + lat + ',' + lng + ')[name][amenity];'
+                + 'way(around:80,' + lat + ',' + lng + ')[name][shop];'
+                + 'way(around:80,' + lat + ',' + lng + ')[name][office];'
+                + 'way(around:80,' + lat + ',' + lng + ')[name][tourism];'
+                + ');out center;';
+            return overpassQuery(q).then(function (data) {
+                var els = (data && data.elements) ? data.elements : [];
+                var best = null;
+                var bestD = Infinity;
+
+                els.forEach(function (el) {
+                    var name = el.tags && el.tags.name ? el.tags.name : '';
+                    if (!name) return;
+
+                    var elLat = el.lat != null ? el.lat : (el.center ? el.center.lat : null);
+                    var elLon = el.lon != null ? el.lon : (el.center ? el.center.lon : null);
+                    if (elLat == null || elLon == null) return;
+
+                    var d = haversineMeters(lat, lng, elLat, elLon);
+                    if (d < bestD) {
+                        bestD = d;
+                        best = { name: name, distance_m: d };
+                    }
+                });
+
+                return best; // {name, distance_m} ou null
+            }).catch(function () { return null; });
+        }
+
+        function buscarRuasProximas(lat, lng) {
+            var q = '[out:json][timeout:10];way(around:140,' + lat + ',' + lng + ')[highway][name];out center;';
+            return overpassQuery(q).then(function (data) {
+                var els = (data && data.elements) ? data.elements : [];
+                var ruas = [];
+
+                els.forEach(function (el) {
+                    var name = el.tags && el.tags.name ? el.tags.name : '';
+                    if (!name) return;
+
+                    var elLat = el.center ? el.center.lat : null;
+                    var elLon = el.center ? el.center.lon : null;
+                    if (elLat == null || elLon == null) return;
+
+                    var d = haversineMeters(lat, lng, elLat, elLon);
+                    ruas.push({ name: name, distance_m: d });
+                });
+
+                // ordena e remove duplicados por nome
+                ruas.sort(function (a, b) { return a.distance_m - b.distance_m; });
+                var seen = {};
+                var uniq = [];
+                for (var i = 0; i < ruas.length; i++) {
+                    var n = ruas[i].name;
+                    if (seen[n]) continue;
+                    seen[n] = true;
+                    uniq.push(ruas[i]);
+                    if (uniq.length >= 3) break;
+                }
+                return uniq; // até 3 ruas
+            }).catch(function () { return []; });
+        }
+
+
+        function buscarNumeroEnderecoProximo(lat, lng) {
+            // Busca o endereço mais próximo com número (addr:housenumber) via Overpass
+            // Ajuda quando o Nominatim retorna apenas a rua.
+            var q = '[out:json][timeout:10];('
+                + 'node(around:40,' + lat + ',' + lng + ')[addr:housenumber];'
+                + 'way(around:40,' + lat + ',' + lng + ')[addr:housenumber];'
+                + 'relation(around:40,' + lat + ',' + lng + ')[addr:housenumber];'
+                + ');out center;';
+            return overpassQuery(q).then(function (data) {
+                var els = (data && data.elements) ? data.elements : [];
+                var best = null;
+                var bestD = Infinity;
+
+                els.forEach(function (el) {
+                    var tags = el.tags || {};
+                    var hn = tags['addr:housenumber'] || '';
+                    if (!hn) return;
+
+                    var elLat = el.lat != null ? el.lat : (el.center ? el.center.lat : null);
+                    var elLon = el.lon != null ? el.lon : (el.center ? el.center.lon : null);
+                    if (elLat == null || elLon == null) return;
+
+                    var d = haversineMeters(lat, lng, elLat, elLon);
+                    if (d < bestD) {
+                        bestD = d;
+                        best = {
+                            housenumber: hn,
+                            street: tags['addr:street'] || '',
+                            name: tags.name || ''
+                        };
+                    }
+                });
+
+                return best; // {housenumber, street, name} ou null
+            }).catch(function () { return null; });
+        }
+
+        function similares(a, b) {
+            a = normalizarTexto(a).toLowerCase();
+            b = normalizarTexto(b).toLowerCase();
+            if (!a || !b) return false;
+            if (a === b) return true;
+
+            function limpa(s) {
+                return s
+                    .replace(/(rua|avenida|av\.?|rodovia|pa-|br-|travessa|tv\.?|alameda|estrada|vicinal|vp|vs)/g, '')
+                    .replace(/[^a-z0-9]+/g, ' ')
+                    .trim();
+            }
+            var aa = limpa(a);
+            var bb = limpa(b);
+            if (!aa || !bb) return false;
+            if (aa === bb) return true;
+            // contém
+            return aa.includes(bb) || bb.includes(aa);
+        }
+
+        function extrairNomeLugarDoNominatim(resp) {
+            // Tenta puxar um nome "de lugar" (POI), e não apenas a rua.
+            if (!resp) return '';
+            var named = resp.namedetails || {};
+            var extra = resp.extratags || {};
+            var addr = resp.address || {};
+
+            // 1) nome explícito (POI)
+            var candidato = named.name || extra.brand || extra.operator || '';
+            if (!candidato && extra['name:pt']) candidato = extra['name:pt'];
+
+            // 2) Alguns casos usam "building"/"amenity" etc.
+            if (!candidato) {
+                candidato = addr.amenity || addr.shop || addr.tourism || addr.leisure || '';
+            }
+
+            // 3) display_name (primeiro trecho)
+            if (!candidato && resp.display_name) {
+                candidato = resp.display_name.split(',')[0];
+            }
+
+            return normalizarTexto(candidato);
+        }
+
+        function montarReferenciaAutomatica(lat, lng, nominatimResp, logradouroAtual) {
+            // Queremos uma referência útil.
+            // Regras:
+            // - Evitar "Próximo a <mesma rua>" (redundante).
+            // - Preferir POI (empresa/escola/unidade/igreja etc.).
+            // - Se não houver POI, usar cruzamento: "Próximo ao cruzamento de X com Y".
+            // - Se só houver 1 rua diferente, usar "Próximo ao cruzamento com X" (quando o logradouro já é conhecido).
+
+            var nomeLocal = extrairNomeLugarDoNominatim(nominatimResp);
+
+            if (nomeLocal && !similares(nomeLocal, logradouroAtual)) {
+                return Promise.resolve('Próximo a ' + nomeLocal);
+            }
+
+            // Fallback 1: Overpass POI
+            return buscarPOIProximo(lat, lng).then(function (poi) {
+                if (poi && poi.name && !similares(poi.name, logradouroAtual)) {
+                    return 'Próximo a ' + poi.name;
+                }
+
+                // Fallback 2: ruas próximas -> cruzamento
+                return buscarRuasProximas(lat, lng).then(function (ruas) {
+                    ruas = (ruas || []).filter(function (r) { return r && r.name && !similares(r.name, logradouroAtual); });
+                    if (ruas.length >= 2) {
+                        return 'Próximo ao cruzamento de ' + ruas[0].name + ' com ' + ruas[1].name;
+                    }
+                    if (ruas.length === 1) {
+                        if (logradouroAtual) return 'Próximo ao cruzamento com ' + ruas[0].name;
+                        return 'Próximo a ' + ruas[0].name;
+                    }
+                    return '';
+                });
+            });
+        }
+
+        function aplicarEnderecoNoRow($row, lat, lng) {
+            // campos do modal de adicionar (linha da tabela)
+            var $log = $row.find('.ponto-logradouro');
+            var $num = $row.find('.ponto-numero');
+            var $bairro = $row.find('.ponto-bairro');
+            var $cep = $row.find('.ponto-cep');
+            var $ref = $row.find('.ponto-referencia');
+
+            reverseNominatim(lat, lng).then(function (resp) {
+                var addr = resp && resp.address ? resp.address : {};
+                var logradouro = addr.road || addr.pedestrian || addr.cycleway || addr.footway || addr.path || '';
+                var numero = addr.house_number || '';
+                var bairro = addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || addr.village || '';
+                var cep = addr.postcode || '';
+
+                setIfEmptyOrAuto($log, logradouro);
+                setIfEmptyOrAuto($num, numero);
+
+                // Se o Nominatim não trouxe número, tenta via Overpass (addr:housenumber)
+                if (!normalizarTexto(numero)) {
+                    buscarNumeroEnderecoProximo(lat, lng).then(function (r) {
+                        if (r && r.housenumber) setIfEmptyOrAuto($num, r.housenumber);
+                    });
+                }
+
+                // Se o Nominatim não trouxe número, tenta via Overpass (addr:housenumber)
+                if (!normalizarTexto(numero)) {
+                    buscarNumeroEnderecoProximo(lat, lng).then(function (r) {
+                        if (r && r.housenumber) setIfEmptyOrAuto($num, r.housenumber);
+                    });
+                }
+                setIfEmptyOrAuto($bairro, bairro);
+                setIfEmptyOrAuto($cep, cep);
+
+                return montarReferenciaAutomatica(lat, lng, resp, logradouro);
+            }).then(function (referencia) {
+                setIfEmptyOrAuto($ref, referencia);
+            }).catch(function (e) {
+                // silencioso: mantém preenchimento manual
+                // console.warn('Autopreenchimento falhou', e);
+            });
+        }
+
+        function aplicarEnderecoNoEditar(lat, lng) {
+            // campos do modal de edição
+            var $container = $('#modal-editar-ponto');
+            var $log = $('#editar-logradouro');
+            var $num = $('#editar-numero');
+            var $bairro = $('#editar-bairro');
+            var $cep = $('#editar-cep');
+            var $ref = $('#editar-referencia');
+
+            reverseNominatim(lat, lng).then(function (resp) {
+                var addr = resp && resp.address ? resp.address : {};
+                var logradouro = addr.road || addr.pedestrian || addr.cycleway || addr.footway || addr.path || '';
+                var numero = addr.house_number || '';
+                var bairro = addr.suburb || addr.neighbourhood || addr.quarter || addr.hamlet || addr.village || '';
+                var cep = addr.postcode || '';
+
+                setIfEmptyOrAuto($log, logradouro);
+                setIfEmptyOrAuto($num, numero);
+                setIfEmptyOrAuto($bairro, bairro);
+                setIfEmptyOrAuto($cep, cep);
+
+                return montarReferenciaAutomatica(lat, lng, resp, logradouro);
+            }).then(function (referencia) {
+                setIfEmptyOrAuto($ref, referencia);
+            }).catch(function () { /* mantém manual */ });
+
+            habilitarProtecaoEdicaoManual($container);
+        }
+
+        function atualizarResumoPlanejamentoAlunos(texto) {
+            var el = document.getElementById('planejamento-alunos-resumo');
+            if (el) el.textContent = texto || '';
+        }
+
+        function atualizarResumoPlanejamentoCompleto(textoManual) {
+            if (textoManual) {
+                atualizarResumoPlanejamentoAlunos(textoManual);
+                return;
+            }
+
+            var escolaNome = '';
+            try {
+                var $sel = $('#filtro-planejamento-escola');
+                escolaNome = $sel.length ? ($sel.find('option:selected').text() || '') : '';
+            } catch (e) { }
+
+            var labelEscola = escolaNome && escolaNome !== 'Todas as escolas' ? (' da escola ' + escolaNome) : '';
+            var partes = [];
+
+            if (planejamentoAlunosMarkers.length) {
+                partes.push(planejamentoAlunosMarkers.length + ' aluno(s)' + labelEscola + ' exibido(s)');
+            }
+
+            if (planejamentoPontosMarkers.length) {
+                partes.push(planejamentoPontosMarkers.length + ' ponto(s) de parada já cadastrado(s) exibido(s)');
+            }
+
+            if (!partes.length) {
+                atualizarResumoPlanejamentoAlunos('Selecione uma escola e use “Mostrar alunos”, “Mostrar pontos” ou associe os alunos filtrados ao ponto de parada mais próximo.');
+                return;
+            }
+
+            atualizarResumoPlanejamentoAlunos(partes.join(' • ') + '.');
+        }
+
+        function limparPlanejamentoAlunosMapa() {
+            if (Array.isArray(planejamentoAlunosMarkers)) {
+                planejamentoAlunosMarkers.forEach(function (m) {
+                    try {
+                        if (planejamentoAlunosLayer && planejamentoAlunosLayer.hasLayer(m)) {
+                            planejamentoAlunosLayer.removeLayer(m);
+                        } else if (mapPontosModal && mapPontosModal.hasLayer(m)) {
+                            mapPontosModal.removeLayer(m);
+                        }
+                    } catch (e) { }
+                });
+            }
+            planejamentoAlunosMarkers = [];
+            atualizarResumoPlanejamentoCompleto();
+        }
+
+        function limparPlanejamentoPontosMapa() {
+            if (Array.isArray(planejamentoPontosMarkers)) {
+                planejamentoPontosMarkers.forEach(function (m) {
+                    try {
+                        if (planejamentoPontosLayer && planejamentoPontosLayer.hasLayer(m)) {
+                            planejamentoPontosLayer.removeLayer(m);
+                        } else if (mapPontosModal && mapPontosModal.hasLayer(m)) {
+                            mapPontosModal.removeLayer(m);
+                        }
+                    } catch (e) { }
+                });
+            }
+            planejamentoPontosMarkers = [];
+            atualizarResumoPlanejamentoCompleto();
+        }
+
+        function carregarEscolasPlanejamentoPontos() {
+            var $sel = $('#filtro-planejamento-escola');
+            if (!$sel.length || escolasPlanejamentoCarregadas) return Promise.resolve();
+
+            return fetch(apiBaseEscolas)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar escolas');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    var escolas = Array.isArray(data) ? data.slice() : [];
+                    escolas.sort(function (a, b) {
+                        return String((a && a.nome) || '').localeCompare(String((b && b.nome) || ''), 'pt-BR');
+                    });
+                    $sel.empty();
+                    $sel.append('<option value="">Todas as escolas</option>');
+                    escolas.forEach(function (e) {
+                        if (!e || e.id == null) return;
+                        $sel.append('<option value="' + e.id + '">' + (e.nome || ('Escola #' + e.id)) + '</option>');
+                    });
+                    escolasPlanejamentoCarregadas = true;
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    atualizarResumoPlanejamentoAlunos('Não foi possível carregar a lista de escolas para o planejamento.');
+                });
+        }
+
+        function obterBoundsPlanejamentoModal() {
+            var bounds = [];
+
+            planejamentoAlunosMarkers.forEach(function (m) {
+                try {
+                    var ll = m.getLatLng();
+                    if (ll && Number.isFinite(ll.lat) && Number.isFinite(ll.lng)) bounds.push([ll.lat, ll.lng]);
+                } catch (e) { }
+            });
+
+            planejamentoPontosMarkers.forEach(function (m) {
+                try {
+                    var ll = m.getLatLng();
+                    if (ll && Number.isFinite(ll.lat) && Number.isFinite(ll.lng)) bounds.push([ll.lat, ll.lng]);
+                } catch (e) { }
+            });
+
+            pontosPendentes.forEach(function (pp) {
+                if (pp && Number.isFinite(pp.lat) && Number.isFinite(pp.lng)) bounds.push([pp.lat, pp.lng]);
+            });
+
+            return bounds;
+        }
+
+        function ajustarBoundsPlanejamentoModal() {
+            if (!mapPontosModal) return;
+            var pts = obterBoundsPlanejamentoModal();
+            if (!pts.length) {
+                mapPontosModal.setView(defaultCenter, defaultZoom);
+                return;
+            }
+            if (pts.length === 1) {
+                mapPontosModal.setView(pts[0], 16);
+                return;
+            }
+            mapPontosModal.fitBounds(pts, { padding: [30, 30] });
+        }
+
+        function renderizarPlanejamentoAlunosNoMapa(payload) {
+            if (!mapPontosModal) initMapPontosModal();
+            if (!planejamentoAlunosLayer) {
+                planejamentoAlunosLayer = L.layerGroup().addTo(mapPontosModal);
+            }
+
+            limparPlanejamentoAlunosMapa();
+
+            var alunos = Array.isArray(payload && payload.data) ? payload.data : [];
+            var escolaNome = '';
+            try {
+                var $sel = $('#filtro-planejamento-escola');
+                escolaNome = $sel.length ? ($sel.find('option:selected').text() || '') : '';
+            } catch (e) { }
+
+            alunos.forEach(function (a) {
+                if (!a || !Number.isFinite(Number(a.latitude)) || !Number.isFinite(Number(a.longitude))) return;
+                var lat = Number(a.latitude);
+                var lng = Number(a.longitude);
+                var marker = L.marker([lat, lng], {
+                    icon: iconAlunoMunicipal
+                });
+                var turno = a.turno_simplificado || 'N/I';
+                var popup = '<div style="min-width:220px">'
+                    + '<strong>' + (a.pessoa_nome || ('Aluno #' + a.id)) + '</strong><br>'
+                    + '<small class="text-muted">Escola: ' + (a.escola_nome || a.unidade_ensino || 'Não informada') + '</small><br>'
+                    + '<small class="text-muted">Turno: ' + turno + '</small>'
+                    + (a.deficiencia ? ('<br><small class="text-muted">Deficiência: ' + a.deficiencia + '</small>') : '')
+                    + '</div>';
+                marker.bindPopup(popup);
+                marker.addTo(planejamentoAlunosLayer);
+                planejamentoAlunosMarkers.push(marker);
+            });
+
+            var labelEscola = escolaNome && escolaNome !== 'Todas as escolas' ? (' da escola ' + escolaNome) : '';
+            if (!planejamentoAlunosMarkers.length) {
+                atualizarResumoPlanejamentoCompleto('Nenhum aluno com localização encontrada' + labelEscola + '.');
+            } else {
+                atualizarResumoPlanejamentoCompleto();
+            }
+
+            ajustarBoundsPlanejamentoModal();
+        }
+
+        function mostrarAlunosPlanejamentoNoMapa() {
+            var escolaId = ($('#filtro-planejamento-escola').val() || '').trim();
+            var url = apiBasePontos + '/planejamento-alunos?so_com_localizacao=true';
+            if (escolaId) {
+                url += '&escola_id=' + encodeURIComponent(escolaId);
+            }
+
+            atualizarResumoPlanejamentoAlunos('Carregando alunos no mapa...');
+
+            return fetch(url)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar alunos para planejamento');
+                    return resp.json();
+                })
+                .then(function (payload) {
+                    renderizarPlanejamentoAlunosNoMapa(payload || { data: [] });
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    atualizarResumoPlanejamentoAlunos('Não foi possível carregar os alunos no mapa.');
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar os alunos para planejamento de pontos.');
+                });
+        }
+
+        function renderizarPlanejamentoPontosNoMapa(listaPontos) {
+            if (!mapPontosModal) initMapPontosModal();
+            if (!planejamentoPontosLayer) {
+                planejamentoPontosLayer = L.layerGroup().addTo(mapPontosModal);
+            }
+
+            limparPlanejamentoPontosMapa();
+
+            var pontos = Array.isArray(listaPontos) ? listaPontos : [];
+
+            pontos.forEach(function (p) {
+                if (!p || !Number.isFinite(Number(p.latitude)) || !Number.isFinite(Number(p.longitude))) return;
+
+                var lat = Number(p.latitude);
+                var lng = Number(p.longitude);
+                var icon = String((p.status || '')).toLowerCase() === 'inativo' ? iconPontoInativo : iconPontoAtivo;
+                var marker = L.marker([lat, lng], { icon: icon });
+
+                var descricao = [];
+                if (p.area) descricao.push('<strong>Área:</strong> ' + p.area);
+                if (p.logradouro || p.numero) descricao.push('<strong>Endereço:</strong> ' + [p.logradouro || '', p.numero || ''].filter(Boolean).join(', '));
+                if (p.bairro) descricao.push('<strong>Bairro:</strong> ' + p.bairro);
+                if (p.referencia) descricao.push('<strong>Referência:</strong> ' + p.referencia);
+                if (p.zoneamento_nome) descricao.push('<strong>Zoneamento:</strong> ' + p.zoneamento_nome);
+
+                marker.bindPopup('<div style="min-width:240px"><strong>Ponto #' + p.id + '</strong><br>' + descricao.join('<br>') + '</div>');
+                marker.addTo(planejamentoPontosLayer);
+                planejamentoPontosMarkers.push(marker);
+            });
+
+            if (!planejamentoPontosMarkers.length) {
+                atualizarResumoPlanejamentoCompleto('Nenhum ponto de parada cadastrado com localização foi encontrado para exibir no mapa.');
+            } else {
+                atualizarResumoPlanejamentoCompleto();
+            }
+
+            ajustarBoundsPlanejamentoModal();
+        }
+
+        function mostrarPontosPlanejamentoNoMapa() {
+            atualizarResumoPlanejamentoAlunos('Carregando pontos de parada no mapa...');
+
+            return fetch(apiBasePontos)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar pontos de parada');
+                    return resp.json();
+                })
+                .then(function (lista) {
+                    renderizarPlanejamentoPontosNoMapa(lista || []);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    atualizarResumoPlanejamentoAlunos('Não foi possível carregar os pontos de parada no mapa.');
+                    mostrarMensagemSistema('Erro', 'Erro ao carregar os pontos de parada já cadastrados.');
+                });
+        }
+
+
+        function associarAlunosFiltradosAoPontoMaisProximo() {
+            var escolaId = ($('#filtro-planejamento-escola').val() || '').trim();
+            var $sel = $('#filtro-planejamento-escola');
+            var escolaNome = $sel.length ? ($sel.find('option:selected').text() || '') : '';
+
+            if (!escolaId) {
+                mostrarMensagemSistema('Atenção', 'Selecione uma escola para associar apenas os alunos filtrados ao ponto de parada mais próximo.');
+                return Promise.resolve(false);
+            }
+
+            return confirmarAcaoSistema(
+                'Associar alunos ao ponto mais próximo',
+                'Deseja associar os alunos filtrados da escola <strong>' + escolaNome + '</strong> ao ponto de parada cadastrado mais próximo? As associações anteriores desses alunos serão substituídas.',
+                'Associar'
+            ).then(function (confirmado) {
+                if (!confirmado) return false;
+
+                var $btn = $('#btn-planejamento-associar-alunos-ponto-proximo');
+                var textoOriginal = $btn.html();
+                $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm mr-1"></span> Associando...');
+
+                return fetch(apiBasePontos + '/associar-alunos-ponto-proximo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        escola_id: Number(escolaId)
+                    })
+                })
+                    .then(function (resp) {
+                        return resp.json().catch(function () { return {}; }).then(function (payload) {
+                            if (!resp.ok) {
+                                throw new Error(payload && payload.error ? payload.error : 'Erro ao associar alunos ao ponto mais próximo.');
+                            }
+                            return payload || {};
+                        });
+                    })
+                    .then(function (payload) {
+                        var associados = Number(payload.associados || 0);
+                        var totalAlunos = Number(payload.total_alunos || 0);
+                        var totalPontos = Number(payload.total_pontos_considerados || 0);
+                        var msg = 'Associação concluída com sucesso.<br>'
+                            + '<strong>Escola:</strong> ' + (payload.escola_nome || escolaNome || ('#' + escolaId)) + '<br>'
+                            + '<strong>Alunos associados:</strong> ' + associados + ' de ' + totalAlunos + '<br>'
+                            + '<strong>Pontos considerados:</strong> ' + totalPontos;
+                        if (Array.isArray(payload.avisos) && payload.avisos.length) {
+                            msg += '<br><br><strong>Avisos:</strong><br>' + payload.avisos.join('<br>');
+                        }
+                        mostrarMensagemSistema('Concluído', msg);
+                        atualizarResumoPlanejamentoAlunos(associados + ' aluno(s) da escola ' + (payload.escola_nome || escolaNome || '') + ' associado(s) ao ponto de parada mais próximo.');
+                        return true;
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', err && err.message ? err.message : 'Erro ao associar os alunos ao ponto de parada mais próximo.');
+                        return false;
+                    })
+                    .finally(function () {
+                        $btn.prop('disabled', false).html(textoOriginal);
+                    });
+            });
+        }
+
+        function initMapPontos() {
+            if (!mapPontos) {
+                mapPontos = criarMapaBase('map-pontos-parada');
+            }
+        }
+
+        function initMapPontosModal() {
+            if (!mapPontosModal) {
+                mapPontosModal = criarMapaBase('mapa-pontos-modal');
+                mapPontosModal.on('click', function (e) {
+                    adicionarPontoPendente(e.latlng.lat, e.latlng.lng, false);
+                });
+            }
+            if (!planejamentoAlunosLayer) {
+                planejamentoAlunosLayer = L.layerGroup().addTo(mapPontosModal);
+            }
+            if (!planejamentoPontosLayer) {
+                planejamentoPontosLayer = L.layerGroup().addTo(mapPontosModal);
+            }
+            setTimeout(function () {
+                mapPontosModal.invalidateSize();
+                ajustarBoundsPlanejamentoModal();
+            }, 100);
+        }
+
+        function carregarZoneamentos() {
+            return fetch(apiBaseZoneamentos)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar zoneamentos');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    zoneamentosCache = data || [];
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+        }
+
+        // Verifica se um ponto (lat/lng) cai dentro de algum zoneamento polygon/multipolygon
+        function encontrarZoneamentoParaPontoFrontend(lat, lng) {
+            if (!zoneamentosCache || !zoneamentosCache.length) return null;
+            var pt = turf.point([lng, lat]);
+
+            for (var i = 0; i < zoneamentosCache.length; i++) {
+                var z = zoneamentosCache[i];
+                if (!z.geom) continue;
+
+                var geometry;
+                try {
+                    geometry = typeof z.geom === 'string' ? JSON.parse(z.geom) : z.geom;
+                } catch (e) {
+                    continue;
+                }
+                if (!geometry || !geometry.type) continue;
+
+                if (geometry.type !== 'Polygon' && geometry.type !== 'MultiPolygon') continue;
+
+                var feature = {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: geometry
+                };
+
+                try {
+                    if (turf.booleanPointInPolygon(pt, feature)) {
+                        return z;
+                    }
+                } catch (e) {
+                    console.error('Erro em booleanPointInPolygon', e);
+                }
+            }
+            return null;
+        }
+
+        function limparMapaPontos() {
+            if (!mapPontos) return;
+            Object.keys(pontoMarkers).forEach(function (id) {
+                var m = pontoMarkers[id];
+                if (m && mapPontos.hasLayer(m)) {
+                    mapPontos.removeLayer(m);
+                }
+            });
+            pontoMarkers = {};
+        }
+
+        function adicionarPontoNoMapa(p) {
+            if (!mapPontos) return;
+
+            var lat = null;
+            var lng = null;
+
+            if (p.localizacao && p.localizacao.type === 'Point' && Array.isArray(p.localizacao.coordinates)) {
+                lng = p.localizacao.coordinates[0];
+                lat = p.localizacao.coordinates[1];
+            } else if (p.localizacao_geojson && p.localizacao_geojson.type === 'Point'
+                && Array.isArray(p.localizacao_geojson.coordinates)) {
+                lng = p.localizacao_geojson.coordinates[0];
+                lat = p.localizacao_geojson.coordinates[1];
+            } else if (typeof p.latitude === 'number' && typeof p.longitude === 'number') {
+                lat = p.latitude;
+                lng = p.longitude;
+            } else if (typeof p.lat === 'number' && typeof p.lng === 'number') {
+                lat = p.lat;
+                lng = p.lng;
+            }
+
+            if (lat == null || lng == null) {
+                return;
+            }
+
+            var icon = (p.status === 'inativo') ? iconPontoInativo : iconPontoAtivo;
+
+            var marker = L.marker([lat, lng], { icon: icon }).addTo(mapPontos);
+
+            var textoArea = p.area === 'rural' ? 'Área rural' :
+                p.area === 'urbana' ? 'Área urbana' : 'Área não informada';
+
+            var textoStatus = '';
+            if (p.status === 'ativo') {
+                textoStatus = 'Status: Ativo';
+            } else if (p.status === 'inativo') {
+                textoStatus = 'Status: Inativo';
+            }
+
+            var popupHtml =
+                '<strong>Ponto #' + (p.id || '') + '</strong><br>' +
+                (textoArea + '<br>') +
+                (textoStatus ? textoStatus + '<br>' : '') +
+                (p.logradouro ? p.logradouro + ', ' : '') +
+                (p.numero ? p.numero + ' ' : '') +
+                (p.bairro ? ' - ' + p.bairro : '') + '<br>' +
+                (p.cep ? 'CEP: ' + p.cep + '<br>' : '') +
+                (p.zoneamento_nome ? 'Zoneamento: ' + p.zoneamento_nome : '');
+
+            marker.bindPopup(popupHtml);
+            pontoMarkers[p.id] = marker;
+        }
+
+        function atualizarMapaPontos() {
+            if (!mapPontos) return;
+            limparMapaPontos();
+            var bounds = null;
+
+            pontos.forEach(function (p) {
+                adicionarPontoNoMapa(p);
+                var m = pontoMarkers[p.id];
+                if (m) {
+                    var ll = m.getLatLng();
+                    if (!bounds) {
+                        bounds = L.latLngBounds(ll, ll);
+                    } else {
+                        bounds.extend(ll);
+                    }
+                }
+            });
+
+            if (bounds && bounds.isValid && bounds.isValid()) {
+                mapPontos.fitBounds(bounds.pad(0.2));
+            } else {
+                mapPontos.setView(defaultCenter, defaultZoom);
+            }
+        }
+
+        function atualizarPaginacaoPontos() {
+            var ul = document.getElementById('paginacao-pontos');
+            if (!ul) return;
+
+            ul.innerHTML = '';
+
+            var liPrev = document.createElement('li');
+            liPrev.className = 'page-item' + (paginaAtualPontos <= 1 ? ' disabled' : '');
+            var aPrev = document.createElement('a');
+            aPrev.className = 'page-link';
+            aPrev.href = '#';
+            aPrev.textContent = 'Anterior';
+            aPrev.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualPontos > 1) {
+                    irParaPaginaPontos(paginaAtualPontos - 1);
+                }
+            });
+            liPrev.appendChild(aPrev);
+            ul.appendChild(liPrev);
+
+            var liInfo = document.createElement('li');
+            liInfo.className = 'page-item disabled';
+            var aInfo = document.createElement('a');
+            aInfo.className = 'page-link';
+            aInfo.href = '#';
+            aInfo.textContent = paginaAtualPontos + ' / ' + totalPaginasPontos;
+            liInfo.appendChild(aInfo);
+            ul.appendChild(liInfo);
+
+            var liNext = document.createElement('li');
+            liNext.className = 'page-item' + (paginaAtualPontos >= totalPaginasPontos ? ' disabled' : '');
+            var aNext = document.createElement('a');
+            aNext.className = 'page-link';
+            aNext.href = '#';
+            aNext.textContent = 'Próxima';
+            aNext.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (paginaAtualPontos < totalPaginasPontos) {
+                    irParaPaginaPontos(paginaAtualPontos + 1);
+                }
+            });
+            liNext.appendChild(aNext);
+            ul.appendChild(liNext);
+        }
+
+        function irParaPaginaPontos(pagina) {
+            if (pagina < 1 || pagina > totalPaginasPontos) return;
+            paginaAtualPontos = pagina;
+            renderizarTabelaPontos();
+        }
+
+        function carregarPontos(resetPagina) {
+            return fetch(apiBasePontos)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar pontos');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    pontos = data || [];
+
+                    // Só reseta para página 1 se for explicitamente pedido
+                    if (resetPagina) {
+                        paginaAtualPontos = 1;
+                    }
+
+                    renderizarTabelaPontos();
+                    atualizarMapaPontos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+        }
+
+        function obterResumoEndereco(p) {
+            var partes = [];
+            if (p.logradouro) partes.push(p.logradouro);
+            if (p.numero) partes.push(p.numero);
+            if (p.complemento) partes.push(p.complemento);
+            if (p.referencia) partes.push('Ref.: ' + p.referencia);
+            if (p.bairro) partes.push('Bairro: ' + p.bairro);
+            return partes.join(' | ');
+        }
+
+        function renderizarTabelaPontos() {
+            var tbody = document.getElementById('tbody-pontos');
+            if (!tbody) return;
+
+            var termo = ($('#search-pontos').val() || '').toLowerCase();
+
+            var checkAll = document.getElementById('check-all-pontos');
+            if (checkAll) {
+                checkAll.checked = false;
+            }
+
+            var filtrados = pontos.filter(function (p) {
+                var textoBusca = [
+                    p.logradouro || '',
+                    p.numero || '',
+                    p.complemento || '',
+                    p.referencia || '',
+                    p.bairro || '',
+                    p.cep || '',
+                    p.zoneamento_nome || '',
+                    p.status || ''
+                ].join(' ').toLowerCase();
+
+                if (termo && textoBusca.indexOf(termo) === -1) return false;
+                return true;
+            });
+
+            totalPaginasPontos = Math.max(1, Math.ceil(filtrados.length / tamanhoPaginaPontos));
+            if (paginaAtualPontos > totalPaginasPontos) {
+                paginaAtualPontos = totalPaginasPontos;
+            }
+            if (paginaAtualPontos < 1) {
+                paginaAtualPontos = 1;
+            }
+
+            var inicio = (paginaAtualPontos - 1) * tamanhoPaginaPontos;
+            var fim = inicio + tamanhoPaginaPontos;
+            var paginaItens = filtrados.slice(inicio, fim);
+
+            tbody.innerHTML = '';
+
+            paginaItens.forEach(function (p) {
+                var tr = document.createElement('tr');
+                tr.setAttribute('data-id', p.id);
+
+                var tdCheck = document.createElement('td');
+                var divCheck = document.createElement('div');
+                divCheck.className = 'custom-control custom-checkbox';
+                var inputCheck = document.createElement('input');
+                inputCheck.type = 'checkbox';
+                inputCheck.className = 'custom-control-input';
+                inputCheck.id = 'ponto-check-' + p.id;
+                var labelCheck = document.createElement('label');
+                labelCheck.className = 'custom-control-label';
+                labelCheck.setAttribute('for', inputCheck.id);
+                divCheck.appendChild(inputCheck);
+                divCheck.appendChild(labelCheck);
+                tdCheck.appendChild(divCheck);
+                tr.appendChild(tdCheck);
+
+                var tdId = document.createElement('td');
+                tdId.textContent = p.id;
+                tr.appendChild(tdId);
+
+                var tdArea = document.createElement('td');
+                var spanArea = document.createElement('span');
+                if (p.area === 'rural') {
+                    spanArea.className = 'badge badge-warning text-dark';
+                    spanArea.textContent = 'Rural';
+                } else if (p.area === 'urbana') {
+                    spanArea.className = 'badge badge-success';
+                    spanArea.textContent = 'Urbana';
+                } else {
+                    spanArea.className = 'badge badge-secondary';
+                    spanArea.textContent = 'N/I';
+                }
+                tdArea.appendChild(spanArea);
+                tr.appendChild(tdArea);
+
+                var tdStatus = document.createElement('td');
+                var spanStatus = document.createElement('span');
+
+                if (p.status === 'ativo') {
+                    spanStatus.className = 'badge badge-success';
+                    spanStatus.textContent = 'Ativo';
+                } else if (p.status === 'inativo') {
+                    spanStatus.className = 'badge badge-secondary';
+                    spanStatus.textContent = 'Inativo';
+                } else {
+                    spanStatus.className = 'badge badge-light text-muted';
+                    spanStatus.textContent = 'N/I';
+                }
+
+                tdStatus.appendChild(spanStatus);
+                tr.appendChild(tdStatus);
+
+                var tdEnd = document.createElement('td');
+                tdEnd.textContent = obterResumoEndereco(p);
+                tr.appendChild(tdEnd);
+
+                var tdCep = document.createElement('td');
+                tdCep.textContent = p.cep || '';
+                tr.appendChild(tdCep);
+
+                var tdZona = document.createElement('td');
+                tdZona.textContent = p.zoneamento_nome || 'Não associado';
+                tr.appendChild(tdZona);
+
+                var tdAcoes = document.createElement('td');
+                var divDrop = document.createElement('div');
+                divDrop.className = 'dropdown';
+                var btnDrop = document.createElement('button');
+                btnDrop.className = 'btn btn-sm dropdown-toggle more-horizontal';
+                btnDrop.type = 'button';
+                btnDrop.setAttribute('data-toggle', 'dropdown');
+                btnDrop.setAttribute('aria-haspopup', 'true');
+                btnDrop.setAttribute('aria-expanded', 'false');
+                var spanSr = document.createElement('span');
+                spanSr.className = 'text-muted sr-only';
+                spanSr.textContent = 'Ação';
+                btnDrop.appendChild(spanSr);
+                var menu = document.createElement('div');
+                menu.className = 'dropdown-menu dropdown-menu-right';
+
+                var aEditar = document.createElement('a');
+                aEditar.className = 'dropdown-item action-editar-ponto';
+                aEditar.href = '#';
+                aEditar.setAttribute('data-id', p.id);
+                aEditar.textContent = 'Editar';
+
+                var aVerMapa = document.createElement('a');
+                aVerMapa.className = 'dropdown-item action-ver-mapa-ponto';
+                aVerMapa.href = '#';
+                aVerMapa.setAttribute('data-id', p.id);
+                aVerMapa.textContent = 'Visualizar no mapa';
+
+                var aExcluir = document.createElement('a');
+                aExcluir.className = 'dropdown-item text-danger action-excluir-ponto';
+                aExcluir.href = '#';
+                aExcluir.setAttribute('data-id', p.id);
+                aExcluir.textContent = 'Excluir';
+
+                menu.appendChild(aEditar);
+                menu.appendChild(aVerMapa);
+                menu.appendChild(aExcluir);
+
+                divDrop.appendChild(btnDrop);
+                divDrop.appendChild(menu);
+                tdAcoes.appendChild(divDrop);
+                tr.appendChild(tdAcoes);
+
+                tbody.appendChild(tr);
+            });
+
+            atualizarPaginacaoPontos();
+        }
+
+        function centralizarPontoNoMapa(id) {
+            var marker = pontoMarkers[id];
+            if (!marker || !mapPontos) return;
+            mapPontos.setView(marker.getLatLng(), 16);
+            marker.openPopup();
+        }
+
+        function excluirPonto(id) {
+            confirmarAcaoSistema(
+                'Excluir ponto',
+                'Deseja realmente excluir este ponto de parada?',
+                'Excluir'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                fetch(apiBasePontos + '/' + id, { method: 'DELETE' })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro ao excluir ponto');
+                        return resp.json();
+                    })
+                    .then(function () {
+                        return carregarPontos();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir ponto.');
+                    });
+            });
+        }
+
+        // --- EDIÇÃO DE PONTO ---
+        var mapEditarPonto;
+        var markerEditarPonto;
+
+        function initMapEditarPonto() {
+            if (!mapEditarPonto) {
+                mapEditarPonto = criarMapaBase('mapa-editar-ponto');
+                mapEditarPonto.on('click', function (e) {
+                    moverMarcadorEditar(e.latlng.lat, e.latlng.lng, true);
+                });
+            }
+            setTimeout(function () {
+                mapEditarPonto.invalidateSize();
+            }, 100);
+        }
+
+        function preencherSelectZoneamentosEditar() {
+            var $sel = $('#editar-zoneamento');
+            if (!$sel.length) return;
+
+            var valorAtual = $sel.val();
+            $sel.empty();
+            $sel.append('<option value="">Não associado</option>');
+
+            (zoneamentosCache || []).forEach(function (z) {
+                var tipo = z.tipo_zona ? (' [' + z.tipo_zona + ']') : '';
+                $sel.append('<option value="' + z.id + '">' + (z.nome || ('Zoneamento #' + z.id)) + tipo + '</option>');
+            });
+
+            if (valorAtual) {
+                $sel.val(valorAtual);
+            }
+        }
+
+        function atualizarCoordsEditar(lat, lng) {
+            $('#editar-ponto-coords').text('Lat: ' + lat.toFixed(6) + ' / Lng: ' + lng.toFixed(6));
+        }
+
+        function moverMarcadorEditar(lat, lng, tentarAutoZoneamento) {
+            initMapEditarPonto();
+
+            var ll = L.latLng(lat, lng);
+            if (!markerEditarPonto) {
+                markerEditarPonto = L.marker(ll, { draggable: true }).addTo(mapEditarPonto);
+                markerEditarPonto.on('dragend', function () {
+                    var p = markerEditarPonto.getLatLng();
+                    moverMarcadorEditar(p.lat, p.lng, true);
+                });
+            } else {
+                markerEditarPonto.setLatLng(ll);
+            }
+
+            mapEditarPonto.setView(ll, 16);
+            atualizarCoordsEditar(lat, lng);
+
+            if (tentarAutoZoneamento) {
+                var z = encontrarZoneamentoParaPontoFrontend(lat, lng);
+                if (z && z.id) {
+                    $('#editar-zoneamento').val(String(z.id));
+                    if (!$('#editar-area').val() && z.tipo_zona) {
+                        $('#editar-area').val(z.tipo_zona === 'rural' ? 'rural' : 'urbana');
+                    }
+                }
+            }
+
+            // autopreenchimento no editar (não sobrescreve o que o usuário digitou)
+            aplicarEnderecoNoEditar(lat, lng);
+        }
+
+        function abrirEditarPonto(id) {
+            preencherSelectZoneamentosEditar();
+
+            fetch(apiBasePontos + '/' + id)
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao buscar ponto');
+                    return resp.json();
+                })
+                .then(function (p) {
+                    $('#editar-ponto-id').val(p.id);
+                    $('#editar-area').val(p.area || '');
+                    $('#editar-status').val(p.status || 'ativo');
+                    $('#editar-logradouro').val(p.logradouro || '');
+                    $('#editar-numero').val(p.numero || '');
+                    $('#editar-complemento').val(p.complemento || '');
+                    $('#editar-referencia').val(p.referencia || '');
+                    $('#editar-bairro').val(p.bairro || '');
+                    $('#editar-cep').val(p.cep || '');
+                    // marca campos como autofill para permitir atualização automática ao mover o marcador
+                    $('#editar-logradouro, #editar-numero, #editar-bairro, #editar-cep, #editar-referencia').attr('data-autofill', '1');
+
+                    $('#editar-zoneamento').val(p.zoneamento_id ? String(p.zoneamento_id) : '');
+
+                    $('#modal-editar-ponto').modal('show');
+
+                    // mapa + marcador
+                    initMapEditarPonto();
+                    var lat = (typeof p.latitude === 'number') ? p.latitude : null;
+                    var lng = (typeof p.longitude === 'number') ? p.longitude : null;
+
+                    if (lat == null || lng == null) {
+                        mapEditarPonto.setView(defaultCenter, defaultZoom);
+                        atualizarCoordsEditar(defaultCenter[0], defaultCenter[1]);
+                    } else {
+                        moverMarcadorEditar(lat, lng, false);
+                    }
+
+                    // máscara CEP no modal
+                    $('#editar-cep.input-zip').mask('00000-000', { placeholder: "____-___" });
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Não foi possível carregar os dados do ponto para edição.');
+                });
+        }
+
+        function salvarEdicaoPonto(event) {
+            event.preventDefault();
+
+            var id = $('#editar-ponto-id').val();
+            if (!id) {
+                mostrarMensagemSistema('Erro', 'ID do ponto não informado.');
+                return;
+            }
+
+            if (!markerEditarPonto) {
+                mostrarMensagemSistema('Localização', 'Defina a localização do ponto (clique no mapa).');
+                return;
+            }
+
+            var ll = markerEditarPonto.getLatLng();
+            var zoneamentoVal = $('#editar-zoneamento').val();
+
+            var payload = {
+                area: $('#editar-area').val() || null,
+                status: $('#editar-status').val() || 'ativo',
+                logradouro: $('#editar-logradouro').val(),
+                numero: $('#editar-numero').val(),
+                complemento: $('#editar-complemento').val() || null,
+                referencia: $('#editar-referencia').val() || null,
+                bairro: $('#editar-bairro').val(),
+                cep: $('#editar-cep').val(),
+                localizacao: { type: 'Point', coordinates: [ll.lng, ll.lat] },
+                zoneamento_id: zoneamentoVal ? parseInt(zoneamentoVal, 10) : null
+            };
+
+            fetch(apiBasePontos + '/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao atualizar');
+                    return resp.json();
+                })
+                .then(function () {
+                    $('#modal-editar-ponto').modal('hide');
+                    return carregarPontos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar alterações do ponto.');
+                });
+        }
+
+        function obterIdsPontosSelecionados() {
+            var ids = [];
+            pontos.forEach(function (p) {
+                var chk = document.getElementById('ponto-check-' + p.id);
+                if (chk && chk.checked) {
+                    ids.push(p.id);
+                }
+            });
+            return ids;
+        }
+
+        // --- PONTOS PENDENTES NO MODAL ---
+
+        function limparPontosPendentes() {
+            pontosPendentes.forEach(function (pp) {
+                if (pp.marker && mapPontosModal && mapPontosModal.hasLayer(pp.marker)) {
+                    mapPontosModal.removeLayer(pp.marker);
+                }
+            });
+            pontosPendentes = [];
+            nextTempId = 1;
+            $('#tbody-pontos-novos').empty();
+            if (mapPontosModal) ajustarBoundsPlanejamentoModal();
+        }
+
+        function adicionarPontoPendente(lat, lng, moverMapa) {
+            if (!mapPontosModal) return;
+
+            var tempId = nextTempId++;
+            var z = encontrarZoneamentoParaPontoFrontend(lat, lng);
+
+            var marker = L.marker([lat, lng]).addTo(mapPontosModal);
+
+            pontosPendentes.push({
+                tempId: tempId,
+                lat: lat,
+                lng: lng,
+                zoneamento_id: z ? z.id : null,
+                zoneamento_nome: z ? z.nome : null,
+                marker: marker
+            });
+
+            var $tbody = $('#tbody-pontos-novos');
+            var zonaText = z ? (z.nome + ' [' + z.tipo_zona + ']') : 'Nenhum zoneamento encontrado';
+            var zonaBadgeClass = z ? (z.tipo_zona === 'rural' ? 'badge badge-warning text-dark' : 'badge badge-success') : 'badge badge-secondary';
+
+            var areaSelectDefault = z ? (z.tipo_zona === 'rural' ? 'rural' : 'urbana') : '';
+
+            var linha = `
+            <tr data-temp-id="${tempId}">
+                <td class="align-middle">${tempId}</td>
+                <td class="align-middle">
+                    <select class="form-control form-control-sm ponto-area">
+                        <option value=""></option>
+                        <option value="urbana" ${areaSelectDefault === 'urbana' ? 'selected' : ''}>Urbana</option>
+                        <option value="rural" ${areaSelectDefault === 'rural' ? 'selected' : ''}>Rural</option>
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm mb-1 ponto-logradouro"
+                           placeholder="Logradouro" required>
+                    <div class="form-row">
+                        <div class="col-4">
+                            <input type="text" class="form-control form-control-sm mb-1 ponto-numero"
+                                   placeholder="Número" required>
+                        </div>
+                        <div class="col-8">
+                            <input type="text" class="form-control form-control-sm mb-1 ponto-complemento"
+                                   placeholder="Complemento">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="col-6">
+                            <input type="text" class="form-control form-control-sm mb-1 ponto-referencia"
+                                   placeholder="Ponto de referência">
+                        </div>
+                        <div class="col-6">
+                            <input type="text" class="form-control form-control-sm mb-1 ponto-bairro"
+                                   placeholder="Bairro" required>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block">
+                        Lat: ${lat.toFixed(5)} / Lng: ${lng.toFixed(5)}
+                    </small>
+                </td>
+                <td class="align-middle">
+                    <input type="text" class="form-control form-control-sm ponto-cep input-zip"
+                           placeholder="____-___" required>
+                </td>
+                <td class="align-middle">
+                    <span class="${zonaBadgeClass}">
+                        ${zonaText}
+                    </span>
+                    <input type="hidden" class="ponto-zoneamento-id" value="${z ? z.id : ''}">
+                </td>
+                <td class="align-middle text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger btn-remover-ponto"
+                            data-temp-id="${tempId}">
+                        <span class="fe fe-trash-2"></span>
+                    </button>
+                </td>
+            </tr>
+        `;
+            $tbody.append(linha);
+
+            $('.ponto-cep.input-zip').mask('00000-000', { placeholder: "____-___" });
+
+            // autopreenchimento (logradouro, número, bairro, CEP e referência)
+            var $linhaRow = $('#tbody-pontos-novos tr[data-temp-id="' + tempId + '"]');
+            aplicarEnderecoNoRow($linhaRow, lat, lng);
+
+            if (moverMapa) {
+                ajustarBoundsPlanejamentoModal();
+            }
+        }
+
+        function removerPontoPendente(tempId) {
+            var idx = pontosPendentes.findIndex(function (pp) {
+                return pp.tempId === tempId;
+            });
+            if (idx !== -1) {
+                var pp = pontosPendentes[idx];
+                if (pp.marker && mapPontosModal && mapPontosModal.hasLayer(pp.marker)) {
+                    mapPontosModal.removeLayer(pp.marker);
+                }
+                pontosPendentes.splice(idx, 1);
+            }
+            $('#tbody-pontos-novos tr[data-temp-id="' + tempId + '"]').remove();
+            if (mapPontosModal) ajustarBoundsPlanejamentoModal();
+        }
+
+        function salvarPontosPendentes(event) {
+            event.preventDefault();
+
+            var valido = true;
+            $('#tbody-pontos-novos tr').each(function () {
+                $(this).find('input[required], select[required]').each(function () {
+                    if (!this.value) {
+                        valido = false;
+                    }
+                });
+            });
+
+            if (!valido || !$('#tbody-pontos-novos tr').length) {
+                mostrarMensagemSistema(
+                    'Dados incompletos',
+                    'Adicione ao menos um ponto e preencha os campos obrigatórios (logradouro, número, bairro e CEP).'
+                );
+                return;
+            }
+
+            var payloads = [];
+            $('#tbody-pontos-novos tr').each(function () {
+                var $tr = $(this);
+                var tempId = parseInt($tr.attr('data-temp-id'), 10);
+                var base = pontosPendentes.find(function (pp) {
+                    return pp.tempId === tempId;
+                });
+                if (!base) return;
+
+                var area = $tr.find('.ponto-area').val() || null;
+                var logradouro = $tr.find('.ponto-logradouro').val();
+                var numero = $tr.find('.ponto-numero').val();
+                var complemento = $tr.find('.ponto-complemento').val();
+                var referencia = $tr.find('.ponto-referencia').val();
+                var bairro = $tr.find('.ponto-bairro').val();
+                var cep = $tr.find('.ponto-cep').val();
+                var zoneamento_id_str = $tr.find('.ponto-zoneamento-id').val();
+                var zoneamento_id = zoneamento_id_str ? parseInt(zoneamento_id_str, 10) : null;
+
+                payloads.push({
+                    area: area,
+                    logradouro: logradouro,
+                    numero: numero,
+                    complemento: complemento,
+                    referencia: referencia,
+                    bairro: bairro,
+                    cep: cep,
+                    localizacao: {
+                        type: 'Point',
+                        coordinates: [base.lng, base.lat]
+                    },
+                    zoneamento_id: zoneamento_id
+                });
+            });
+
+            if (!payloads.length) {
+                mostrarMensagemSistema(
+                    'Nenhum ponto',
+                    'Não há pontos válidos para salvar.'
+                );
+                return;
+            }
+
+            var promessas = payloads.map(function (p) {
+                return fetch(apiBasePontos, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(p)
+                }).then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao salvar ponto');
+                    return resp.json();
+                });
+            });
+
+            Promise.all(promessas)
+                .then(function () {
+                    $('#modal-novos-pontos').modal('hide');
+                    limparPontosPendentes();
+                    return carregarPontos();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    mostrarMensagemSistema('Erro', 'Erro ao salvar um ou mais pontos de parada.');
+                });
+        }
+
+        // Associação em massa de pontos aos zoneamentos
+        function associarPontosAosZoneamentos() {
+            confirmarAcaoSistema(
+                'Associar pontos aos zoneamentos',
+                'O sistema irá analisar todos os pontos de parada e associá-los automaticamente ' +
+                'aos zoneamentos mais adequados (polígono contendo o ponto ou linha próxima). Deseja continuar?',
+                'Iniciar associação'
+            ).then(function (confirmado) {
+                if (!confirmado) return;
+
+                fetch(apiBasePontos + '/associar-zoneamentos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(function (resp) {
+                        if (!resp.ok) throw new Error('Erro na associação');
+                        return resp.json();
+                    })
+                    .then(function (data) {
+                        var msg = 'Associação concluída com sucesso.';
+                        if (data && typeof data.total !== 'undefined') {
+                            msg += '<br>Total de pontos: ' + data.total;
+                            msg += '<br>Atualizados: ' + (data.atualizados || 0);
+                            msg += '<br>Sem zoneamento encontrado: ' + (data.semZoneamento || 0);
+                        }
+                        mostrarMensagemSistema('Concluído', msg);
+                        carregarPontos();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Falha ao associar pontos aos zoneamentos.');
+                    });
+            });
+        }
+
+        $(document).ready(function () {
+            $('.input-zip').mask('00000-000', { placeholder: "____-___" });
+
+            initMapPontos();
+            carregarZoneamentos().then(function () {
+                carregarPontos();
+            });
+
+            $('#btn-atualizar-mapa-pontos').on('click', function () {
+                carregarPontos();
+            });
+
+            $('#search-pontos').on('input', function () {
+                paginaAtualPontos = 1;
+                renderizarTabelaPontos();
+            });
+
+            $('#check-all-pontos').on('change', function () {
+                var checked = this.checked;
+                pontos.forEach(function (p) {
+                    var chk = document.getElementById('ponto-check-' + p.id);
+                    if (chk) chk.checked = checked;
+                });
+            });
+
+            $('#tbody-pontos').on('click', '.action-ver-mapa-ponto', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                centralizarPontoNoMapa(id);
+            });
+
+            $('#tbody-pontos').on('click', '.action-editar-ponto', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                abrirEditarPonto(id);
+            });
+
+            $('#tbody-pontos').on('click', '.action-excluir-ponto', function (e) {
+                e.preventDefault();
+                var id = $(this).data('id');
+                excluirPonto(id);
+            });
+
+            $('#form-editar-ponto').on('submit', salvarEdicaoPonto);
+
+            $('#modal-editar-ponto').on('shown.bs.modal', function () {
+                initMapEditarPonto();
+                preencherSelectZoneamentosEditar();
+            });
+
+            $('#modal-editar-ponto').on('hidden.bs.modal', function () {
+                if (markerEditarPonto && mapEditarPonto && mapEditarPonto.hasLayer(markerEditarPonto)) {
+                    mapEditarPonto.removeLayer(markerEditarPonto);
+                }
+                markerEditarPonto = null;
+                $('#form-editar-ponto')[0] && $('#form-editar-ponto')[0].reset();
+                $('#editar-ponto-coords').text('Lat: - / Lng: -');
+            });
+
+            $('#btn-excluir-pontos-selecionados').on('click', function (e) {
+                e.preventDefault();
+                var ids = obterIdsPontosSelecionados();
+                if (!ids.length) {
+                    mostrarMensagemSistema('Atenção', 'Selecione ao menos um ponto.');
+                    return;
+                }
+                confirmarAcaoSistema(
+                    'Excluir pontos',
+                    'Deseja realmente excluir os pontos selecionados?',
+                    'Excluir'
+                ).then(function (confirmado) {
+                    if (!confirmado) return;
+                    Promise.all(ids.map(function (id) {
+                        return fetch(apiBasePontos + '/' + id, { method: 'DELETE' });
+                    })).then(function () {
+                        carregarPontos();
+                    }).catch(function (err) {
+                        console.error(err);
+                        mostrarMensagemSistema('Erro', 'Erro ao excluir pontos selecionados.');
+                    });
+                });
+            });
+
+            $('#btn-abrir-novos-pontos').on('click', function () {
+                limparPontosPendentes();
+                limparPlanejamentoAlunosMapa();
+                limparPlanejamentoPontosMapa();
+            });
+
+            $('#modal-novos-pontos').on('shown.bs.modal', function () {
+                initMapPontosModal();
+                carregarEscolasPlanejamentoPontos();
+            });
+
+            $('#modal-novos-pontos').on('hidden.bs.modal', function () {
+                limparPontosPendentes();
+                limparPlanejamentoAlunosMapa();
+                limparPlanejamentoPontosMapa();
+                $('#filtro-planejamento-escola').val('');
+            });
+
+            $('#tbody-pontos-novos').on('click', '.btn-remover-ponto', function () {
+                var tempId = parseInt($(this).data('temp-id'), 10);
+                removerPontoPendente(tempId);
+            });
+
+            $('#form-pontos').on('submit', salvarPontosPendentes);
+
+            $('#btn-planejamento-mostrar-alunos').on('click', function () {
+                mostrarAlunosPlanejamentoNoMapa();
+            });
+
+            $('#btn-planejamento-limpar-alunos').on('click', function () {
+                limparPlanejamentoAlunosMapa();
+                ajustarBoundsPlanejamentoModal();
+            });
+
+            $('#btn-planejamento-mostrar-pontos').on('click', function () {
+                mostrarPontosPlanejamentoNoMapa();
+            });
+
+            $('#btn-planejamento-limpar-pontos').on('click', function () {
+                limparPlanejamentoPontosMapa();
+                ajustarBoundsPlanejamentoModal();
+            });
+
+            $('#btn-planejamento-associar-alunos-ponto-proximo').on('click', function () {
+                associarAlunosFiltradosAoPontoMaisProximo();
+            });
+
+            $('#btn-associar-pontos-zoneamentos').on('click', function (e) {
+                e.preventDefault();
+                associarPontosAosZoneamentos();
+            });
+        });
+    </script>
+
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-56159088-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
+        gtag('js', new Date());
+        gtag('config', 'UA-56159088-1');
+    </script>
+</body>
+
+</html>

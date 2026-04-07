@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Login Admin - SETRANE EXPRESS</title>
+
+    <link rel="stylesheet" href="./css/app-dark.css">
+    <link rel="stylesheet" href="./css/feather.css">
+
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .card {
+            max-width: 520px;
+            width: 100%;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .brand img {
+            height: 44px;
+            width: auto;
+        }
+
+        .muted {
+            opacity: .8;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="card shadow">
+        <div class="card-body p-4">
+            <div class="brand">
+                <!-- Ajuste: use um asset que existe. Se você quiser manter o seu, coloque o arquivo no caminho abaixo -->
+                <img src="/assets/icons/user.png" alt="Logo" onerror="this.style.display='none'">
+                <div>
+                    <div class="h5 mb-0">SETRANE EXPRESS</div>
+                    <div class="small text-muted">Acesso administrativo</div>
+                </div>
+            </div>
+
+            <form id="adminLoginForm">
+                <div class="form-group">
+                    <label class="text-muted small">Email</label>
+                    <input class="form-control" type="email" id="email" required placeholder="setrane@...">
+                </div>
+
+                <div class="form-group">
+                    <label class="text-muted small">Senha</label>
+                    <input class="form-control" type="password" id="password" required placeholder="••••••••">
+                </div>
+
+                <div class="alert alert-danger d-none" id="errBox"></div>
+
+                <button class="btn btn-primary btn-block" type="submit" id="btnEntrar">
+                    Entrar
+                </button>
+
+                <div class="small text-muted mt-3">
+                    Endpoint esperado: <span class="mono">POST /api/admin-login</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function setError(msg) {
+            const el = document.getElementById('errBox');
+            el.textContent = msg;
+            el.classList.remove('d-none');
+        }
+
+        async function safeReadJson(resp) {
+            const ct = (resp.headers.get('content-type') || '').toLowerCase();
+            const isJson = ct.includes('application/json');
+            if (!isJson) {
+                const text = await resp.text().catch(() => '');
+                throw new Error(`Resposta não-JSON do servidor (status ${resp.status}). Primeiro trecho: ${text.slice(0, 120)}`);
+            }
+            return resp.json();
+        }
+
+        document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            document.getElementById('errBox').classList.add('d-none');
+            const btn = document.getElementById('btnEntrar');
+            btn.disabled = true;
+
+            try {
+                const payload = {
+                    email: document.getElementById('email').value.trim(),
+                    senha: document.getElementById('password').value
+                };
+
+                const resp = await fetch('/api/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await safeReadJson(resp);
+                if (!resp.ok) throw new Error(data?.error || data?.message || 'Falha no login.');
+
+                const token = data.token || data.accessToken || data.jwt;
+                if (!token) throw new Error('Login OK, mas o token não veio na resposta.');
+
+                localStorage.setItem('auth_token', token);
+                const tid = (data.tenant_id != null ? data.tenant_id : (data.user && data.user.tenant_id));
+                if (tid != null) localStorage.setItem('tenant_id', String(tid));
+
+                const redirectUrl = data.redirectUrl || '/admin/painel';
+                window.location.href = redirectUrl;
+            } catch (err) {
+                setError(err.message || String(err));
+            } finally {
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>
