@@ -3,8 +3,51 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import pool from '../db.js';
+import { createRateLimit, buildTenantScopedKey } from '../middleware/rateLimit.js';
+import { resolveTenantFromHost, isLocalhostRequest } from '../services/tenantHost.js';
 
 const router = express.Router();
+
+const authRateLimit = createRateLimit({
+    namespace: 'auth-login',
+    windowMs: 15 * 60 * 1000,
+    max: 8,
+    key: (req) => buildTenantScopedKey(req, 'login'),
+    message: 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.'
+});
+
+function normalizeTenantCode(value) {
+    const digits = String(value || '').replace(/\D/g, '').trim();
+    return digits.length === 7 ? digits : null;
+}
+
+async function findUsersByEmail(client, email) {
+    const { rows } = await client.query(
+        `
+        SELECT u.id, u.tenant_id, u.nome, u.email, u.senha_hash, u.cargo::text AS cargo, u.fornecedor_id, u.init, u.ativo
+        FROM usuarios u
+        WHERE lower(u.email) = lower($1)
+        ORDER BY u.id ASC;
+      `,
+        [email]
+    );
+    return rows;
+}
+
+async function findUserByEmailAndTenantCode(client, email, tenantCode) {
+    const { rows } = await client.query(
+        `
+        SELECT u.id, u.tenant_id, u.nome, u.email, u.senha_hash, u.cargo::text AS cargo, u.fornecedor_id, u.init, u.ativo
+        FROM usuarios u
+        JOIN tenants t ON t.id = u.tenant_id
+        WHERE lower(u.email) = lower($1)
+          AND t.codigo = $2
+        LIMIT 1;
+      `,
+        [email, tenantCode]
+    );
+    return rows[0] || null;
+}
 
 function getJwtSecret() {
     const secret = process.env.JWT_SECRET;
@@ -23,8 +66,9 @@ function getJwtSecret() {
  * - cargo IN (ADMIN, GESTOR, USUARIO)
  * - senha válida (bcrypt)
  */
-router.post('/login', async (req, res) => {
+router.post('/login', authRateLimit, async (req, res) => {
     const { email, senha } = req.body || {};
+    const tenantCode = normalizeTenantCode(req.body?.tenant_codigo);
     if (!email || !senha) {
         return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
     }
@@ -33,17 +77,36 @@ router.post('/login', async (req, res) => {
     try {
         client = await pool.connect();
 
-        const { rows } = await client.query(
-            `
-        SELECT id, tenant_id, nome, email, senha_hash, cargo::text AS cargo, fornecedor_id, init, ativo
-        FROM usuarios
-        WHERE lower(email) = lower($1)
-        LIMIT 1;
-      `,
-            [email]
-        );
+        const tenantFromHost = await resolveTenantFromHost(req);
+        const resolvedTenantCode = tenantFromHost ? null : tenantCode;
 
-        const user = rows[0];
+        let user = null;
+        if (tenantFromHost?.id) {
+            const { rows } = await client.query(
+                `
+                SELECT u.id, u.tenant_id, u.nome, u.email, u.senha_hash, u.cargo::text AS cargo, u.fornecedor_id, u.init, u.ativo
+                FROM usuarios u
+                WHERE lower(u.email) = lower($1)
+                  AND u.tenant_id = $2
+                LIMIT 1
+                `,
+                [email, tenantFromHost.id]
+            );
+            user = rows[0] || null;
+        } else if (resolvedTenantCode) {
+            user = await findUserByEmailAndTenantCode(client, email, resolvedTenantCode);
+        } else {
+            const matches = await findUsersByEmail(client, email);
+            if (matches.length > 1) {
+                return res.status(409).json({
+                    error: isLocalhostRequest(req)
+                        ? 'Há mais de um tenant vinculado a este e-mail. Em ambiente local, informe também o código do tenant.'
+                        : 'Não foi possível determinar o tenant pelo domínio acessado.'
+                });
+            }
+            user = matches[0] || null;
+        }
+
         if (!user) {
             return res.status(401).json({ error: 'Credenciais inválidas.' });
         }
@@ -106,6 +169,8 @@ router.post('/login', async (req, res) => {
                 fornecedor_id: user.fornecedor_id ?? null,
             },
             redirectUrl,
+            tenant_codigo: resolvedTenantCode || null,
+            tenant_host: tenantFromHost?.host || null,
         });
     } catch (err) {
         console.error('Erro no login:', err);

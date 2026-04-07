@@ -4,8 +4,18 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import pool from '../db.js';
 import { sendPasswordResetEmail } from '../utils/mailer.js';
+import { createRateLimit, buildTenantScopedKey } from '../middleware/rateLimit.js';
+import { resolveTenantFromHost, isLocalhostRequest } from '../services/tenantHost.js';
 
 const router = express.Router();
+
+const passwordResetRateLimit = createRateLimit({
+  namespace: 'password-reset',
+  windowMs: 15 * 60 * 1000,
+  max: 8,
+  key: (req) => buildTenantScopedKey(req, req.path || 'password-reset'),
+  message: 'Muitas tentativas de redefinição. Aguarde alguns minutos e tente novamente.'
+});
 
 /**
  * Endpoints:
@@ -30,6 +40,11 @@ function normalizeTenantId(v) {
   if (v === undefined || v === null || v === '') return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+function normalizeTenantCode(value) {
+  const digits = String(value || '').replace(/\D/g, '').trim();
+  return digits.length === 7 ? digits : null;
 }
 
 function gen6Digits() {
@@ -69,17 +84,45 @@ async function findUserByEmail(email, tenantId) {
   return rows[0] || null;
 }
 
+async function resolveTenantIdForReset(email, tenantCode) {
+  if (tenantCode) {
+    const { rows } = await pool.query(
+      `
+      SELECT t.id
+      FROM tenants t
+      JOIN usuarios u ON u.tenant_id = t.id
+      WHERE lower(u.email) = lower($1)
+        AND t.codigo = $2
+      LIMIT 1
+      `,
+      [email, tenantCode]
+    );
+    return rows[0]?.id ?? null;
+  }
+
+  const { rows } = await pool.query(
+    `
+    SELECT DISTINCT tenant_id
+    FROM usuarios
+    WHERE lower(email) = lower($1)
+    ORDER BY tenant_id ASC
+    `,
+    [email]
+  );
+
+  if (rows.length === 1) return rows[0].tenant_id;
+  return null;
+}
+
 async function updateUserPassword(email, tenantId, passwordHash) {
   const s = await getUserSchema();
 
-  if (tenantId !== null) {
-    const q = `UPDATE public.${s.table} SET ${s.passCol} = $1 WHERE ${s.emailCol} = $2 AND ${s.tenantCol} = $3`;
-    await pool.query(q, [passwordHash, email, tenantId]);
-    return;
+  if (tenantId === null) {
+    throw new Error('tenant_id é obrigatório para redefinir senha em ambiente multi-tenant');
   }
 
-  const q = `UPDATE public.${s.table} SET ${s.passCol} = $1 WHERE ${s.emailCol} = $2`;
-  await pool.query(q, [passwordHash, email]);
+  const q = `UPDATE public.${s.table} SET ${s.passCol} = $1 WHERE ${s.emailCol} = $2 AND ${s.tenantCol} = $3`;
+  await pool.query(q, [passwordHash, email, tenantId]);
 }
 
 async function getActiveReset(email, tenantId) {
@@ -145,10 +188,13 @@ function pgHint(err) {
  * POST /api/password-reset/request
  * body: { email, tenant_id? }
  */
-router.post('/password-reset/request', async (req, res) => {
+router.post('/password-reset/request', passwordResetRateLimit, async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
-    const tenantId = normalizeTenantId(req.body?.tenant_id);
+    const requestedTenantId = normalizeTenantId(req.body?.tenant_id);
+    const tenantCode = normalizeTenantCode(req.body?.tenant_codigo);
+    const tenantFromHost = await resolveTenantFromHost(req);
+    const tenantId = requestedTenantId ?? tenantFromHost?.id ?? await resolveTenantIdForReset(email, tenantCode);
 
     if (!email) return res.status(400).json({ success: false, message: 'Informe um e-mail válido.' });
 
@@ -209,13 +255,24 @@ router.post('/password-reset/request', async (req, res) => {
  * POST /api/password-reset/verify
  * body: { email, code, tenant_id? }
  */
-router.post('/password-reset/verify', async (req, res) => {
+router.post('/password-reset/verify', passwordResetRateLimit, async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
     const code = String(req.body?.code || '').trim();
-    const tenantId = normalizeTenantId(req.body?.tenant_id);
+    const requestedTenantId = normalizeTenantId(req.body?.tenant_id);
+    const tenantCode = normalizeTenantCode(req.body?.tenant_codigo);
+    const tenantFromHost = await resolveTenantFromHost(req);
+    const tenantId = requestedTenantId ?? tenantFromHost?.id ?? await resolveTenantIdForReset(email, tenantCode);
 
     if (!email || !code) return res.status(400).json({ valid: false, message: 'Informe e-mail e código.' });
+    if (tenantId === null) {
+      return res.json({
+        valid: false,
+        message: isLocalhostRequest(req)
+          ? 'Informe o código do tenant para validar a redefinição em ambiente local.'
+          : 'Não foi possível determinar o tenant pelo domínio acessado.'
+      });
+    }
 
     const reset = await getActiveReset(email, tenantId);
     if (!reset) return res.json({ valid: false, message: 'Código inválido ou expirado.' });
@@ -242,18 +299,29 @@ router.post('/password-reset/verify', async (req, res) => {
  * POST /api/password-reset/confirm
  * body: { email, code, novaSenha, tenant_id? }
  */
-router.post('/password-reset/confirm', async (req, res) => {
+router.post('/password-reset/confirm', passwordResetRateLimit, async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
     const code = String(req.body?.code || '').trim();
     const novaSenha = String(req.body?.novaSenha || '');
-    const tenantId = normalizeTenantId(req.body?.tenant_id);
+    const requestedTenantId = normalizeTenantId(req.body?.tenant_id);
+    const tenantCode = normalizeTenantCode(req.body?.tenant_codigo);
+    const tenantFromHost = await resolveTenantFromHost(req);
+    const tenantId = requestedTenantId ?? tenantFromHost?.id ?? await resolveTenantIdForReset(email, tenantCode);
 
     if (!email || !code || !novaSenha) {
       return res.status(400).json({ success: false, message: 'Informe e-mail, código e nova senha.' });
     }
     if (novaSenha.length < 6) {
       return res.status(400).json({ success: false, message: 'A senha deve ter pelo menos 6 caracteres.' });
+    }
+    if (tenantId === null) {
+      return res.status(400).json({
+        success: false,
+        message: isLocalhostRequest(req)
+          ? 'Informe o código do tenant para redefinir a senha em ambiente local.'
+          : 'Não foi possível determinar o tenant pelo domínio acessado.'
+      });
     }
 
     const reset = await getActiveReset(email, tenantId);

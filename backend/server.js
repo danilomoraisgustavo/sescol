@@ -3,10 +3,12 @@ import 'dotenv/config';
 import jwt from 'jsonwebtoken';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
+import pool from './db.js';
 
 import zoneamentosRouter from './routes/zoneamentos.js';
 import escolasRoutes from './routes/escolas.js';
@@ -36,6 +38,7 @@ import authMiddleware from './middleware/auth.js';
 import tenantMiddleware from './middleware/tenant.js';
 
 const app = express();
+app.set('trust proxy', 1);
 
 // HTTP server envolvendo o Express (necessário para o socket.io)
 const httpServer = createServer(app);
@@ -233,69 +236,134 @@ app.get('/auth-logout.html', (req, res) => {
 // Arquivos estáticos do frontend (HTML, CSS, JS, imagens da UI)
 app.use(express.static(PUBLIC_DIR));
 
-// Arquivos enviados (CNH, certificados, etc.) – acesso direto em /uploads/...
-app.use('/uploads', express.static(UPLOADS_DIR));
-
 // Pasta específica para uploads de branding (logos, brasões etc.)
 app.use(
     '/uploads/branding',
     express.static(path.join(UPLOADS_DIR, 'branding'))
 );
 
-
-
-// Alias de compatibilidade: muitos registros antigos apontam para /arquivos/... em vez de /uploads/...
-app.use('/arquivos', express.static(UPLOADS_DIR));
+// Compatibilidade para branding legado
+app.use(
+    '/arquivos/branding',
+    express.static(path.join(UPLOADS_DIR, 'branding'))
+);
 
 /**
  * Fallback: alguns registros antigos salvaram apenas o nome do arquivo (sem subpasta),
  * ex.: /arquivos/1746622537662-714782508.pdf
  * Nesse caso, procuramos o arquivo dentro das subpastas de uploads e servimos se existir.
  */
-app.get('/arquivos/:filename', (req, res, next) => {
-    try {
-        const filename = String(req.params.filename || '').trim();
+function sanitizeRelativeUploadPath(value) {
+    const raw = String(value || '').replace(/^\/+/, '').trim();
+    if (!raw || raw.includes('\0')) return null;
 
-        // Segurança: não aceitar path traversal
-        if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+    const normalized = path.posix.normalize(raw.replace(/\\/g, '/'));
+    if (!normalized || normalized === '.' || normalized.startsWith('../') || normalized.includes('/../')) {
+        return null;
+    }
+
+    return normalized;
+}
+
+function buildUploadCandidates(relativePath) {
+    const normalized = sanitizeRelativeUploadPath(relativePath);
+    if (!normalized) return [];
+
+    const basename = path.posix.basename(normalized);
+    const explicit = path.join(UPLOADS_DIR, normalized);
+    const candidates = [explicit];
+
+    if (normalized === basename) {
+        const commonDirs = [
+            'cnh',
+            'certificados_motoristas',
+            'certificados_monitores',
+            'motoristas_documentos',
+            'monitores_documentos',
+            'veiculos_documentos',
+            'veiculos_alvaras',
+            'motoristas_internos',
+            'veiculos_internos',
+        ];
+        for (const dir of commonDirs) {
+            candidates.push(path.join(UPLOADS_DIR, dir, basename));
+        }
+    }
+
+    return [...new Set(candidates)];
+}
+
+async function canAccessUploadForTenant(tenantId, relativePath) {
+    const normalized = sanitizeRelativeUploadPath(relativePath);
+    if (!normalized) return false;
+
+    const normalizedLike = `%${normalized}`;
+    const basenameLike = `%/${path.posix.basename(normalized)}`;
+    const checks = [
+        `SELECT 1 FROM motoristas WHERE tenant_id = $1 AND regexp_replace(COALESCE(arquivo_cnh_path,''), '\\\\', '/', 'g') LIKE $2 LIMIT 1`,
+        `SELECT 1 FROM motoristas_cursos WHERE tenant_id = $1 AND regexp_replace(COALESCE(arquivo_path,''), '\\\\', '/', 'g') LIKE $2 LIMIT 1`,
+        `SELECT 1 FROM monitores WHERE tenant_id = $1 AND regexp_replace(COALESCE(documento_pessoal_path,''), '\\\\', '/', 'g') LIKE $2 LIMIT 1`,
+        `SELECT 1 FROM monitores_cursos WHERE tenant_id = $1 AND regexp_replace(COALESCE(arquivo_path,''), '\\\\', '/', 'g') LIKE $2 LIMIT 1`,
+        `SELECT 1 FROM veiculos WHERE tenant_id = $1 AND (regexp_replace(COALESCE(documento_path,''), '\\\\', '/', 'g') LIKE $2 OR regexp_replace(COALESCE(alvara_path,''), '\\\\', '/', 'g') LIKE $2) LIMIT 1`,
+        `SELECT 1 FROM motoristas_internos_documentos WHERE tenant_id = $1 AND regexp_replace(COALESCE(caminho_arquivo,''), '\\\\', '/', 'g') LIKE $2 LIMIT 1`,
+        `SELECT 1 FROM veiculos_internos_documentos WHERE tenant_id = $1 AND regexp_replace(COALESCE(caminho_arquivo,''), '\\\\', '/', 'g') LIKE $2 LIMIT 1`,
+    ];
+
+    for (const sql of checks) {
+        try {
+            const direct = await pool.query(sql, [tenantId, normalizedLike]);
+            if (direct.rowCount) return true;
+
+            const byBasename = await pool.query(sql, [tenantId, basenameLike]);
+            if (byBasename.rowCount) return true;
+        } catch (err) {
+            const code = String(err?.code || '');
+            if (code === '42P01' || code === '42703') {
+                continue;
+            }
+            throw err;
+        }
+    }
+
+    return false;
+}
+
+async function serveProtectedUpload(req, res, next) {
+    try {
+        const tenantId = Number(req.tenantId ?? req.user?.tenant_id);
+        if (!Number.isFinite(tenantId) || tenantId <= 0) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const wildcardPart = String(req.params[0] || req.params.filename || '');
+        const relativePath = sanitizeRelativeUploadPath(wildcardPart);
+        if (!relativePath) {
             return res.status(400).send('Arquivo inválido');
         }
 
-        const candidates = [
-            path.join(UPLOADS_DIR, filename),
-            path.join(UPLOADS_DIR, 'cnh', filename),
-            path.join(UPLOADS_DIR, 'certificados_motoristas', filename),
-            path.join(UPLOADS_DIR, 'certificados_monitores', filename),
-            path.join(UPLOADS_DIR, 'motoristas_documentos', filename),
-            path.join(UPLOADS_DIR, 'monitores_documentos', filename),
-            path.join(UPLOADS_DIR, 'veiculos_documentos', filename),
-            path.join(UPLOADS_DIR, 'veiculos_alvaras', filename),
-            path.join(UPLOADS_DIR, 'branding', filename)
-        ];
+        const authorized = await canAccessUploadForTenant(tenantId, relativePath);
+        if (!authorized) {
+            return res.status(404).send('Arquivo não encontrado');
+        }
 
+        const candidates = buildUploadCandidates(relativePath);
         for (const full of candidates) {
+            if (!full.startsWith(UPLOADS_DIR)) continue;
             if (fs.existsSync(full) && fs.statSync(full).isFile()) {
                 return res.sendFile(full);
             }
         }
 
-        // Busca 1 nível abaixo de uploads (evita varrer tudo profundamente)
-        const subdirs = fs.readdirSync(UPLOADS_DIR, { withFileTypes: true })
-            .filter(d => d.isDirectory())
-            .map(d => d.name);
-
-        for (const dir of subdirs) {
-            const full = path.join(UPLOADS_DIR, dir, filename);
-            if (fs.existsSync(full) && fs.statSync(full).isFile()) {
-                return res.sendFile(full);
-            }
-        }
-
-        return next(); // deixa o 404 padrão acontecer
+        return res.status(404).send('Arquivo não encontrado');
     } catch (e) {
+        console.error('Erro ao servir upload protegido:', e);
         return next();
     }
-});
+}
+
+app.get('/uploads/*', authMiddleware, tenantMiddleware, serveProtectedUpload);
+app.get('/arquivos/*', authMiddleware, tenantMiddleware, serveProtectedUpload);
+app.get('/arquivos/:filename', authMiddleware, tenantMiddleware, serveProtectedUpload);
 /**
  * ==========================
  *  ROTAS DE API (JSON)

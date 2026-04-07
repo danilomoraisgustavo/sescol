@@ -12,6 +12,9 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE TABLE IF NOT EXISTS tenants (
     id              BIGSERIAL PRIMARY KEY,
     nome            TEXT NOT NULL,
+    codigo          VARCHAR(7),
+    subdominio      TEXT,
+    dominio         TEXT,
     documento       VARCHAR(20), -- CNPJ/CPF (opcional)
     email           TEXT,
     telefone        TEXT,
@@ -20,6 +23,22 @@ CREATE TABLE IF NOT EXISTS tenants (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (documento)
 );
+
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS codigo VARCHAR(7);
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS subdominio TEXT;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS dominio TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_codigo_unique
+    ON tenants (codigo)
+    WHERE codigo IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_subdominio_unique
+    ON tenants (lower(subdominio))
+    WHERE subdominio IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tenants_dominio_unique
+    ON tenants (lower(dominio))
+    WHERE dominio IS NOT NULL;
 
 
 -- =========================================================

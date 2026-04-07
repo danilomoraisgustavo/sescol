@@ -268,6 +268,14 @@ async function __getTenantColumns() {
   if (cols.has('ativo')) pick.push('ativo');
   else if (cols.has('active')) pick.push('active AS ativo');
 
+  if (cols.has('codigo')) pick.push('codigo');
+  if (cols.has('subdominio')) pick.push('subdominio');
+  if (cols.has('subdomain')) pick.push('subdomain AS subdominio');
+  if (cols.has('slug') && !pick.some((c) => c.includes('subdominio'))) pick.push('slug AS subdominio');
+  if (cols.has('dominio')) pick.push('dominio');
+  if (cols.has('domain')) pick.push('domain AS dominio');
+  if (cols.has('custom_domain') && !pick.some((c) => c.includes('dominio'))) pick.push('custom_domain AS dominio');
+
   // timestamps (use whichever exists)
   if (cols.has('created_at')) pick.push('created_at');
   else if (cols.has('criado_em')) pick.push('criado_em');
@@ -309,15 +317,45 @@ router.put('/tenant', async (req, res) => {
   const email = body.email ? String(body.email).trim() : null;
   const telefone = body.telefone ? String(body.telefone).trim() : null;
   const ativo = body.ativo !== false;
+  const subdominio = body.subdominio ? String(body.subdominio).trim().toLowerCase() : null;
+  const dominio = body.dominio ? String(body.dominio).trim().toLowerCase() : null;
 
   if (!nome) return res.status(400).json({ message: 'Informe o nome do tenant.' });
+  const cols = await __getTenantColumns();
+  const setParts = ['nome=$1', 'documento=$2', 'email=$3', 'telefone=$4', 'ativo=$5'];
+  const params = [nome, documento, email, telefone, ativo];
+
+  const tenantColumns = new Set(cols.map((c) => c.split(/\s+AS\s+/i)[0].trim()));
+  if (tenantColumns.has('subdominio')) {
+    params.push(subdominio);
+    setParts.push(`subdominio=$${params.length}`);
+  } else if (tenantColumns.has('subdomain')) {
+    params.push(subdominio);
+    setParts.push(`subdomain=$${params.length}`);
+  } else if (tenantColumns.has('slug')) {
+    params.push(subdominio);
+    setParts.push(`slug=$${params.length}`);
+  }
+
+  if (tenantColumns.has('dominio')) {
+    params.push(dominio);
+    setParts.push(`dominio=$${params.length}`);
+  } else if (tenantColumns.has('domain')) {
+    params.push(dominio);
+    setParts.push(`domain=$${params.length}`);
+  } else if (tenantColumns.has('custom_domain')) {
+    params.push(dominio);
+    setParts.push(`custom_domain=$${params.length}`);
+  }
+
+  params.push(tenantId);
 
   const { rows } = await pool.query(
     `UPDATE tenants
-     SET nome=$1, documento=$2, email=$3, telefone=$4, ativo=$5
-     WHERE id=$6
-     RETURNING id, nome, documento, email, telefone, ativo`,
-    [nome, documento, email, telefone, ativo, tenantId]
+     SET ${setParts.join(', ')}
+     WHERE id=$${params.length}
+     RETURNING *`,
+    params
   );
 
   return res.json(rows[0]);

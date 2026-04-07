@@ -46,6 +46,7 @@
             /* Garante que ocupe a 3ª coluna do grid */
             grid-column: 3 / 4;
         }
+
     </style>
 </head>
 
@@ -319,7 +320,6 @@
                     const data = {
                         email: formData.get("email"),
                         senha: formData.get("senha"),
-                        tenant_codigo: formData.get("tenant_codigo"),
                     };
 
                     fetch("/api/login", {
@@ -349,7 +349,7 @@
                         })
                         .catch(err => {
                             console.error("Erro ao efetuar login:", err);
-                            showToast("danger", "Erro interno ao efetuar login.");
+                            showToast("danger", err.message || "Erro interno ao efetuar login.");
                         });
                 });
             }

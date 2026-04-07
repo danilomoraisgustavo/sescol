@@ -108,6 +108,12 @@ async function queryWithOptionalTenant(clientOrPool, sqlTenant, paramsTenant, sq
             msg.includes("does not exist");
 
         if (!tenantMissing) throw err;
+        const statement = String(sqlTenant || '').trim().split(/\s+/)[0]?.toUpperCase();
+        if (statement && statement !== 'SELECT') {
+            const blocked = new Error('Operação bloqueada por segurança: a tabela/coluna tenant_id é obrigatória para escrita.');
+            blocked.statusCode = 500;
+            throw blocked;
+        }
         return await clientOrPool.query(sqlNoTenant, paramsNoTenant);
     }
 }

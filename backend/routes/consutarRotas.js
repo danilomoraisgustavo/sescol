@@ -7,6 +7,8 @@
 //   app.use('/api/public', consutarRotasPublicas);
 
 import express from 'express';
+import { createRateLimit } from '../middleware/rateLimit.js';
+import { resolveTenantFromHost, isLocalhostRequest } from '../services/tenantHost.js';
 
 let __pool = null;
 async function getPool() {
@@ -118,6 +120,30 @@ function normalizeTurnoParam(t) {
 }
 
 const router = express.Router();
+const publicLookupRateLimit = createRateLimit({
+  namespace: 'public-route-lookup',
+  windowMs: 10 * 60 * 1000,
+  max: 20,
+  key: (req) => [
+    req.headers['x-forwarded-for'] || req.ip || 'unknown',
+    String(req.query.tenant_codigo || '').replace(/\D/g, ''),
+  ].join('|'),
+  message: 'Muitas consultas públicas em sequência. Aguarde alguns minutos e tente novamente.'
+});
+
+function normalizeTenantCode(value) {
+  const digits = String(value || '').replace(/\D/g, '').trim();
+  return digits.length === 7 ? digits : null;
+}
+
+async function resolveTenantByCode(pool, tenantCode) {
+  if (!tenantCode) return null;
+  const { rows } = await pool.query(
+    `SELECT id FROM tenants WHERE codigo = $1 AND ativo = TRUE LIMIT 1`,
+    [tenantCode]
+  );
+  return rows[0]?.id ?? null;
+}
 
 /**
  * GET /api/public/consultar-rota?q=...
@@ -127,7 +153,7 @@ const router = express.Router();
  * GET /api/public/consultar-rota?rota_id=123
  * Opcional: &turno=manha|tarde|noite|integral|outros|todos
  */
-router.get('/consultar-rota', async (req, res) => {
+router.get('/consultar-rota', publicLookupRateLimit, async (req, res) => {
   const rotaIdParam = req.query.rota_id ? String(req.query.rota_id).trim() : '';
 
   // compat
@@ -145,14 +171,27 @@ router.get('/consultar-rota', async (req, res) => {
   }
 
   const turnoParam = normalizeTurnoParam(req.query.turno);
+  const tenantCode = normalizeTenantCode(req.query.tenant_codigo);
 
   if (!rotaIdParam && !placa && !cpf && !nome) {
     return res.status(400).json({ error: 'Informe placa, cpf, nome ou q para consultar.' });
   }
-
+  if (nome && nome.length < 5) {
+    return res.status(400).json({ error: 'Informe pelo menos 5 caracteres para busca por nome.' });
+  }
   try {
     const pool = await getPool();
     const q = (text, params) => pool.query(text, params);
+    const tenantFromHost = await resolveTenantFromHost(req);
+    const tenantFilterId = tenantFromHost?.id ?? await resolveTenantByCode(pool, tenantCode);
+
+    if ((cpf || nome) && !tenantFilterId) {
+      return res.status(400).json({
+        error: isLocalhostRequest(req)
+          ? 'Informe também o código do tenant para buscas por CPF ou nome em ambiente local.'
+          : 'Não foi possível identificar o tenant pelo domínio acessado.'
+      });
+    }
 
     // 1) Descobrir a rota (id + tenant_id) por prioridade: rota_id -> placa -> cpf -> nome
     let rotaRef = null;
@@ -167,9 +206,10 @@ router.get('/consultar-rota', async (req, res) => {
         SELECT id, tenant_id
         FROM rotas_escolares
         WHERE id = $1
+          AND ($2::bigint IS NULL OR tenant_id = $2)
         LIMIT 1
         `,
-        [rid]
+        [rid, tenantFilterId]
       );
       rotaRef = r0.rows[0] || null;
     }
@@ -181,11 +221,12 @@ router.get('/consultar-rota', async (req, res) => {
         FROM rotas_escolares r
         JOIN veiculos v ON v.id = r.veiculo_id
         WHERE r.status = 'ativo'
+          AND ($2::bigint IS NULL OR r.tenant_id = $2)
           AND regexp_replace(upper(v.placa), '[^A-Z0-9]', '', 'g') = $1
         ORDER BY r.updated_at DESC
         LIMIT 1
         `,
-        [placa]
+        [placa, tenantFilterId]
       );
       rotaRef = r1.rows[0] || null;
     }
@@ -198,11 +239,12 @@ router.get('/consultar-rota', async (req, res) => {
         JOIN rotas_escolares_alunos ra ON ra.rota_id = r.id
         JOIN alunos_municipais a ON a.id = ra.aluno_id
         WHERE r.status = 'ativo'
+          AND r.tenant_id = $2
           AND regexp_replace(coalesce(a.cpf,''), '\\D', '', 'g') = $1
         ORDER BY r.updated_at DESC
         LIMIT 1
         `,
-        [cpf]
+        [cpf, tenantFilterId]
       );
       rotaRef = r2.rows[0] || null;
     }
@@ -215,11 +257,12 @@ router.get('/consultar-rota', async (req, res) => {
         JOIN rotas_escolares_alunos ra ON ra.rota_id = r.id
         JOIN alunos_municipais a ON a.id = ra.aluno_id
         WHERE r.status = 'ativo'
+          AND r.tenant_id = $2
           AND a.pessoa_nome ILIKE $1
         ORDER BY r.updated_at DESC
         LIMIT 1
         `,
-        [`%${nome}%`]
+        [`%${nome}%`, tenantFilterId]
       );
       rotaRef = r3.rows[0] || null;
     }
@@ -295,8 +338,6 @@ router.get('/consultar-rota', async (req, res) => {
 
         f.razao_social,
         f.nome_fantasia,
-        f.telefone AS fornecedor_telefone,
-
         f.logradouro_garagem,
         f.numero_garagem,
         f.complemento_garagem,
@@ -356,7 +397,6 @@ router.get('/consultar-rota', async (req, res) => {
       SELECT
         a.id AS aluno_id,
         a.pessoa_nome,
-        a.cpf,
         a.turma,
         a.unidade_ensino,
         a.deficiencia,
@@ -366,12 +406,6 @@ router.get('/consultar-rota', async (req, res) => {
         a.rua,
         a.numero_pessoa_endereco,
         a.bairro,
-        a.filiacao_1,
-        a.telefone_filiacao_1,
-        a.filiacao_2,
-        a.telefone_filiacao_2,
-        a.responsavel,
-        a.telefone_responsavel,
         ST_Y(a.localizacao)::float AS casa_lat,
         ST_X(a.localizacao)::float AS casa_lng,
 
@@ -412,19 +446,11 @@ router.get('/consultar-rota', async (req, res) => {
       return {
         aluno_id: row.aluno_id,
         pessoa_nome: row.pessoa_nome,
-        cpf: row.cpf,
         turma: row.turma,
         unidade_ensino: row.unidade_ensino,
         escola_nome: row.unidade_ensino,
         deficiencia: row.deficiencia,
         turno: detectTurnoFromTurma(row.turma),
-
-        filiacao_1: row.filiacao_1,
-        telefone_filiacao_1: row.telefone_filiacao_1,
-        filiacao_2: row.filiacao_2,
-        telefone_filiacao_2: row.telefone_filiacao_2,
-        responsavel: row.responsavel,
-        telefone_responsavel: row.telefone_responsavel,
 
         // no front: sempre "ponto_*"; em exclusiva vira a casa
         ponto_id: isExclusiva ? row.aluno_id : row.ponto_id,
@@ -557,7 +583,7 @@ router.get('/consultar-rota', async (req, res) => {
       rota: {
         ...rota,
         motoristas_nomes: (motoristas || []).map(x => x.nome).filter(Boolean).join(' • '),
-        monitores_telefones: (monitores || []).map(x => x.telefone).filter(Boolean).join(' • '),
+        monitores_telefones: '',
       },
       garagem,
       motoristas,
@@ -567,7 +593,6 @@ router.get('/consultar-rota', async (req, res) => {
       escolas,
       meta: {
         rota_id: rotaId,
-        tenant_id: tenantId, // debug
         turno: turnoParam || 'auto/todos',
         match: match,
       },

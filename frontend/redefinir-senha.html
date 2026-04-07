@@ -404,7 +404,6 @@
           emailInput.focus();
           return;
         }
-
         setLoading(btnSend, true);
         try {
           const r = await fetch(`${API_BASE}/password-reset/request`, {
