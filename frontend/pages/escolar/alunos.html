@@ -2573,15 +2573,26 @@
                 return date.toLocaleString('pt-BR');
             }
 
-            function renderHistoricoAluno(data) {
+            function renderHistoricoAluno(data, fallbackAluno) {
+                var fallback = fallbackAluno || {};
                 var aluno = data.aluno || {};
                 var resumo = data.resumo || {};
                 var historico = Array.isArray(data.historico) ? data.historico : [];
-                $('#historico-aluno-subtitulo').text((aluno.pessoa_nome || 'Aluno') + ' • ID ' + (aluno.id_pessoa || aluno.id || '-'));
-                $('#historico-status-atual').text(resumo.status_atual || 'Não informado');
-                $('#historico-escola-atual').text(resumo.escola_atual || 'Não informado');
-                $('#historico-turma-atual').text(resumo.turma_atual || 'Não informado');
-                $('#historico-ano-atual').text(resumo.ano_letivo_atual || 'Não informado');
+                if ((!historico || !historico.length) && fallback && (fallback.escola_nome || fallback.unidade_ensino || fallback.turma || fallback.ano)) {
+                    historico = [{
+                        tipo_label: 'Vínculo escolar atual',
+                        escola_destino_nome: fallback.escola_nome || fallback.unidade_ensino || 'Escola não informada',
+                        turma_destino: fallback.turma || 'Turma não informada',
+                        ano_letivo: fallback.ano || null,
+                        status_aluno: fallback.status || null,
+                        criado_em: null
+                    }];
+                }
+                $('#historico-aluno-subtitulo').text((aluno.pessoa_nome || fallback.pessoa_nome || 'Aluno') + ' • ID ' + (aluno.id_pessoa || fallback.id_pessoa || fallback.id || '-'));
+                $('#historico-status-atual').text(resumo.status_atual || fallback.status || 'Não informado');
+                $('#historico-escola-atual').text(resumo.escola_atual || fallback.escola_nome || fallback.unidade_ensino || 'Não informado');
+                $('#historico-turma-atual').text(resumo.turma_atual || fallback.turma || 'Não informado');
+                $('#historico-ano-atual').text(resumo.ano_letivo_atual || fallback.ano || 'Não informado');
                 if (!historico.length) {
                     $('#historico-aluno-lista').html('<div class="text-muted">Nenhuma movimentação encontrada para este aluno.</div>');
                     return;
@@ -2604,11 +2615,13 @@
             }
 
             function abrirHistoricoAluno(alunoId) {
+                var fallbackAluno = buscarAlunoPorId(alunoId) || null;
                 $('#historico-aluno-lista').html('<div class="text-muted">Carregando histórico...</div>');
                 $('#modal-historico-aluno').modal('show');
+                if (fallbackAluno) renderHistoricoAluno({}, fallbackAluno);
                 return apiFetch(apiBaseAlunos + '/' + encodeURIComponent(alunoId) + '/historico')
                     .then(function (data) {
-                        renderHistoricoAluno(data || {});
+                        renderHistoricoAluno(data || {}, fallbackAluno);
                         return data;
                     })
                     .catch(function (err) {
@@ -2618,8 +2631,10 @@
             }
 
             function termoPareceCpf(termo) {
-                var digits = String(termo || '').replace(/\D/g, '');
-                return digits.length >= 6;
+                var texto = String(termo || '').trim();
+                var digits = texto.replace(/\D/g, '');
+                if (digits.length < 3) return false;
+                return /^[\d.\-\/\s]+$/.test(texto);
             }
 
             function renderizarTabelaAlunos() {
@@ -2824,13 +2839,6 @@
                     var dropdown = document.createElement('div');
                     dropdown.className = 'dropdown-menu dropdown-menu-right';
 
-                    var linkEditar = document.createElement('a');
-                    linkEditar.className = 'dropdown-item acao-editar-aluno';
-                    linkEditar.href = '#';
-                    linkEditar.setAttribute('data-id', a.id);
-                    linkEditar.textContent = 'Editar';
-                    dropdown.appendChild(linkEditar);
-
                     var linkExcluir = document.createElement('a');
                     linkExcluir.className = 'dropdown-item acao-excluir-aluno';
                     linkExcluir.href = '#';
@@ -2847,13 +2855,6 @@
                         linkLocalizar.textContent = 'Localizar no mapa';
                         dropdown.appendChild(linkLocalizar);
                     }
-
-                    var linkSolicitarTransporte = document.createElement('a');
-                    linkSolicitarTransporte.className = 'dropdown-item acao-solicitar-transporte';
-                    linkSolicitarTransporte.href = '#';
-                    linkSolicitarTransporte.setAttribute('data-id', a.id);
-                    linkSolicitarTransporte.textContent = 'Solicitar transporte';
-                    dropdown.appendChild(linkSolicitarTransporte);
 
                     // NOVO: mostrar "Carteirinha escolar" somente se apto ao transporte
                     if (a.transporte_apto) {
@@ -3692,42 +3693,17 @@
                                     ? '<br>Ponto: Associado'
                                     : '<br>Ponto: Não associado') +
                                 '<div class="aluno-popup-actions">' +
-                                '<a href="#" class="aluno-popup-btn aluno-popup-edit" title="Editar">✏️</a>' +
                                 '<a href="#" class="aluno-popup-btn aluno-popup-del" title="Apagar">🗑️</a>' +
                                 '</div>';
                             marker.bindPopup(popupHtml);
 
-                            // Ações do popup (editar / apagar)
+                            // Ações do popup (apagar)
                             marker.on('popupopen', function (ev) {
                                 try {
                                     var el = ev && ev.popup && ev.popup.getElement ? ev.popup.getElement() : null;
                                     if (!el) return;
-                                    var btnEdit = el.querySelector('.aluno-popup-edit');
                                     var btnDel = el.querySelector('.aluno-popup-del');
                                     var alunoId = String(a.id);
-
-                                    if (btnEdit) {
-                                        btnEdit.onclick = function (e) {
-                                            e.preventDefault();
-                                            window.__suppressMapRefreshAfterSave = true;
-                                            obterAlunoCompletoPorId(alunoId)
-                                                .then(function (aluno) {
-                                                    if (typeof window.abrirModalEditarAluno === 'function') {
-                                                        window.abrirModalEditarAluno(aluno);
-                                                    } else {
-                                                        console.log('Implementar window.abrirModalEditarAluno(aluno).', aluno);
-                                                        mostrarMensagemSistema(
-                                                            'Edição de aluno',
-                                                            'A tela de edição ainda não foi implementada nesta interface.'
-                                                        );
-                                                    }
-                                                })
-                                                .catch(function (err) {
-                                                    console.error(err);
-                                                    mostrarMensagemSistema('Erro', (err && err.message) ? err.message : 'Erro ao buscar aluno.');
-                                                });
-                                        };
-                                    }
 
                                     if (btnDel) {
                                         btnDel.onclick = function (e) {
@@ -5192,49 +5168,6 @@
                 });
             });
 
-            $(document).on('click', '.acao-editar-aluno', function (e) {
-                e.preventDefault();
-                var id = $(this).data('id');
-                var aluno = buscarAlunoPorId(id);
-
-                if (!aluno) {
-                    // Nem sempre o aluno do tooltip está na lista em memória (filtros/paginação).
-                    // Faz fetch completo no backend antes de abrir o modal.
-                    var suppress = (typeof isModalMapaAlunosAberto === 'function' && isModalMapaAlunosAberto());
-                    window.__suppressMapRefreshAfterSave = !!suppress;
-                    obterAlunoCompletoPorId(id)
-                        .then(function (alunoCompleto) {
-                            if (typeof window.abrirModalEditarAluno === 'function') {
-                                window.abrirModalEditarAluno(alunoCompleto);
-                            } else {
-                                console.log('Implementar window.abrirModalEditarAluno(aluno).', alunoCompleto);
-                                mostrarMensagemSistema(
-                                    'Edição de aluno',
-                                    'A tela de edição ainda não foi implementada nesta interface.'
-                                );
-                            }
-                        })
-                        .catch(function (err) {
-                            console.error(err);
-                            mostrarMensagemSistema('Erro', (err && err.message) ? err.message : 'Erro ao buscar aluno.');
-                        });
-                    return;
-                }
-
-                // Se a edição veio do mapa, não re-renderiza marcadores ao salvar
-                var suppress = (typeof isModalMapaAlunosAberto === 'function' && isModalMapaAlunosAberto());
-                window.__suppressMapRefreshAfterSave = !!suppress;
-                if (typeof window.abrirModalEditarAluno === 'function') {
-                    window.abrirModalEditarAluno(aluno);
-                } else {
-                    console.log('Implementar window.abrirModalEditarAluno(aluno).', aluno);
-                    mostrarMensagemSistema(
-                        'Edição de aluno',
-                        'A tela de edição ainda não foi implementada nesta interface.'
-                    );
-                }
-            });
-
             $(document).on('click', '.acao-historico-aluno', function (e) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -5529,68 +5462,6 @@
                     aluno.numero_pessoa_endereco
                 );
             };
-
-            $(document).on('click', '.acao-solicitar-transporte', function (e) {
-                e.preventDefault();
-                var id = $(this).data('id');
-                var aluno = buscarAlunoPorId(id);
-
-                if (!aluno) {
-                    mostrarMensagemSistema('Erro', 'Aluno não encontrado em memória.');
-                    return;
-                }
-
-                stAlunoAtual = aluno;
-                stCepConvertido = false;
-                stReavaliacaoContext = null; // limpa qualquer contexto anterior
-
-                $('#st-aluno-id').val(aluno.id || '');
-                $('#st-id-pessoa').val(aluno.id_pessoa || '');
-                $('#st-nome').val(aluno.pessoa_nome || '');
-
-                $('#st-data-nascimento').val((aluno.data_nascimento || '').toString().slice(0, 10));
-                $('#st-idade').val(calcularIdade(aluno.data_nascimento));
-
-                $('#st-cpf').val(obterCpfExibicao(aluno));
-
-                var escolaTexto = aluno.escola_nome || aluno.unidade_ensino || 'Não associada';
-                $('#st-escola').val(escolaTexto);
-                $('#st-escola-id').val(aluno.escola_id || aluno.id_escola || aluno.escolaId || aluno.idEscola || '');
-
-                var turmaTexto = aluno.turma || aluno.turma_escola || '';
-                $('#st-turma').val(turmaTexto);
-
-                $('#st-cep').val(aluno.cep || '');
-                $('#st-rua').val(aluno.rua || '');
-                $('#st-bairro').val(aluno.bairro || '');
-                $('#st-numero').val(aluno.numero_pessoa_endereco || '');
-                $('#st-telefone').val(aluno.telefone_responsavel || '');
-
-                $('#st-filiacao-1').val(aluno.filiacao_1 || '');
-                $('#st-filiacao-2').val(aluno.filiacao_2 || '');
-                $('#st-responsavel').val(aluno.responsavel || '');
-
-                $('#st-deficiencia').val(aluno.deficiencia || '');
-                $('#st-carro-adaptado').prop('checked', !!aluno.carro_adaptado);
-
-                var rotaEx = (aluno && (aluno.rota_exclusiva !== undefined && aluno.rota_exclusiva !== null))
-                    ? !!aluno.rota_exclusiva
-                    : !!(aluno && aluno.deficiencia && String(aluno.deficiencia).trim() !== '');
-                $('#st-rota-exclusiva').prop('checked', rotaEx);
-
-                $('#st-mapa-aluno-id').val(aluno.id || '');
-
-                // Não bloquear o fluxo por falha na consulta de CEP (ViaCEP pode falhar por CORS/502 no browser).
-                // O usuário pode preencher manualmente e salvar mesmo assim.
-                $('#btn-st-salvar').prop('disabled', false);
-                $('#btn-st-ir-mapa').prop('disabled', true);
-
-                $('#st-dados-tab').tab('show');
-                $('#modalSolicitarTransporteLabel').text('Solicitar transporte');
-                stSetModoCadastro('municipal');
-                $('#modal-solicitar-transporte').modal('show');
-                atualizarBotoesPorAba('st-dados-tab');
-            });
 
             $('#btn-st-converter-cep').on('click', function () {
                 var cep = ($('#st-cep').val() || '').replace(/\D/g, '');

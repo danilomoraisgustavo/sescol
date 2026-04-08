@@ -208,7 +208,8 @@ function formatHistoricoTipo(tipo) {
         MATRICULA: 'Matrícula',
         ATUALIZACAO_MATRICULA: 'Atualização de matrícula',
         TRANSFERENCIA_SAIDA: 'Transferência de saída',
-        TRANSFERENCIA_ENTRADA: 'Transferência de entrada'
+        TRANSFERENCIA_ENTRADA: 'Transferência de entrada',
+        TRANSFERENCIA_INTERNA_SOLICITADA: 'Transferência interna solicitada'
     };
     return mapa[raw] || raw || 'Movimentação';
 }

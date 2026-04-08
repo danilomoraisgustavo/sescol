@@ -12,6 +12,8 @@ let columnCacheAt = 0;
 let escolaTurmasTableEnsured = false;
 let alunoComplementosTableEnsured = false;
 let matriculasHistoricoTableEnsured = false;
+let auditoriaEscolarTableEnsured = false;
+let transferenciasInternasTableEnsured = false;
 
 function buildPoint(lat, lng) {
     return `ST_SetSRID(ST_Point(${lng}, ${lat}), 4326)`;
@@ -214,6 +216,74 @@ async function ensureMatriculasHistoricoTable() {
     `);
 
     matriculasHistoricoTableEnsured = true;
+}
+
+async function ensureAuditoriaEscolarTable() {
+    if (auditoriaEscolarTableEnsured) return;
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS auditoria_operacoes_escolares (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            usuario_id BIGINT NULL,
+            usuario_nome TEXT NULL,
+            usuario_email TEXT NULL,
+            modulo TEXT NOT NULL,
+            entidade TEXT NOT NULL,
+            entidade_id TEXT NULL,
+            acao TEXT NOT NULL,
+            origem TEXT NULL,
+            detalhes JSONB NOT NULL DEFAULT '{}'::jsonb,
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_auditoria_operacoes_escolares_entidade
+        ON auditoria_operacoes_escolares (entidade, entidade_id, criado_em DESC)
+    `);
+
+    auditoriaEscolarTableEnsured = true;
+}
+
+async function ensureTransferenciasInternasTable() {
+    if (transferenciasInternasTableEnsured) return;
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS alunos_transferencias_internas (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            aluno_id INTEGER NOT NULL,
+            escola_origem_id INTEGER NOT NULL,
+            escola_destino_id INTEGER NOT NULL,
+            ano_letivo INTEGER NULL,
+            turma_origem TEXT NULL,
+            turma_destino TEXT NULL,
+            status TEXT NOT NULL DEFAULT 'PENDENTE_AUTORIZACAO',
+            motivo TEXT NULL,
+            observacoes TEXT NULL,
+            protocolo TEXT NULL,
+            responsavel_nome TEXT NULL,
+            responsavel_documento TEXT NULL,
+            responsavel_parentesco TEXT NULL,
+            responsavel_telefone TEXT NULL,
+            responsavel_email TEXT NULL,
+            autorizacao_assinada BOOLEAN NOT NULL DEFAULT FALSE,
+            solicitado_por_usuario_id BIGINT NULL,
+            concluido_por_usuario_id BIGINT NULL,
+            autorizado_em TIMESTAMP WITHOUT TIME ZONE NULL,
+            concluido_em TIMESTAMP WITHOUT TIME ZONE NULL,
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            atualizado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_alunos_transferencias_internas_aluno
+        ON alunos_transferencias_internas (aluno_id, criado_em DESC)
+    `);
+
+    transferenciasInternasTableEnsured = true;
 }
 
 async function generateNextNetworkEnrollmentId(client, tenantId) {
@@ -425,6 +495,18 @@ function formatDatePtBr(value) {
     return date.toLocaleDateString("pt-BR");
 }
 
+function normalizeCpf(value) {
+    if (value === undefined || value === null) return null;
+    const digits = String(value).replace(/\D/g, "");
+    return digits.length === 11 ? digits : null;
+}
+
+function maskCpf(value) {
+    const digits = normalizeCpf(value);
+    if (!digits) return "N/I";
+    return `***.***.***-${digits.slice(-2)}`;
+}
+
 function formatEnderecoAluno(aluno) {
     return [
         aluno?.rua,
@@ -464,6 +546,70 @@ async function registrarHistoricoMatricula(client, tenantId, payload = {}) {
             JSON.stringify(payload.detalhes || {}),
         ],
     );
+}
+
+function getActorFromRequest(req) {
+    return {
+        id: req?.user?.id ? Number(req.user.id) : null,
+        nome: parseOptionalText(req?.user?.nome),
+        email: parseOptionalText(req?.user?.email),
+        cargo: parseOptionalText(req?.user?.cargo),
+    };
+}
+
+async function registrarAuditoriaEscolar(client, req, payload = {}) {
+    await ensureAuditoriaEscolarTable();
+    const actor = getActorFromRequest(req);
+    await client.query(
+        `
+        INSERT INTO auditoria_operacoes_escolares (
+            tenant_id, usuario_id, usuario_nome, usuario_email,
+            modulo, entidade, entidade_id, acao, origem, detalhes
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb)
+        `,
+        [
+            payload.tenant_id || getTenantId(req) || null,
+            actor.id,
+            actor.nome,
+            actor.email,
+            parseOptionalText(payload.modulo) || 'escolar',
+            parseOptionalText(payload.entidade) || 'aluno',
+            payload.entidade_id == null ? null : String(payload.entidade_id),
+            parseOptionalText(payload.acao) || 'OPERACAO',
+            parseOptionalText(payload.origem) || 'web',
+            JSON.stringify({
+                actor,
+                ...((payload && payload.detalhes) || {}),
+            }),
+        ],
+    );
+}
+
+async function loadEscolaById(client, escolaId, tenantId) {
+    const tenantSupport = await getTenantColumnSupport();
+    const params = [escolaId];
+    let tenantWhere = '';
+    if (tenantSupport.escolas && tenantId) {
+        params.push(tenantId);
+        tenantWhere = `AND tenant_id = $2`;
+    }
+    const result = await client.query(
+        `
+        SELECT id, nome, codigo_inep, logradouro, numero, complemento, referencia, bairro, cep
+        FROM escolas
+        WHERE id = $1
+        ${tenantWhere}
+        LIMIT 1
+        `,
+        params,
+    );
+    return result.rows[0] || null;
+}
+
+function formatProtocoloTransferencia(transferId, anoLetivo) {
+    const ano = parseOptionalInt(anoLetivo) || new Date().getFullYear();
+    return `TRI-${ano}-${String(transferId).padStart(6, '0')}`;
 }
 
 /**
@@ -1132,7 +1278,12 @@ router.get("/:id/dashboard", async (req, res) => {
             return res.status(404).json({ error: "Escola não encontrada" });
         }
 
-        const alunos = Array.isArray(dashboardData.alunos) ? dashboardData.alunos : [];
+        const includeSensitive = String(req.query.include_sensitive || "") === "1";
+        const alunos = (Array.isArray(dashboardData.alunos) ? dashboardData.alunos : []).map((aluno) => {
+            const payload = { ...aluno, cpf_masked: maskCpf(aluno?.cpf) };
+            if (!includeSensitive) delete payload.cpf;
+            return payload;
+        });
         const turmas = Array.isArray(turmasData.turmas) ? turmasData.turmas : [];
         const alunosRecentes = alunos
             .slice()
@@ -1849,10 +2000,17 @@ router.get("/:id/alunos", async (req, res) => {
             return res.status(404).json({ error: "Escola não encontrada" });
         }
 
+        const includeSensitive = String(req.query.include_sensitive || "") === "1";
+        const alunos = (Array.isArray(data.alunos) ? data.alunos : []).map((aluno) => {
+            const payload = { ...aluno, cpf_masked: maskCpf(aluno?.cpf) };
+            if (!includeSensitive) delete payload.cpf;
+            return payload;
+        });
+
         return res.json({
             escola: data.escola,
             resumo: data.resumo,
-            alunos: data.alunos,
+            alunos,
             filtros: {
                 turma: parseOptionalText(req.query?.turma),
                 ano_letivo: parseOptionalInt(req.query?.ano_letivo),
@@ -1882,6 +2040,482 @@ router.get("/:id/alunos/:alunoId/matricula", async (req, res) => {
     } catch (err) {
         console.error("Erro ao carregar ficha de matrícula do aluno:", err);
         return res.status(500).json({ error: "Erro ao carregar ficha de matrícula do aluno" });
+    }
+});
+
+router.post("/:id/alunos/:alunoId/transferencias-internas", async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const escolaOrigemId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const escolaDestinoId = parseInt(req.body?.escola_destino_id, 10);
+        const anoLetivo = parseOptionalInt(req.body?.ano_letivo);
+        const turmaDestino = parseOptionalText(req.body?.turma_destino);
+
+        if ([escolaOrigemId, alunoId, escolaDestinoId].some((value) => Number.isNaN(value))) {
+            return res.status(400).json({ error: "Identificadores inválidos para transferência." });
+        }
+        if (escolaOrigemId === escolaDestinoId) {
+            return res.status(400).json({ error: "A escola de destino deve ser diferente da escola de origem." });
+        }
+        if (!anoLetivo) {
+            return res.status(400).json({ error: "Informe o ano letivo da transferência." });
+        }
+        if (!turmaDestino) {
+            return res.status(400).json({ error: "Informe a turma de destino." });
+        }
+
+        const tenantId = getTenantId(req);
+        await ensureTransferenciasInternasTable();
+        await ensureMatriculasHistoricoTable();
+
+        const [aluno, escolaOrigem, escolaDestino] = await Promise.all([
+            loadAlunoMatriculaDetalhes({ escolaId: escolaOrigemId, alunoId, tenantId }),
+            loadEscolaById(client, escolaOrigemId, tenantId),
+            loadEscolaById(client, escolaDestinoId, tenantId),
+        ]);
+
+        if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
+        if (!escolaOrigem) return res.status(404).json({ error: "Escola de origem não encontrada." });
+        if (!escolaDestino) return res.status(404).json({ error: "Escola de destino não encontrada." });
+
+        await client.query("BEGIN");
+
+        const insertResult = await client.query(
+            `
+            INSERT INTO alunos_transferencias_internas (
+                tenant_id, aluno_id, escola_origem_id, escola_destino_id, ano_letivo,
+                turma_origem, turma_destino, status, motivo, observacoes,
+                responsavel_nome, responsavel_documento, responsavel_parentesco,
+                responsavel_telefone, responsavel_email, solicitado_por_usuario_id,
+                autorizacao_assinada, atualizado_em
+            )
+            VALUES ($1,$2,$3,$4,$5,$6,$7,'PENDENTE_AUTORIZACAO',$8,$9,$10,$11,$12,$13,$14,$15,false,NOW())
+            RETURNING id, criado_em
+            `,
+            [
+                tenantId || null,
+                alunoId,
+                escolaOrigemId,
+                escolaDestinoId,
+                anoLetivo,
+                parseOptionalText(aluno.turma_escola || aluno.turma),
+                turmaDestino,
+                parseOptionalText(req.body?.motivo),
+                parseOptionalText(req.body?.observacoes),
+                parseOptionalText(req.body?.responsavel_nome) || parseOptionalText(aluno.responsavel),
+                parseOptionalText(req.body?.responsavel_documento),
+                parseOptionalText(req.body?.responsavel_parentesco),
+                parseOptionalText(req.body?.responsavel_telefone) || parseOptionalText(aluno.telefone_responsavel),
+                parseOptionalText(req.body?.responsavel_email),
+                req?.user?.id ? Number(req.user.id) : null,
+            ],
+        );
+
+        const transferenciaId = Number(insertResult.rows[0].id);
+        const protocolo = formatProtocoloTransferencia(transferenciaId, anoLetivo);
+
+        await client.query(
+            `UPDATE alunos_transferencias_internas SET protocolo = $2 WHERE id = $1`,
+            [transferenciaId, protocolo],
+        );
+
+        await registrarHistoricoMatricula(client, tenantId, {
+            aluno_id: alunoId,
+            escola_id: escolaOrigemId,
+            escola_destino_id: escolaDestinoId,
+            ano_letivo: anoLetivo,
+            turma: aluno.turma_escola || aluno.turma,
+            turma_destino: turmaDestino,
+            tipo_evento: "TRANSFERENCIA_INTERNA_SOLICITADA",
+            status_aluno: parseOptionalText(aluno.status) || "ativo",
+            detalhes: {
+                transferencia_id: transferenciaId,
+                protocolo,
+                motivo: parseOptionalText(req.body?.motivo),
+                observacoes: parseOptionalText(req.body?.observacoes),
+                escola_origem_nome: escolaOrigem.nome,
+                escola_destino_nome: escolaDestino.nome,
+                responsavel_nome: parseOptionalText(req.body?.responsavel_nome) || parseOptionalText(aluno.responsavel),
+                responsavel_documento: parseOptionalText(req.body?.responsavel_documento),
+            },
+        });
+
+        await registrarAuditoriaEscolar(client, req, {
+            tenant_id: tenantId,
+            modulo: "escola",
+            entidade: "aluno_transferencia_interna",
+            entidade_id: transferenciaId,
+            acao: "TRANSFERENCIA_INTERNA_SOLICITADA",
+            detalhes: {
+                aluno_id: alunoId,
+                escola_origem_id: escolaOrigemId,
+                escola_destino_id: escolaDestinoId,
+                ano_letivo: anoLetivo,
+                turma_origem: aluno.turma_escola || aluno.turma || null,
+                turma_destino: turmaDestino,
+                protocolo,
+            },
+        });
+
+        await client.query("COMMIT");
+        return res.status(201).json({
+            message: "Solicitação de transferência interna registrada.",
+            transferencia_id: transferenciaId,
+            protocolo,
+            status: "PENDENTE_AUTORIZACAO",
+            pdf_url: `/api/escolas/${escolaOrigemId}/alunos/${alunoId}/transferencias-internas/${transferenciaId}/autorizacao-pdf`,
+        });
+    } catch (err) {
+        try { await client.query("ROLLBACK"); } catch (_) { }
+        console.error("Erro ao solicitar transferência interna do aluno:", err);
+        return res.status(500).json({ error: "Erro ao solicitar transferência interna do aluno." });
+    } finally {
+        client.release();
+    }
+});
+
+router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concluir", async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const escolaOrigemId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const transferenciaId = parseInt(req.params.transferenciaId, 10);
+        if ([escolaOrigemId, alunoId, transferenciaId].some((value) => Number.isNaN(value))) {
+            return res.status(400).json({ error: "Identificadores inválidos para concluir a transferência." });
+        }
+
+        const tenantId = getTenantId(req);
+        const tenantSupport = await getTenantColumnSupport();
+        const columnSupport = await getColumnSupport();
+        await ensureTransferenciasInternasTable();
+        await ensureMatriculasHistoricoTable();
+
+        await client.query("BEGIN");
+
+        const transferenciaParams = [transferenciaId, alunoId, escolaOrigemId];
+        let tenantWhereTransfer = "";
+        if (tenantId) {
+            transferenciaParams.push(tenantId);
+            tenantWhereTransfer = `AND tenant_id = $4`;
+        }
+
+        const transferenciaResult = await client.query(
+            `
+            SELECT *
+            FROM alunos_transferencias_internas
+            WHERE id = $1
+              AND aluno_id = $2
+              AND escola_origem_id = $3
+              ${tenantWhereTransfer}
+            LIMIT 1
+            `,
+            transferenciaParams,
+        );
+        const transferencia = transferenciaResult.rows[0];
+        if (!transferencia) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ error: "Solicitação de transferência não encontrada." });
+        }
+        if (String(transferencia.status || "").toUpperCase() === "CONCLUIDA") {
+            await client.query("ROLLBACK");
+            return res.status(409).json({ error: "Esta transferência interna já foi concluída." });
+        }
+
+        const escolaDestino = await loadEscolaById(client, Number(transferencia.escola_destino_id), tenantId);
+        if (!escolaDestino) {
+            await client.query("ROLLBACK");
+            return res.status(404).json({ error: "Escola de destino não encontrada." });
+        }
+
+        const anoLetivo = parseOptionalInt(transferencia.ano_letivo);
+        const turmaDestino = parseOptionalText(transferencia.turma_destino);
+
+        const vinculosParams = [alunoId, anoLetivo];
+        let vinculosTenantWhere = '';
+        if (tenantSupport.alunos_escolas && tenantId) {
+            vinculosParams.push(tenantId);
+            vinculosTenantWhere = 'AND tenant_id = $3';
+        }
+
+        const vinculosResult = await client.query(
+            `
+            SELECT id, escola_id, turma, ano_letivo, atualizado_em
+            FROM alunos_escolas
+            WHERE aluno_id = $1
+              AND ano_letivo = $2
+              ${vinculosTenantWhere}
+            `,
+            vinculosParams,
+        );
+        const vinculosExistentes = vinculosResult.rows || [];
+        const vinculoOrigem = vinculosExistentes.find((row) => Number(row.escola_id) === escolaOrigemId) || null;
+
+        for (const vinculo of vinculosExistentes.filter((row) => Number(row.escola_id) !== Number(transferencia.escola_destino_id))) {
+            await registrarHistoricoMatricula(client, tenantId, {
+                aluno_id: alunoId,
+                escola_id: vinculo.escola_id,
+                escola_destino_id: Number(transferencia.escola_destino_id),
+                ano_letivo: anoLetivo,
+                turma: vinculo.turma,
+                turma_destino: turmaDestino,
+                tipo_evento: "TRANSFERENCIA_SAIDA",
+                status_aluno: "transferido",
+                detalhes: {
+                    origem: "transferencia_interna",
+                    transferencia_id: transferenciaId,
+                    protocolo: transferencia.protocolo,
+                },
+            });
+        }
+
+        await registrarHistoricoMatricula(client, tenantId, {
+            aluno_id: alunoId,
+            escola_id: escolaOrigemId,
+            escola_destino_id: Number(transferencia.escola_destino_id),
+            ano_letivo: anoLetivo,
+            turma: vinculoOrigem?.turma || transferencia.turma_origem,
+            turma_destino: turmaDestino,
+            tipo_evento: "TRANSFERENCIA_ENTRADA",
+            status_aluno: "ativo",
+            detalhes: {
+                origem: "transferencia_interna",
+                transferencia_id: transferenciaId,
+                protocolo: transferencia.protocolo,
+                autorizacao_assinada: true,
+            },
+        });
+
+        if (tenantSupport.alunos_escolas) {
+            await client.query(
+                `
+                DELETE FROM alunos_escolas
+                WHERE aluno_id = $1
+                  AND ano_letivo = $2
+                  AND tenant_id = $3
+                  AND escola_id <> $4
+                `,
+                [alunoId, anoLetivo, tenantId, Number(transferencia.escola_destino_id)],
+            );
+
+            await client.query(
+                `
+                INSERT INTO alunos_escolas (tenant_id, aluno_id, escola_id, ano_letivo, turma)
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (aluno_id, escola_id, ano_letivo) DO UPDATE
+                SET turma = EXCLUDED.turma,
+                    atualizado_em = NOW()
+                `,
+                [tenantId, alunoId, Number(transferencia.escola_destino_id), anoLetivo, turmaDestino],
+            );
+        } else {
+            await client.query(
+                `
+                DELETE FROM alunos_escolas
+                WHERE aluno_id = $1
+                  AND ano_letivo = $2
+                  AND escola_id <> $3
+                `,
+                [alunoId, anoLetivo, Number(transferencia.escola_destino_id)],
+            );
+
+            await client.query(
+                `
+                INSERT INTO alunos_escolas (aluno_id, escola_id, ano_letivo, turma)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (aluno_id, escola_id, ano_letivo) DO UPDATE
+                SET turma = EXCLUDED.turma,
+                    atualizado_em = NOW()
+                `,
+                [alunoId, Number(transferencia.escola_destino_id), anoLetivo, turmaDestino],
+            );
+        }
+
+        const updateAlunoParams = [
+            escolaDestino.nome,
+            turmaDestino,
+            escolaDestino.codigo_inep,
+            alunoId,
+        ];
+        const updateAlunoSets = [
+            `unidade_ensino = COALESCE($1, unidade_ensino)`,
+            `turma = COALESCE($2, turma)`,
+            `codigo_inep = COALESCE($3, codigo_inep)`,
+            `status = 'ativo'`,
+            `transporte_apto = COALESCE(transporte_apto, false)`,
+        ];
+        let updateAlunoWhere = `WHERE id = $4`;
+        if (columnSupport.alunosMunicipaisTenantId && tenantId) {
+            updateAlunoParams.push(tenantId);
+            updateAlunoWhere += ` AND tenant_id = $5`;
+        }
+
+        await client.query(
+            `
+            UPDATE alunos_municipais
+            SET ${updateAlunoSets.join(", ")},
+                atualizado_em = NOW()
+            ${updateAlunoWhere}
+            `,
+            updateAlunoParams,
+        );
+
+        const conclusaoTime = new Date().toISOString();
+        const updateTransferParams = [
+            transferenciaId,
+            req?.user?.id ? Number(req.user.id) : null,
+            conclusaoTime,
+        ];
+        let updateTransferTenantWhere = '';
+        if (tenantId) {
+            updateTransferParams.push(tenantId);
+            updateTransferTenantWhere = 'AND tenant_id = $4';
+        }
+        await client.query(
+            `
+            UPDATE alunos_transferencias_internas
+            SET status = 'CONCLUIDA',
+                autorizacao_assinada = true,
+                autorizado_em = COALESCE(autorizado_em, $3::timestamp),
+                concluido_em = $3::timestamp,
+                concluido_por_usuario_id = $2,
+                atualizado_em = NOW()
+            WHERE id = $1
+            ${updateTransferTenantWhere}
+            `,
+            updateTransferParams,
+        );
+
+        await registrarAuditoriaEscolar(client, req, {
+            tenant_id: tenantId,
+            modulo: "escola",
+            entidade: "aluno_transferencia_interna",
+            entidade_id: transferenciaId,
+            acao: "TRANSFERENCIA_INTERNA_CONCLUIDA",
+            detalhes: {
+                aluno_id: alunoId,
+                escola_origem_id: escolaOrigemId,
+                escola_destino_id: Number(transferencia.escola_destino_id),
+                escola_destino_nome: escolaDestino.nome,
+                ano_letivo: anoLetivo,
+                turma_destino: turmaDestino,
+                protocolo: transferencia.protocolo,
+            },
+        });
+
+        await client.query("COMMIT");
+        return res.json({
+            message: "Transferência interna concluída com sucesso.",
+            transferencia_id: transferenciaId,
+            protocolo: transferencia.protocolo,
+            escola_destino_id: Number(transferencia.escola_destino_id),
+            escola_destino_nome: escolaDestino.nome,
+            ano_letivo: anoLetivo,
+            turma_destino: turmaDestino,
+        });
+    } catch (err) {
+        try { await client.query("ROLLBACK"); } catch (_) { }
+        console.error("Erro ao concluir transferência interna do aluno:", err);
+        return res.status(500).json({ error: "Erro ao concluir transferência interna do aluno." });
+    } finally {
+        client.release();
+    }
+});
+
+router.get("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/autorizacao-pdf", async (req, res) => {
+    try {
+        const escolaOrigemId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const transferenciaId = parseInt(req.params.transferenciaId, 10);
+        if ([escolaOrigemId, alunoId, transferenciaId].some((value) => Number.isNaN(value))) {
+            return res.status(400).json({ error: "Identificadores inválidos para gerar a autorização." });
+        }
+
+        const tenantId = getTenantId(req);
+        await ensureTransferenciasInternasTable();
+        const params = [transferenciaId, alunoId, escolaOrigemId];
+        let tenantWhere = '';
+        if (tenantId) {
+            params.push(tenantId);
+            tenantWhere = 'AND t.tenant_id = $4';
+        }
+        const result = await pool.query(
+            `
+            SELECT
+                t.*,
+                ao.pessoa_nome,
+                ao.cpf,
+                ao.id_pessoa,
+                ao.data_nascimento,
+                ao.responsavel,
+                ao.telefone_responsavel,
+                eo.nome AS escola_origem_nome,
+                eo.codigo_inep AS escola_origem_inep,
+                ed.nome AS escola_destino_nome,
+                ed.codigo_inep AS escola_destino_inep
+            FROM alunos_transferencias_internas t
+            JOIN alunos_municipais ao ON ao.id = t.aluno_id
+            JOIN escolas eo ON eo.id = t.escola_origem_id
+            JOIN escolas ed ON ed.id = t.escola_destino_id
+            WHERE t.id = $1
+              AND t.aluno_id = $2
+              AND t.escola_origem_id = $3
+              ${tenantWhere}
+            LIMIT 1
+            `,
+            params,
+        );
+        const transferencia = result.rows[0];
+        if (!transferencia) {
+            return res.status(404).json({ error: "Solicitação de transferência não encontrada." });
+        }
+
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="autorizacao_transferencia_${transferenciaId}.pdf"`);
+
+        const doc = new PDFDocument({ size: "A4", margin: 45 });
+        doc.pipe(res);
+        drawCabecalho(doc, branding);
+        doc.y = 120;
+        doc.font("Helvetica-Bold").fontSize(15).text("AUTORIZAÇÃO DE TRANSFERÊNCIA INTERNA", { align: "center" });
+        doc.moveDown(1.4);
+        doc.font("Helvetica").fontSize(11);
+        doc.text(`Protocolo: ${transferencia.protocolo || "Não informado"}`);
+        doc.text(`Data da solicitação: ${formatDatePtBr(transferencia.criado_em)}`);
+        doc.moveDown(1);
+        doc.text(
+            `Eu, ${transferencia.responsavel_nome || transferencia.responsavel || "__________________________________"}, ` +
+            `documento ${transferencia.responsavel_documento || "__________________________________"}, ` +
+            `na qualidade de ${transferencia.responsavel_parentesco || "responsável legal"}, autorizo a transferência interna do(a) estudante ` +
+            `${transferencia.pessoa_nome || "Não informado"} (ID rede ${transferencia.id_pessoa || "N/I"}) ` +
+            `da unidade ${transferencia.escola_origem_nome || "Não informada"} para a unidade ${transferencia.escola_destino_nome || "Não informada"}, ` +
+            `no ano letivo de ${transferencia.ano_letivo || "N/I"}, turma destino ${transferencia.turma_destino || "Não informada"}.`,
+            { align: "justify" },
+        );
+        doc.moveDown(1);
+        doc.text(`Motivo informado: ${transferencia.motivo || "Não informado"}`, { align: "justify" });
+        if (transferencia.observacoes) {
+            doc.moveDown(0.5);
+            doc.text(`Observações: ${transferencia.observacoes}`, { align: "justify" });
+        }
+        doc.moveDown(1.5);
+        doc.text("Este documento deve acompanhar o estudante até a escola de destino para formalização definitiva da transferência.", { align: "justify" });
+        doc.moveDown(2.5);
+        doc.text("__________________________________________", { align: "center" });
+        doc.font("Helvetica-Bold").text(transferencia.responsavel_nome || "Responsável legal", { align: "center" });
+        doc.font("Helvetica").text(`Documento: ${transferencia.responsavel_documento || "Não informado"}`, { align: "center" });
+        doc.moveDown(2.5);
+        doc.text("__________________________________________", { align: "center" });
+        doc.font("Helvetica-Bold").text("Secretaria escolar - escola de origem", { align: "center" });
+        doc.moveDown(2);
+        doc.text("__________________________________________", { align: "center" });
+        doc.font("Helvetica-Bold").text("Recebimento - escola de destino", { align: "center" });
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar autorização de transferência interna:", err);
+        return res.status(500).json({ error: "Erro ao gerar autorização de transferência interna." });
     }
 });
 

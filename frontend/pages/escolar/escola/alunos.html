@@ -215,8 +215,8 @@
                 <form id="form-matricula-aluno">
                     <div class="modal-header">
                         <div>
-                            <h5 class="modal-title mb-1">Ficha completa de matrícula</h5>
-                            <div class="small text-muted">Cadastro escolar, responsáveis, saúde, complementos e geolocalização do aluno.</div>
+                            <h5 class="modal-title mb-1" id="modal-matricula-titulo">Ficha completa de matrícula</h5>
+                            <div class="small text-muted" id="modal-matricula-subtitulo">Cadastro escolar, responsáveis, saúde, complementos e geolocalização do aluno.</div>
                         </div>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
                             <span aria-hidden="true">&times;</span>
@@ -1110,6 +1110,93 @@
         </div>
     </div>
 
+    <div class="modal fade modal-slide-right" id="modal-transferencia-interna" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <form id="form-transferencia-interna">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title mb-1">Transferência interna do aluno</h5>
+                            <div class="small text-muted">Solicitação, autorização do responsável e conclusão da movimentação entre escolas.</div>
+                        </div>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="transferencia-aluno-id">
+                        <input type="hidden" id="transferencia-id">
+                        <div class="alert alert-light border mb-3" id="transferencia-resumo-aluno">
+                            <strong>Aluno</strong>
+                            <div class="small text-muted mt-1">Selecione a escola de destino e gere a autorização para assinatura.</div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-6">
+                                <label for="transferencia-escola-destino">Escola de destino</label>
+                                <select class="form-control" id="transferencia-escola-destino" required></select>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="transferencia-ano-letivo">Ano letivo</label>
+                                <input type="number" class="form-control" id="transferencia-ano-letivo" min="2000" max="2100" required>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label for="transferencia-turma-destino">Turma de destino</label>
+                                <select class="form-control" id="transferencia-turma-destino"></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="transferencia-motivo">Motivo da transferência</label>
+                            <textarea class="form-control" id="transferencia-motivo" rows="2" placeholder="Descreva o motivo administrativo/pedagógico da transferência"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="transferencia-observacoes">Observações da secretaria</label>
+                            <textarea class="form-control" id="transferencia-observacoes" rows="2" placeholder="Pendências, orientações ou observações relevantes"></textarea>
+                        </div>
+                        <div class="matricula-tab-card">
+                            <div class="small text-uppercase text-muted mb-3">Responsável pela autorização</div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="transferencia-responsavel-nome">Nome do responsável</label>
+                                    <input type="text" class="form-control" id="transferencia-responsavel-nome" required>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="transferencia-responsavel-documento">CPF/Documento</label>
+                                    <input type="text" class="form-control" id="transferencia-responsavel-documento">
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label for="transferencia-responsavel-parentesco">Parentesco</label>
+                                    <input type="text" class="form-control" id="transferencia-responsavel-parentesco" placeholder="Ex.: mãe, pai, responsável">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="transferencia-responsavel-telefone">Telefone</label>
+                                    <input type="text" class="form-control" id="transferencia-responsavel-telefone">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="transferencia-responsavel-email">E-mail</label>
+                                    <input type="email" class="form-control" id="transferencia-responsavel-email">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="custom-control custom-checkbox mt-3">
+                            <input type="checkbox" class="custom-control-input" id="transferencia-autorizacao-assinada">
+                            <label class="custom-control-label" for="transferencia-autorizacao-assinada">Autorização assinada e recebida pela escola de destino</label>
+                        </div>
+                        <div class="small text-muted mt-2" id="transferencia-protocolo-info">Gere primeiro a autorização em PDF para formalizar a trilha da transferência.</div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <button type="button" class="btn btn-outline-primary mr-2" id="btn-gerar-autorizacao-transferencia">Gerar autorização PDF</button>
+                            <button type="button" class="btn btn-primary" id="btn-concluir-transferencia" disabled>Concluir transferência</button>
+                        </div>
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Fechar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="../../../js/jquery.min.js"></script>
     <script src="../../../js/popper.min.js"></script>
     <script src="../../../js/bootstrap.min.js"></script>
@@ -1132,10 +1219,12 @@
         var marcadorEscolaTransporte = null;
         var marcadoresPontosParada = [];
         var escolaAtualCache = null;
+        var escolasTransferenciaCache = [];
         var googleMapsLoader = null;
         var geocoderGoogle = null;
         var directionsRendererTransporte = null;
         var cameraStreamFoto = null;
+        var transferenciaAtualSolicitada = null;
 
         function escapeHtml(value) {
             return String(value == null ? '' : value)
@@ -1148,8 +1237,86 @@
 
         function formatarCpf(cpf) {
             var digits = String(cpf || '').replace(/\D/g, '');
-            if (digits.length !== 11) return cpf || 'CPF não informado';
-            return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+            if (digits.length !== 11) return 'N/I';
+            return '***.***.***-' + digits.slice(-2);
+        }
+
+        function obterNomeAluno(aluno) {
+            return (aluno && (aluno.pessoa_nome || aluno.nome)) || 'Aluno';
+        }
+
+        function resetarModalTransferencia() {
+            $('#form-transferencia-interna')[0].reset();
+            $('#transferencia-id').val('');
+            $('#transferencia-aluno-id').val('');
+            $('#transferencia-protocolo-info').text('Gere primeiro a autorização em PDF para formalizar a trilha da transferência.');
+            $('#btn-concluir-transferencia').prop('disabled', true);
+            transferenciaAtualSolicitada = null;
+        }
+
+        function preencherSelectEscolasTransferencia(escolaAtualId) {
+            var $select = $('#transferencia-escola-destino');
+            $select.empty().append('<option value="">Selecione a escola de destino</option>');
+            (escolasTransferenciaCache || []).forEach(function (escola) {
+                if (!escola || Number(escola.id) === Number(escolaAtualId)) return;
+                $select.append('<option value="' + Number(escola.id) + '">' + escapeHtml(escola.nome || ('Escola #' + escola.id)) + '</option>');
+            });
+        }
+
+        function preencherTurmasDestinoTransferencia(escolaDestinoId, anoLetivo, selectedTurma) {
+            var $select = $('#transferencia-turma-destino');
+            $select.empty().append('<option value="">Selecione a turma</option>');
+            if (!escolaDestinoId) return Promise.resolve();
+
+            var url = '/api/escolas/' + escolaDestinoId + '/turmas';
+            if (anoLetivo) url += '?ano_letivo=' + encodeURIComponent(anoLetivo);
+
+            return window.EscolaContexto.carregarJson(url)
+                .then(function (data) {
+                    var turmas = (data && data.turmas) || [];
+                    turmas.forEach(function (turma) {
+                        var nome = turma.nome || turma.turma;
+                        if (!nome) return;
+                        $select.append('<option value="' + escapeHtml(nome) + '">' + escapeHtml(nome) + '</option>');
+                    });
+                    if (selectedTurma) $select.val(selectedTurma);
+                })
+                .catch(function () {
+                    $select.empty().append('<option value="">Informe manualmente a turma</option>');
+                });
+        }
+
+        function abrirModalTransferenciaInterna(aluno) {
+            resetarModalTransferencia();
+            preencherSelectEscolasTransferencia(escolaId);
+            $('#transferencia-aluno-id').val(aluno.id || '');
+            $('#transferencia-ano-letivo').val(aluno.ano_letivo || anoLetivoFiltro || new Date().getFullYear());
+            $('#transferencia-responsavel-nome').val(aluno.responsavel || '');
+            $('#transferencia-responsavel-telefone').val(aluno.telefone_responsavel || '');
+            $('#transferencia-responsavel-documento').val((aluno.cpf_last2 ? 'CPF final ' + aluno.cpf_last2 : ''));
+            $('#transferencia-responsavel-parentesco').val('Responsável legal');
+            $('#transferencia-resumo-aluno').html(
+                '<strong>' + escapeHtml(obterNomeAluno(aluno)) + '</strong>' +
+                '<div class="small text-muted mt-1">Origem: ' + escapeHtml(escolaAtualCache && escolaAtualCache.nome ? escolaAtualCache.nome : 'Escola atual') +
+                ' • Turma atual: ' + escapeHtml(aluno.turma_escola || aluno.turma || 'Não informada') +
+                ' • Ano letivo: ' + escapeHtml(aluno.ano_letivo || anoLetivoFiltro || new Date().getFullYear()) + '</div>'
+            );
+            $('#modal-transferencia-interna').modal('show');
+        }
+
+        function coletarPayloadTransferencia() {
+            return {
+                escola_destino_id: $('#transferencia-escola-destino').val(),
+                ano_letivo: $('#transferencia-ano-letivo').val(),
+                turma_destino: $('#transferencia-turma-destino').val(),
+                motivo: $('#transferencia-motivo').val(),
+                observacoes: $('#transferencia-observacoes').val(),
+                responsavel_nome: $('#transferencia-responsavel-nome').val(),
+                responsavel_documento: $('#transferencia-responsavel-documento').val(),
+                responsavel_parentesco: $('#transferencia-responsavel-parentesco').val(),
+                responsavel_telefone: $('#transferencia-responsavel-telefone').val(),
+                responsavel_email: $('#transferencia-responsavel-email').val()
+            };
         }
 
         function valorGeoJsonParaLatLng(geojson) {
@@ -1898,15 +2065,26 @@
             return date.toLocaleString('pt-BR');
         }
 
-        function renderHistoricoAluno(data) {
+        function renderHistoricoAluno(data, fallbackAluno) {
+            var fallback = fallbackAluno || {};
             var aluno = data.aluno || {};
             var resumo = data.resumo || {};
             var historico = Array.isArray(data.historico) ? data.historico : [];
-            $('#historico-aluno-subtitulo').text((aluno.pessoa_nome || 'Aluno') + ' • ID ' + (aluno.id_pessoa || aluno.id || '-'));
-            $('#historico-status-atual').text(resumo.status_atual || 'Não informado');
-            $('#historico-escola-atual').text(resumo.escola_atual || 'Não informado');
-            $('#historico-turma-atual').text(resumo.turma_atual || 'Não informado');
-            $('#historico-ano-atual').text(resumo.ano_letivo_atual || 'Não informado');
+            if ((!historico || !historico.length) && fallback && (fallback.escola_nome || fallback.unidade_ensino || fallback.turma || fallback.ano_letivo)) {
+                historico = [{
+                    tipo_label: 'Vínculo escolar atual',
+                    escola_destino_nome: fallback.escola_nome || fallback.unidade_ensino || (escolaAtualCache && escolaAtualCache.nome) || 'Escola não informada',
+                    turma_destino: fallback.turma_escola || fallback.turma || 'Turma não informada',
+                    ano_letivo: fallback.ano_letivo || null,
+                    status_aluno: fallback.status || null,
+                    criado_em: null
+                }];
+            }
+            $('#historico-aluno-subtitulo').text((aluno.pessoa_nome || fallback.nome || 'Aluno') + ' • ID ' + (aluno.id_pessoa || fallback.id_pessoa || fallback.id || '-'));
+            $('#historico-status-atual').text(resumo.status_atual || fallback.status || 'Não informado');
+            $('#historico-escola-atual').text(resumo.escola_atual || fallback.escola_nome || fallback.unidade_ensino || (escolaAtualCache && escolaAtualCache.nome) || 'Não informado');
+            $('#historico-turma-atual').text(resumo.turma_atual || fallback.turma_escola || fallback.turma || 'Não informado');
+            $('#historico-ano-atual').text(resumo.ano_letivo_atual || fallback.ano_letivo || 'Não informado');
             if (!historico.length) {
                 $('#historico-aluno-lista').html('<div class="text-muted">Nenhuma movimentação encontrada para este aluno.</div>');
                 return;
@@ -1929,8 +2107,19 @@
         }
 
         function abrirHistoricoAluno(alunoId) {
+            var fallbackAluno = null;
+            $('#alunos-body').find('.acao-historico-aluno').each(function () {
+                if (String($(this).data('id')) === String(alunoId)) {
+                    return false;
+                }
+            });
             $('#historico-aluno-lista').html('<div class="text-muted">Carregando histórico...</div>');
             $('#modal-historico-aluno').modal('show');
+            try {
+                var alunosVisiveis = Array.isArray(window.__alunosEscolaVisiveis) ? window.__alunosEscolaVisiveis : [];
+                fallbackAluno = alunosVisiveis.find(function (item) { return String(item.id) === String(alunoId); }) || null;
+                if (fallbackAluno) renderHistoricoAluno({}, fallbackAluno);
+            } catch (_) { }
             return fetch('/api/alunos/' + alunoId + '/historico', { credentials: 'include' })
                 .then(function (resp) {
                     if (!resp.ok) {
@@ -1940,7 +2129,7 @@
                     }
                     return resp.json();
                 })
-                .then(renderHistoricoAluno)
+                .then(function (data) { return renderHistoricoAluno(data, fallbackAluno); })
                 .catch(function (err) {
                     console.error(err);
                     $('#historico-aluno-lista').html('<div class="text-danger">Não foi possível carregar o histórico do aluno.</div>');
@@ -1979,8 +2168,16 @@
                     var resumo = data.resumo || {};
                     var alunos = data.alunos || [];
                     var filtros = data.filtros || {};
+                    window.__alunosEscolaVisiveis = alunos;
 
                     escolaAtualCache = escola;
+                    if (!escolasTransferenciaCache.length) {
+                        window.EscolaContexto.carregarJson('/api/escolas').then(function (listaEscolas) {
+                            escolasTransferenciaCache = Array.isArray(listaEscolas) ? listaEscolas : [];
+                        }).catch(function () {
+                            escolasTransferenciaCache = [];
+                        });
+                    }
                     document.title = 'SETRANE EXPRESS - Alunos - ' + (escola.nome || 'Escola');
                     $('#page-title').text('Alunos - ' + (escola.nome || 'Escola'));
                     $('#page-subtitle').text(window.EscolaContexto.formatarEndereco(escola) || 'Endereco nao informado');
@@ -2014,7 +2211,7 @@
                                     '<div class="aluno-avatar-meta">' +
                                         '<button type="button" class="aluno-link-button acao-historico-aluno" data-id="' + aluno.id + '">' +
                                             '<strong>' + escapeHtml(aluno.nome || ('Aluno #' + aluno.id)) + '</strong>' +
-                                            '<div class="small text-muted">' + escapeHtml(formatarCpf(aluno.cpf)) + '</div>' +
+                                            '<div class="small text-muted">' + escapeHtml(aluno.cpf_masked || formatarCpf(aluno.cpf)) + '</div>' +
                                         '</button>' +
                                     '</div>' +
                                 '</div>' +
@@ -2028,9 +2225,13 @@
                             '<td class="text-right">' +
                                 '<div class="btn-group">' +
                                     '<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
-                                        'Documentos' +
+                                        'Ações' +
                                     '</button>' +
                                     '<div class="dropdown-menu dropdown-menu-right">' +
+                                        '<button type="button" class="dropdown-item acao-editar-aluno" data-aluno-id="' + aluno.id + '">Editar cadastro</button>' +
+                                        '<button type="button" class="dropdown-item acao-solicitar-transporte" data-aluno-id="' + aluno.id + '">Solicitar transporte escolar</button>' +
+                                        '<button type="button" class="dropdown-item acao-transferencia-interna" data-aluno-id="' + aluno.id + '">Transferência interna</button>' +
+                                        '<div class="dropdown-divider"></div>' +
                                         '<button type="button" class="dropdown-item acao-atestado-matricula" data-aluno-id="' + aluno.id + '" data-arquivo="' + escapeHtml(nomeArquivo) + '">Atestado de matrícula</button>' +
                                         '<button type="button" class="dropdown-item acao-carteira-escolar" data-aluno-id="' + aluno.id + '">Carteira escolar</button>' +
                                         '<button type="button" class="dropdown-item acao-ficha-matricula" data-aluno-id="' + aluno.id + '" data-arquivo="' + escapeHtml(nomeArquivo) + '">Ficha de matrícula</button>' +
@@ -2076,12 +2277,169 @@
                 });
             });
 
+            function configurarModalMatriculaNovoCadastro() {
+                $('#modal-matricula-titulo').text('Ficha completa de matrícula');
+                $('#modal-matricula-subtitulo').text('Cadastro escolar, responsáveis, saúde, complementos e geolocalização do aluno.');
+                $('#matricula-aluno-selecionado').html(
+                    '<strong>Cadastro direto da matrícula</strong>' +
+                    '<div class="small text-muted mt-1">Preencha os dados do aluno, vínculo escolar, responsáveis, endereço e geolocalização nesta ficha.</div>'
+                );
+            }
+
+            function configurarModalMatriculaEdicao(aluno) {
+                var nome = (aluno && (aluno.pessoa_nome || aluno.nome)) || 'Aluno';
+                $('#modal-matricula-titulo').text('Editar aluno');
+                $('#modal-matricula-subtitulo').text('Atualize os dados cadastrais, escolares, familiares e de transporte desta matrícula.');
+                $('#matricula-aluno-selecionado').html(
+                    '<strong>' + escapeHtml(nome) + '</strong>' +
+                    '<div class="small text-muted mt-1">Edite o cadastro completo, histórico da matrícula e dados operacionais do transporte dentro desta escola.</div>'
+                );
+            }
+
+            function abrirFichaAluno(alunoId, options) {
+                options = options || {};
+                limparFormularioMatricula();
+                preencherSelectTurmasMatricula(turmaFiltro, anoLetivoFiltro);
+
+                return fetch('/api/escolas/' + escolaId + '/alunos/' + alunoId + '/matricula', {
+                    credentials: 'include'
+                })
+                    .then(function (resp) {
+                        if (!resp.ok) {
+                            return resp.json().then(function (data) {
+                                throw new Error(data && data.error ? data.error : 'Não foi possível carregar os dados do aluno.');
+                            });
+                        }
+                        return resp.json();
+                    })
+                    .then(function (data) {
+                        preencherFormularioMatricula(data || {});
+                        configurarModalMatriculaEdicao(data || {});
+                        $('#modal-matricula-aluno').modal('show');
+                        $('a[href="' + (options.tab || '#tab-matricula') + '"]').tab('show');
+                        return data;
+                    });
+            }
+
             $('#alunos-body').on('click', '.acao-historico-aluno', function () {
                 abrirHistoricoAluno($(this).data('id'));
             });
 
+            $('#alunos-body').on('click', '.acao-editar-aluno', function () {
+                var alunoId = $(this).data('aluno-id');
+                abrirFichaAluno(alunoId, { tab: '#tab-matricula' }).catch(function (err) {
+                    console.error(err);
+                    window.alert(err.message || 'Não foi possível carregar o cadastro do aluno.');
+                });
+            });
+
+            $('#alunos-body').on('click', '.acao-solicitar-transporte', function () {
+                var alunoId = $(this).data('aluno-id');
+                abrirFichaAluno(alunoId, { tab: '#tab-transporte' }).then(function () {
+                    if ($('#matricula-deseja-transporte').is(':checked')) {
+                        calcularTrajetoTransporteAutomatico();
+                        if ($('#matricula-transporte-aprovado').is(':checked')) {
+                            carregarPontosParadaTransporte();
+                        }
+                    }
+                }).catch(function (err) {
+                    console.error(err);
+                    window.alert(err.message || 'Não foi possível abrir o fluxo de transporte escolar.');
+                });
+            });
+
+            $('#alunos-body').on('click', '.acao-transferencia-interna', function () {
+                var alunoId = $(this).data('aluno-id');
+                var aluno = (window.__alunosEscolaVisiveis || []).find(function (item) {
+                    return String(item.id) === String(alunoId);
+                }) || null;
+                if (!aluno) {
+                    window.alert('Não foi possível localizar os dados do aluno para iniciar a transferência.');
+                    return;
+                }
+                abrirModalTransferenciaInterna(aluno);
+            });
+
+            $('#transferencia-escola-destino, #transferencia-ano-letivo').on('change', function () {
+                preencherTurmasDestinoTransferencia($('#transferencia-escola-destino').val(), $('#transferencia-ano-letivo').val(), '');
+            });
+
+            $('#btn-gerar-autorizacao-transferencia').on('click', function () {
+                var alunoId = $('#transferencia-aluno-id').val();
+                var payload = coletarPayloadTransferencia();
+                if (!payload.escola_destino_id || !payload.ano_letivo || !payload.turma_destino) {
+                    window.alert('Preencha escola de destino, ano letivo e turma de destino.');
+                    return;
+                }
+                fetch('/api/escolas/' + escolaId + '/alunos/' + alunoId + '/transferencias-internas', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                    .then(function (resp) {
+                        if (!resp.ok) {
+                            return resp.json().then(function (data) {
+                                throw new Error(data && data.error ? data.error : 'Erro ao registrar a transferência interna.');
+                            });
+                        }
+                        return resp.json();
+                    })
+                    .then(function (data) {
+                        transferenciaAtualSolicitada = data || null;
+                        $('#transferencia-id').val(data.transferencia_id || '');
+                        $('#transferencia-protocolo-info').text('Protocolo ' + (data.protocolo || 'N/I') + ' gerado. Colete a assinatura do responsável e depois conclua a transferência.');
+                        $('#btn-concluir-transferencia').prop('disabled', false);
+                        return abrirPdfEmNovaAba(data.pdf_url, 'autorizacao_transferencia_' + (data.protocolo || 'aluno') + '.pdf');
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        window.alert(err.message || 'Não foi possível gerar a autorização da transferência.');
+                    });
+            });
+
+            $('#btn-concluir-transferencia').on('click', function () {
+                var transferenciaId = $('#transferencia-id').val();
+                var alunoId = $('#transferencia-aluno-id').val();
+                if (!transferenciaId) {
+                    window.alert('Gere a autorização da transferência antes de concluir.');
+                    return;
+                }
+                if (!$('#transferencia-autorizacao-assinada').is(':checked')) {
+                    window.alert('Marque que a autorização foi assinada e recebida para concluir.');
+                    return;
+                }
+                fetch('/api/escolas/' + escolaId + '/alunos/' + alunoId + '/transferencias-internas/' + transferenciaId + '/concluir', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ autorizacao_assinada: true })
+                })
+                    .then(function (resp) {
+                        if (!resp.ok) {
+                            return resp.json().then(function (data) {
+                                throw new Error(data && data.error ? data.error : 'Erro ao concluir a transferência interna.');
+                            });
+                        }
+                        return resp.json();
+                    })
+                    .then(function () {
+                        $('#modal-transferencia-interna').modal('hide');
+                        window.location.reload();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        window.alert(err.message || 'Não foi possível concluir a transferência interna.');
+                    });
+            });
+
+            $('#modal-transferencia-interna').on('hidden.bs.modal', function () {
+                resetarModalTransferencia();
+            });
+
             $('#btn-matricular-aluno').on('click', function () {
                 limparFormularioMatricula();
+                configurarModalMatriculaNovoCadastro();
                 $('#matricula-ano-letivo').val(anoLetivoFiltro || new Date().getFullYear());
                 preencherSelectTurmasMatricula(turmaFiltro, anoLetivoFiltro);
                 $('#matricula-data-matricula').val(new Date().toISOString().slice(0, 10));
