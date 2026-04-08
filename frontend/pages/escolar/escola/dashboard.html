@@ -14,6 +14,19 @@
     <style>
         .school-kpi-value { font-size: 1.75rem; font-weight: 800; line-height: 1; }
         .school-panel { border: 1px solid rgba(255,255,255,.08); }
+        .school-section-title { font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: #6c757d; }
+        .school-chip { display: inline-flex; align-items: center; padding: .35rem .6rem; border-radius: 999px; margin: 0 .35rem .35rem 0; font-size: .78rem; font-weight: 600; }
+        .school-alert-card { border-left: 4px solid transparent; }
+        .school-alert-card.alert-danger-soft { border-left-color: #dc3545; }
+        .school-alert-card.alert-warning-soft { border-left-color: #ffc107; }
+        .school-alert-card.alert-info-soft { border-left-color: #17a2b8; }
+        .school-alert-card.alert-primary-soft { border-left-color: #1b68ff; }
+        .school-list-compact li { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: .65rem 0; border-bottom: 1px solid rgba(0,0,0,.06); }
+        .school-list-compact li:last-child { border-bottom: 0; }
+        .school-metric-label { color: #6c757d; font-size: .8rem; }
+        .school-progress-sm { height: .55rem; }
+        .school-avatar-mini { width: 34px; height: 34px; object-fit: cover; border-radius: 50%; }
+        .school-action-card { min-height: 100%; }
     </style>
 </head>
 <body class="vertical dark">
@@ -80,6 +93,120 @@
                         </div>
 
                         <div class="row">
+                            <div class="col-lg-12 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Resumo executivo da unidade</strong>
+                                        <span class="small text-muted">Secretaria, pedagógico, orientação e operação</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3 mb-3">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="school-section-title mb-2">Secretaria escolar</div>
+                                                    <div class="school-metric-label">Sem turma</div>
+                                                    <div class="h4 mb-2" id="sec-sem-turma">0</div>
+                                                    <div class="school-metric-label">Sem geolocalização</div>
+                                                    <div class="h5 mb-2" id="sec-sem-geo">0</div>
+                                                    <div class="school-metric-label">Sem CPF</div>
+                                                    <div class="h5 mb-0" id="sec-sem-cpf">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="school-section-title mb-2">Contato e vínculo</div>
+                                                    <div class="school-metric-label">Sem responsável</div>
+                                                    <div class="h4 mb-2" id="sec-sem-responsavel">0</div>
+                                                    <div class="school-metric-label">Sem telefone</div>
+                                                    <div class="h5 mb-2" id="sec-sem-contato">0</div>
+                                                    <div class="school-metric-label">Sem turno</div>
+                                                    <div class="h5 mb-0" id="sec-sem-turno">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="school-section-title mb-2">Pedagógico</div>
+                                                    <div class="school-metric-label">Turmas sem alunos</div>
+                                                    <div class="h4 mb-2" id="ped-turmas-vazias">0</div>
+                                                    <div class="school-metric-label">Multisseriadas</div>
+                                                    <div class="h5 mb-2" id="ped-multisseriadas">0</div>
+                                                    <div class="school-metric-label">Com transporte</div>
+                                                    <div class="h5 mb-0" id="ped-turmas-transporte">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3 mb-3">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="school-section-title mb-2">Inclusão e apoio</div>
+                                                    <div class="school-metric-label">Alunos com deficiência</div>
+                                                    <div class="h4 mb-2" id="apoio-deficiencia">0</div>
+                                                    <div class="school-metric-label">Aptos ao transporte</div>
+                                                    <div class="h5 mb-2" id="apoio-transporte">0</div>
+                                                    <div class="school-metric-label">Zoneamentos vinculados</div>
+                                                    <div class="h5 mb-0" id="apoio-zoneamentos">0</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Painel de atenção imediata</strong>
+                                        <span class="small text-muted">Itens que pedem ação da escola</span>
+                                    </div>
+                                    <div class="card-body" id="school-alerts-body">
+                                        <div class="text-muted">Carregando alertas...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Ações rápidas do módulo</strong>
+                                        <span class="small text-muted">Atalhos de gestão</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <div class="border rounded p-3 school-action-card">
+                                                    <div class="school-section-title mb-2">Secretaria</div>
+                                                    <h6 class="mb-1">Matrículas e ajustes</h6>
+                                                    <p class="text-muted small mb-3">Atualize cadastros, enturmação e dados obrigatórios da unidade.</p>
+                                                    <a href="#" id="quick-link-alunos" class="btn btn-sm btn-primary">Abrir alunos</a>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="border rounded p-3 school-action-card">
+                                                    <div class="school-section-title mb-2">Pedagógico</div>
+                                                    <h6 class="mb-1">Turmas e organização</h6>
+                                                    <p class="text-muted small mb-3">Revise turmas, capacidade, séries e estrutura pedagógica.</p>
+                                                    <a href="#" id="quick-link-turmas" class="btn btn-sm btn-outline-primary">Abrir turmas</a>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="border rounded p-3 school-action-card">
+                                                    <div class="school-section-title mb-2">Território</div>
+                                                    <h6 class="mb-1">Zoneamentos da escola</h6>
+                                                    <p class="text-muted small mb-3">Verifique cobertura territorial e vínculo com a unidade.</p>
+                                                    <a href="/zoneamentos" class="btn btn-sm btn-outline-secondary">Abrir zoneamentos</a>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <div class="border rounded p-3 school-action-card">
+                                                    <div class="school-section-title mb-2">Operação</div>
+                                                    <h6 class="mb-1">Pontos de parada</h6>
+                                                    <p class="text-muted small mb-3">Conferir pontos vinculáveis para transporte escolar.</p>
+                                                    <a href="/pontos-parada" class="btn btn-sm btn-outline-secondary">Abrir pontos</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="col-lg-6 mb-4">
                                 <div class="card shadow h-100">
                                     <div class="card-header d-flex align-items-center justify-content-between">
@@ -120,6 +247,86 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="col-lg-4 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header">
+                                        <strong>Distribuição por etapa</strong>
+                                    </div>
+                                    <div class="card-body" id="school-etapas-body">
+                                        <div class="text-muted">Carregando...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header">
+                                        <strong>Distribuição por turno</strong>
+                                    </div>
+                                    <div class="card-body" id="school-turnos-body">
+                                        <div class="text-muted">Carregando...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header">
+                                        <strong>Distribuição por modalidade</strong>
+                                    </div>
+                                    <div class="card-body" id="school-modalidades-body">
+                                        <div class="text-muted">Carregando...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Secretaria escolar</strong>
+                                        <span class="small text-muted">Conferência cadastral da unidade</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-unstyled school-list-compact mb-0" id="secretaria-list-body">
+                                            <li><span class="text-muted">Carregando indicadores...</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Orientação e acompanhamento</strong>
+                                        <span class="small text-muted">Inclusão, contato e suporte</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-unstyled school-list-compact mb-0" id="orientacao-list-body">
+                                            <li><span class="text-muted">Carregando indicadores...</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Alunos em atenção administrativa</strong>
+                                        <span class="small text-muted">Recortes por cadastro incompleto ou vínculo sensível</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0">
+                                                <thead class="thead-light">
+                                                    <tr><th>Aluno</th><th>Turma</th><th>Responsável</th><th>Contato</th><th>Mapa</th><th>Status</th></tr>
+                                                </thead>
+                                                <tbody id="school-attention-body">
+                                                    <tr><td colspan="6" class="text-center text-muted py-4">Carregando alunos em atenção...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -151,6 +358,65 @@
             }).join('');
         }
 
+        function humanizarChave(value) {
+            var raw = String(value || '').replace(/[_-]+/g, ' ').trim();
+            if (!raw) return 'Não informado';
+            return raw.charAt(0).toUpperCase() + raw.slice(1);
+        }
+
+        function renderDistribution(hostId, items, total) {
+            var host = document.getElementById(hostId);
+            if (!host) return;
+            if (!items || !items.length) {
+                host.innerHTML = '<div class="text-muted">Sem dados suficientes.</div>';
+                return;
+            }
+            host.innerHTML = items.slice(0, 6).map(function (item) {
+                var valor = Number(item.total || 0);
+                var percent = total ? Math.max(4, Math.round((valor / total) * 100)) : 0;
+                return '' +
+                    '<div class="mb-3">' +
+                        '<div class="d-flex justify-content-between mb-1">' +
+                            '<span>' + humanizarChave(item.chave) + '</span>' +
+                            '<strong>' + valor + '</strong>' +
+                        '</div>' +
+                        '<div class="progress school-progress-sm">' +
+                            '<div class="progress-bar" role="progressbar" style="width:' + percent + '%"></div>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function renderAlerts(alertas) {
+            var host = document.getElementById('school-alerts-body');
+            if (!host) return;
+            if (!alertas || !alertas.length) {
+                host.innerHTML = '<div class="text-muted">Nenhum alerta crítico identificado com a base atual.</div>';
+                return;
+            }
+            host.innerHTML = alertas.map(function (alerta) {
+                var tipo = alerta.tipo || 'info';
+                return '' +
+                    '<div class="border rounded p-3 mb-3 school-alert-card alert-' + tipo + '-soft">' +
+                        '<div class="d-flex align-items-start justify-content-between">' +
+                            '<div>' +
+                                '<div class="font-weight-bold mb-1">' + alerta.titulo + '</div>' +
+                                '<div class="text-muted small">' + alerta.detalhe + '</div>' +
+                            '</div>' +
+                            '<span class="badge badge-light text-uppercase">' + tipo + '</span>' +
+                        '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function renderSimpleList(hostId, items) {
+            var host = document.getElementById(hostId);
+            if (!host) return;
+            host.innerHTML = items.map(function (item) {
+                return '<li><span>' + item.label + '</span><strong>' + item.value + '</strong></li>';
+            }).join('');
+        }
+
         function renderTurmas(turmas) {
             var tbody = document.getElementById('school-turmas-body');
             if (!tbody) return;
@@ -159,7 +425,12 @@
                 return;
             }
             tbody.innerHTML = turmas.slice(0, 8).map(function (turma) {
-                return '<tr><td><strong>' + (turma.turma || 'Sem turma') + '</strong></td><td>' + (turma.ano_letivo || ' - ') + '</td><td>' + (turma.total_alunos || 0) + '</td><td>' + (turma.total_apto_transporte || 0) + '</td></tr>';
+                var ocupacao = Number(turma.total_alunos || 0);
+                var capacidade = Number(turma.capacidade || turma.limite_planejado_alunos || 0);
+                var subtitulo = [];
+                if (turma.turno) subtitulo.push(turma.turno);
+                if (turma.etapa) subtitulo.push(humanizarChave(turma.etapa));
+                return '<tr><td><strong>' + (turma.turma || 'Sem turma') + '</strong><div class="small text-muted">' + (subtitulo.join(' • ') || 'Sem detalhamento') + '</div></td><td>' + (turma.ano_letivo || ' - ') + '</td><td>' + ocupacao + (capacidade ? ' / ' + capacidade : '') + '</td><td>' + (turma.total_apto_transporte || 0) + '</td></tr>';
             }).join('');
         }
 
@@ -171,7 +442,33 @@
                 return;
             }
             tbody.innerHTML = alunos.slice(0, 8).map(function (aluno) {
-                return '<tr><td><strong>' + (aluno.nome || ('Aluno #' + aluno.id)) + '</strong></td><td>' + (aluno.turma_escola || aluno.turma || ' - ') + '</td><td>' + (aluno.ano_letivo || ' - ') + '</td><td>' + (aluno.turno || ' - ') + '</td></tr>';
+                var foto = aluno.foto_url || '../../../assets/icons/user.png';
+                return '<tr><td><div class="d-flex align-items-center"><img src="' + foto + '" class="school-avatar-mini mr-2" alt="Aluno"><div><strong>' + (aluno.nome || ('Aluno #' + aluno.id)) + '</strong><div class="small text-muted">' + (aluno.bairro || 'Bairro não informado') + '</div></div></div></td><td>' + (aluno.turma_escola || aluno.turma || ' - ') + '</td><td>' + (aluno.ano_letivo || ' - ') + '</td><td>' + (aluno.turno || ' - ') + '</td></tr>';
+            }).join('');
+        }
+
+        function renderAttentionTable(alunos) {
+            var tbody = document.getElementById('school-attention-body');
+            if (!tbody) return;
+            if (!alunos || !alunos.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Nenhum aluno em atenção administrativa.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = alunos.slice(0, 12).map(function (aluno) {
+                var situacoes = [];
+                if (!aluno.turma_escola && !aluno.turma) situacoes.push('Sem turma');
+                if (!aluno.responsavel) situacoes.push('Sem responsável');
+                if (!aluno.telefone_responsavel) situacoes.push('Sem contato');
+                if (!aluno.localizacao_geojson || !aluno.localizacao_geojson.coordinates) situacoes.push('Sem mapa');
+                if (!aluno.cpf) situacoes.push('Sem CPF');
+                return '<tr>' +
+                    '<td><strong>' + (aluno.nome || ('Aluno #' + aluno.id)) + '</strong></td>' +
+                    '<td>' + (aluno.turma_escola || aluno.turma || ' - ') + '</td>' +
+                    '<td>' + (aluno.responsavel || 'Não informado') + '</td>' +
+                    '<td>' + (aluno.telefone_responsavel || 'Não informado') + '</td>' +
+                    '<td>' + ((aluno.localizacao_geojson && aluno.localizacao_geojson.coordinates) ? 'OK' : 'Pendente') + '</td>' +
+                    '<td>' + (situacoes.length ? situacoes.join(' • ') : (aluno.status || 'Regular')) + '</td>' +
+                '</tr>';
             }).join('');
         }
 
@@ -179,11 +476,17 @@
             var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
             $('#link-turmas, #link-ver-turmas').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'turmas'));
             $('#link-alunos, #link-ver-alunos').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'));
+            $('#quick-link-turmas').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'turmas'));
+            $('#quick-link-alunos').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'));
 
             window.EscolaContexto.carregarDashboard(escolaId)
                 .then(function (data) {
                     var escola = data.escola || {};
                     var resumo = data.resumo || {};
+                    var indicadores = data.indicadores || {};
+                    var pendencias = indicadores.pendencias_secretaria || {};
+                    var metricas = indicadores.metricas_pedagogicas || {};
+                    var distribuicoes = indicadores.distribuicoes || {};
                     document.title = 'SETRANE EXPRESS - ' + (escola.nome || 'Escola');
                     $('#school-title').text(escola.nome || 'Dashboard da escola');
                     $('#school-subtitle').text('INEP: ' + (escola.codigo_inep || 'Nao informado'));
@@ -193,9 +496,42 @@
                     $('#kpi-turmas').text(resumo.total_turmas || 0);
                     $('#kpi-anos-letivos').text(resumo.total_anos_letivos || 0);
                     $('#kpi-apto-transporte').text(resumo.total_alunos_apto_transporte || 0);
+                    $('#sec-sem-turma').text(pendencias.sem_turma || 0);
+                    $('#sec-sem-geo').text(pendencias.sem_geolocalizacao || 0);
+                    $('#sec-sem-cpf').text(pendencias.sem_cpf || 0);
+                    $('#sec-sem-responsavel').text(pendencias.sem_responsavel || 0);
+                    $('#sec-sem-contato').text(pendencias.sem_contato || 0);
+                    $('#sec-sem-turno').text(pendencias.sem_turno || 0);
+                    $('#ped-turmas-vazias').text(metricas.turmas_sem_alunos || 0);
+                    $('#ped-multisseriadas').text(metricas.turmas_multisseriadas || 0);
+                    $('#ped-turmas-transporte').text(metricas.turmas_com_transporte || 0);
+                    $('#apoio-deficiencia').text(metricas.alunos_com_deficiencia || 0);
+                    $('#apoio-transporte').text(resumo.total_alunos_apto_transporte || 0);
+                    $('#apoio-zoneamentos').text((escola.zoneamentos || []).length || 0);
                     renderZoneamentos(escola.zoneamentos || []);
                     renderTurmas(data.turmas || []);
-                    renderAlunos(data.alunos || []);
+                    renderAlunos(data.alunos_recentes || data.alunos || []);
+                    renderAlerts(indicadores.alertas || []);
+                    renderDistribution('school-etapas-body', distribuicoes.etapas || [], resumo.total_matriculas || 0);
+                    renderDistribution('school-turnos-body', distribuicoes.turnos || [], resumo.total_matriculas || 0);
+                    renderDistribution('school-modalidades-body', distribuicoes.modalidades || [], resumo.total_matriculas || 0);
+                    renderSimpleList('secretaria-list-body', [
+                        { label: 'Cadastros sem turma definida', value: pendencias.sem_turma || 0 },
+                        { label: 'Cadastros sem geolocalização', value: pendencias.sem_geolocalizacao || 0 },
+                        { label: 'Cadastros sem CPF', value: pendencias.sem_cpf || 0 },
+                        { label: 'Cadastros sem turno', value: pendencias.sem_turno || 0 },
+                        { label: 'Cadastros sem contato', value: pendencias.sem_contato || 0 }
+                    ]);
+                    renderSimpleList('orientacao-list-body', [
+                        { label: 'Alunos com deficiência/condição', value: metricas.alunos_com_deficiencia || 0 },
+                        { label: 'Cadastros sem responsável principal', value: pendencias.sem_responsavel || 0 },
+                        { label: 'Alunos aptos ao transporte', value: resumo.total_alunos_apto_transporte || 0 },
+                        { label: 'Turmas com alunos aptos ao transporte', value: metricas.turmas_com_transporte || 0 },
+                        { label: 'Turmas multisseriadas', value: metricas.turmas_multisseriadas || 0 }
+                    ]);
+                    renderAttentionTable((data.alunos || []).filter(function (aluno) {
+                        return !aluno.turma_escola || !aluno.responsavel || !aluno.telefone_responsavel || !aluno.cpf || !(aluno.localizacao_geojson && aluno.localizacao_geojson.coordinates);
+                    }));
                 })
                 .catch(function () {
                     $('#school-title').text('Erro ao carregar escola');

@@ -17,6 +17,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
+let alunosColumnSupportCache = null;
+let alunosColumnSupportCacheAt = 0;
+const ALUNOS_COLUMN_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // Multi-tenant security: tenantId MUST come from validated JWT/cookie.
 router.use(authMiddleware, tenantMiddleware);
@@ -118,6 +121,41 @@ async function queryWithOptionalTenant(clientOrPool, sqlTenant, paramsTenant, sq
     }
 }
 
+async function getAlunosColumnSupport() {
+    const now = Date.now();
+    if (alunosColumnSupportCache && (now - alunosColumnSupportCacheAt) < ALUNOS_COLUMN_CACHE_TTL_MS) {
+        return alunosColumnSupportCache;
+    }
+
+    const tables = ['alunos_municipais', 'alunos_escolas', 'escolas'];
+    const { rows } = await pool.query(
+        `
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = ANY($1::text[])
+        `,
+        [tables]
+    );
+
+    const grouped = {};
+    for (const row of rows || []) {
+        grouped[row.table_name] = grouped[row.table_name] || new Set();
+        grouped[row.table_name].add(row.column_name);
+    }
+
+    alunosColumnSupportCache = {
+        alunosMunicipaisTenantId: grouped.alunos_municipais?.has('tenant_id') || false,
+        alunosMunicipaisRotaExclusiva: grouped.alunos_municipais?.has('rota_exclusiva') || false,
+        alunosMunicipaisCarroAdaptado: grouped.alunos_municipais?.has('carro_adaptado') || false,
+        alunosMunicipaisLocalizacao: grouped.alunos_municipais?.has('localizacao') || false,
+        alunosEscolasTenantId: grouped.alunos_escolas?.has('tenant_id') || false,
+        escolasTenantId: grouped.escolas?.has('tenant_id') || false,
+    };
+    alunosColumnSupportCacheAt = now;
+    return alunosColumnSupportCache;
+}
+
 
 function normalizeCpf(cpf) {
     if (!cpf) return null;
@@ -144,6 +182,11 @@ function canViewSensitive(req) {
         return true;
     }
     return false;
+}
+
+function shiftSqlPlaceholders(sql, offset) {
+    if (!offset) return sql;
+    return String(sql).replace(/\$(\d+)/g, (_, num) => `$${Math.max(1, Number(num) - offset)}`);
 }
 
 function maskCpf(cpf) {
@@ -412,6 +455,7 @@ function encontrarEscolaPorUnidade(unidadePlanilha, escolasMap) {
 router.get("/", async (req, res) => {
     try {
         const tenantId = requireTenantId(req);
+        const columnSupport = await getAlunosColumnSupport();
 
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const limitReq = parseInt(req.query.limit, 10) || 20;
@@ -428,16 +472,34 @@ router.get("/", async (req, res) => {
         const qDigits = qRaw ? String(qRaw).replace(/\D/g, "") : "";
         const qLikeDigits = qDigits ? `%${qDigits}%` : null;
 
-        const whereParts = ["a.tenant_id = $1"];
-        const params = [tenantId];
-        let idx = 2;
+        const params = [];
+        let idx = 1;
+        const whereParts = [];
+
+        if (columnSupport.alunosMunicipaisTenantId) {
+            whereParts.push("a.tenant_id = $1");
+            params.push(tenantId);
+            idx = 2;
+        }
 
         // Filtros extras: somente alunos com transporte exclusivo / carro adaptado
         // (booleanos na query) ?only_exclusivo=1  ?only_adaptado=1
         const onlyExclusivo = parseBoolQuery(req.query.only_exclusivo);
         const onlyAdaptado = parseBoolQuery(req.query.only_adaptado);
-        if (onlyExclusivo) whereParts.push("COALESCE(a.rota_exclusiva, false) = true");
-        if (onlyAdaptado) whereParts.push("COALESCE(a.carro_adaptado, false) = true");
+        if (onlyExclusivo) {
+            if (columnSupport.alunosMunicipaisRotaExclusiva) {
+                whereParts.push("COALESCE(a.rota_exclusiva, false) = true");
+            } else {
+                whereParts.push("false");
+            }
+        }
+        if (onlyAdaptado) {
+            if (columnSupport.alunosMunicipaisCarroAdaptado) {
+                whereParts.push("COALESCE(a.carro_adaptado, false) = true");
+            } else {
+                whereParts.push("false");
+            }
+        }
 
         if (qLikeRaw || qLikeNorm || qLikeDigits) {
             const parts = [];
@@ -494,7 +556,7 @@ router.get("/", async (req, res) => {
             whereParts.push(`(${parts.join(" OR ")})`);
         }
 
-        const whereSql = `WHERE ${whereParts.join(" AND ")}`;
+        const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
 
         // Pega apenas 1 vínculo escola/ano por aluno (o mais recente), evitando duplicar alunos na listagem
         // LISTAGEM PADRÃO = alunos municipais
@@ -504,12 +566,13 @@ router.get("/", async (req, res) => {
                 SELECT ae.escola_id, ae.ano_letivo, ae.turma, ae.atualizado_em
                 FROM alunos_escolas ae
                 WHERE ae.aluno_id = a.id
-                  AND ae.tenant_id = a.tenant_id
+                  ${columnSupport.alunosEscolasTenantId && columnSupport.alunosMunicipaisTenantId ? 'AND ae.tenant_id = a.tenant_id' : ''}
                 ORDER BY ae.ano_letivo DESC NULLS LAST, ae.atualizado_em DESC NULLS LAST, ae.id DESC
                 LIMIT 1
             ) ae ON TRUE
             LEFT JOIN escolas e
               ON e.id = ae.escola_id
+              ${columnSupport.escolasTenantId && columnSupport.alunosMunicipaisTenantId ? 'AND e.tenant_id = a.tenant_id' : ''}
         `;
 
         // COUNT correto (1 por aluno)
@@ -544,9 +607,9 @@ router.get("/", async (req, res) => {
               a.responsavel,
               a.telefone_responsavel,
               a.deficiencia,
-              a.rota_exclusiva,
-	              a.carro_adaptado,
-              ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson,
+              ${columnSupport.alunosMunicipaisRotaExclusiva ? 'a.rota_exclusiva' : 'false AS rota_exclusiva'},
+              ${columnSupport.alunosMunicipaisCarroAdaptado ? 'a.carro_adaptado' : 'false AS carro_adaptado'},
+              ${columnSupport.alunosMunicipaisLocalizacao ? 'ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson' : 'NULL::json AS localizacao_geojson'},
               a.codigo_inep,
               ae.ano_letivo,
               ae.turma AS turma_escola,
@@ -597,6 +660,7 @@ router.get("/", async (req, res) => {
 router.get("/estaduais", async (req, res) => {
     try {
         const tenantId = requireTenantId(req);
+        const columnSupport = await getAlunosColumnSupport();
 
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const limitReq = parseInt(req.query.limit, 10) || 20;
@@ -611,9 +675,15 @@ router.get("/estaduais", async (req, res) => {
         const qDigits = qRaw ? String(qRaw).replace(/\D/g, "") : "";
         const qLikeDigits = qDigits ? `%${qDigits}%` : null;
 
-        const whereParts = ["a.tenant_id = $1"];
-        const params = [tenantId];
-        let idx = 2;
+        const params = [];
+        let idx = 1;
+        const whereParts = [];
+
+        if (columnSupport.alunosMunicipaisTenantId) {
+            whereParts.push("a.tenant_id = $1");
+            params.push(tenantId);
+            idx = 2;
+        }
 
         if (qLikeRaw || qLikeNorm || qLikeDigits) {
             const parts = [];
@@ -657,7 +727,7 @@ router.get("/estaduais", async (req, res) => {
             whereParts.push(`(${parts.join(" OR ")})`);
         }
 
-        const whereSql = `WHERE ${whereParts.join(" AND ")}`;
+        const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
 
         const baseFrom = `FROM alunos_municipais a`;
 
@@ -683,10 +753,10 @@ router.get("/estaduais", async (req, res) => {
               a.filiacao_2,
               a.responsavel,
               a.deficiencia,
-              a.carro_adaptado,
+              ${columnSupport.alunosMunicipaisCarroAdaptado ? 'a.carro_adaptado' : 'false AS carro_adaptado'},
               a.transporte_escolar_publico_utiliza,
               a.transporte_apto,
-              ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson
+              ${columnSupport.alunosMunicipaisLocalizacao ? 'ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson' : 'NULL::json AS localizacao_geojson'}
             ${baseFrom}
             ${whereSql}
             ORDER BY a.pessoa_nome ASC, a.id ASC
@@ -1495,8 +1565,7 @@ router.post("/estadual-manual", async (req, res) => {
 router.get("/localizacoes", async (req, res) => {
     try {
         const tenantId = requireTenantId(req);
-
-        const sql = `
+        const sqlTenant = `
             SELECT
               a.id,
               a.pessoa_nome,
@@ -1509,10 +1578,25 @@ router.get("/localizacoes", async (req, res) => {
              AND ae.tenant_id = a.tenant_id
             LEFT JOIN escolas e
               ON e.id = ae.escola_id
+             AND e.tenant_id = a.tenant_id
             WHERE a.localizacao IS NOT NULL
               AND a.tenant_id = $1;
         `;
-        const result = await pool.query(sql, [tenantId]);
+        const sqlNoTenant = `
+            SELECT
+              a.id,
+              a.pessoa_nome,
+              a.unidade_ensino,
+              e.nome AS escola_nome,
+              ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson
+            FROM alunos_municipais a
+            LEFT JOIN alunos_escolas ae
+              ON ae.aluno_id = a.id
+            LEFT JOIN escolas e
+              ON e.id = ae.escola_id
+            WHERE a.localizacao IS NOT NULL;
+        `;
+        const result = await queryWithOptionalTenant(pool, sqlTenant, [tenantId], sqlNoTenant, []);
         return res.json(result.rows || []);
     } catch (err) {
         console.error("Erro ao listar localizações de alunos:", err);
@@ -1537,6 +1621,7 @@ router.get("/localizacoes", async (req, res) => {
 router.get("/mapa", async (req, res) => {
     try {
         const tenantId = requireTenantId(req);
+        const columnSupport = await getAlunosColumnSupport();
 
         const escolaIdRaw = req.query.escola_id;
         const transporte = String(req.query.transporte || "").trim();
@@ -1558,12 +1643,30 @@ router.get("/mapa", async (req, res) => {
             ? Number(String(escolaIdRaw).trim())
             : null;
 
-        const where = ["a.tenant_id = $1"]; // sempre
-        const params = [tenantId];
-        let idx = 2;
+        const where = [];
+        const params = [];
+        let idx = 1;
 
-        if (onlyExclusivo) where.push("COALESCE(a.rota_exclusiva, false) = true");
-        if (onlyAdaptado) where.push("COALESCE(a.carro_adaptado, false) = true");
+        if (columnSupport.alunosMunicipaisTenantId) {
+            where.push("a.tenant_id = $1");
+            params.push(tenantId);
+            idx = 2;
+        }
+
+        if (onlyExclusivo) {
+            if (columnSupport.alunosMunicipaisRotaExclusiva) {
+                where.push("COALESCE(a.rota_exclusiva, false) = true");
+            } else {
+                where.push("false");
+            }
+        }
+        if (onlyAdaptado) {
+            if (columnSupport.alunosMunicipaisCarroAdaptado) {
+                where.push("COALESCE(a.carro_adaptado, false) = true");
+            } else {
+                where.push("false");
+            }
+        }
 
         // localização
         if (soComLocalizacao === "1" || soComLocalizacao.toLowerCase() === "true") {
@@ -1592,9 +1695,6 @@ router.get("/mapa", async (req, res) => {
         }
 
         // filtros extras
-        if (onlyExclusivo) where.push("COALESCE(a.rota_exclusiva, false) = true");
-        if (onlyAdaptado) where.push("COALESCE(a.carro_adaptado, false) = true");
-
         // turno (usa turno_simplificado: MAT | VESP | NOT | INT)
         if (turno) {
             const t = String(turno).trim().toUpperCase();
@@ -1613,14 +1713,14 @@ router.get("/mapa", async (req, res) => {
                 SELECT 1
                 FROM alunos_pontos ap
                 WHERE ap.aluno_id = a.id
-                  AND ap.tenant_id = a.tenant_id
+                  ${columnSupport.alunosMunicipaisTenantId ? 'AND ap.tenant_id = a.tenant_id' : ''}
             )`);
         } else if (ponto === "sem_ponto") {
             where.push(`NOT EXISTS (
                 SELECT 1
                 FROM alunos_pontos ap
                 WHERE ap.aluno_id = a.id
-                  AND ap.tenant_id = a.tenant_id
+                  ${columnSupport.alunosMunicipaisTenantId ? 'AND ap.tenant_id = a.tenant_id' : ''}
             )`);
         }
 
@@ -1632,30 +1732,30 @@ router.get("/mapa", async (req, res) => {
                 SELECT 1
                 FROM rotas_escolares_alunos rea
                 WHERE rea.aluno_id = a.id
-                  AND rea.tenant_id = a.tenant_id
+                  ${columnSupport.alunosMunicipaisTenantId ? 'AND rea.tenant_id = a.tenant_id' : ''}
             )`);
         } else if (rota === "sem_rota") {
             where.push(`NOT EXISTS (
                 SELECT 1
                 FROM rotas_escolares_alunos rea
                 WHERE rea.aluno_id = a.id
-                  AND rea.tenant_id = a.tenant_id
+                  ${columnSupport.alunosMunicipaisTenantId ? 'AND rea.tenant_id = a.tenant_id' : ''}
             )`);
         }
-        const sql = `
+        const sqlTenant = `
             SELECT
               a.id,
               a.pessoa_nome,
               a.unidade_ensino,
               a.transporte_apto,
               a.deficiencia,
-              a.rota_exclusiva,
-              a.carro_adaptado,
+              ${columnSupport.alunosMunicipaisRotaExclusiva ? 'a.rota_exclusiva' : 'false AS rota_exclusiva'},
+              ${columnSupport.alunosMunicipaisCarroAdaptado ? 'a.carro_adaptado' : 'false AS carro_adaptado'},
               EXISTS (
                 SELECT 1
                 FROM rotas_escolares_alunos rea
                 WHERE rea.aluno_id = a.id
-                  AND rea.tenant_id = a.tenant_id
+                  ${columnSupport.alunosMunicipaisTenantId ? 'AND rea.tenant_id = a.tenant_id' : ''}
               ) AS tem_rota,
               e.id AS escola_id,
               e.nome AS escola_nome,
@@ -1670,25 +1770,76 @@ router.get("/mapa", async (req, res) => {
              AND ae.tenant_id = a.tenant_id
             LEFT JOIN escolas e
               ON e.id = ae.escola_id
+             AND e.tenant_id = a.tenant_id
             LEFT JOIN alunos_pontos ap
               ON ap.aluno_id = a.id
              AND ap.tenant_id = a.tenant_id
-            WHERE ${where.join(" AND ")}
+            ${where.length ? `WHERE ${where.join(" AND ")}` : ''}
             GROUP BY
               a.id,
               a.pessoa_nome,
               a.unidade_ensino,
               a.transporte_apto,
               a.deficiencia,
-              a.rota_exclusiva,
-              a.carro_adaptado,
+              ${columnSupport.alunosMunicipaisRotaExclusiva ? 'a.rota_exclusiva,' : ''}
+              ${columnSupport.alunosMunicipaisCarroAdaptado ? 'a.carro_adaptado,' : ''}
+              e.id,
+              e.nome,
+              a.localizacao
+            ORDER BY a.pessoa_nome ASC, a.id ASC;
+        `;
+        const whereNoTenant = where.map((clause) => clause
+            .replaceAll('a.tenant_id = $1', '1=1')
+            .replaceAll('AND ap.tenant_id = a.tenant_id', '')
+            .replaceAll('AND rea.tenant_id = a.tenant_id', '')
+        ).filter((clause) => clause && clause !== '1=1');
+        const needsShift = columnSupport.alunosMunicipaisTenantId ? 1 : 0;
+        const whereNoTenantShifted = whereNoTenant.map((clause) => shiftSqlPlaceholders(clause, needsShift));
+        const paramsNoTenant = needsShift ? params.slice(1) : params.slice();
+        const sqlNoTenant = `
+            SELECT
+              a.id,
+              a.pessoa_nome,
+              a.unidade_ensino,
+              a.transporte_apto,
+              a.deficiencia,
+              ${columnSupport.alunosMunicipaisRotaExclusiva ? 'a.rota_exclusiva' : 'false AS rota_exclusiva'},
+              ${columnSupport.alunosMunicipaisCarroAdaptado ? 'a.carro_adaptado' : 'false AS carro_adaptado'},
+              EXISTS (
+                SELECT 1
+                FROM rotas_escolares_alunos rea
+                WHERE rea.aluno_id = a.id
+              ) AS tem_rota,
+              e.id AS escola_id,
+              e.nome AS escola_nome,
+              ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson,
+              MAX(a.turno_simplificado) AS turno_simplificado,
+              MAX(ap.ponto_id) AS ponto_id,
+              MAX(ap.associado_em) AS ponto_associado_em,
+              COALESCE(array_remove(array_agg(DISTINCT ap.ponto_id), NULL), '{}'::int[]) AS ponto_ids
+            FROM alunos_municipais a
+            LEFT JOIN alunos_escolas ae
+              ON ae.aluno_id = a.id
+            LEFT JOIN escolas e
+              ON e.id = ae.escola_id
+            LEFT JOIN alunos_pontos ap
+              ON ap.aluno_id = a.id
+            ${whereNoTenantShifted.length ? `WHERE ${whereNoTenantShifted.join(" AND ")}` : ''}
+            GROUP BY
+              a.id,
+              a.pessoa_nome,
+              a.unidade_ensino,
+              a.transporte_apto,
+              a.deficiencia,
+              ${columnSupport.alunosMunicipaisRotaExclusiva ? 'a.rota_exclusiva,' : ''}
+              ${columnSupport.alunosMunicipaisCarroAdaptado ? 'a.carro_adaptado,' : ''}
               e.id,
               e.nome,
               a.localizacao
             ORDER BY a.pessoa_nome ASC, a.id ASC;
         `;
 
-        const result = await pool.query(sql, params);
+        const result = await queryWithOptionalTenant(pool, sqlTenant, params, sqlNoTenant, paramsNoTenant);
         const rows = result.rows || [];
 
         // compat: se front solicitar, devolve stats junto (sem quebrar quem espera array)
@@ -1735,8 +1886,7 @@ router.get("/mapa", async (req, res) => {
 router.get("/geo/localizacoes", async (req, res) => {
     try {
         const tenantId = requireTenantId(req);
-
-        const sql = `
+        const sqlTenant = `
             SELECT
               a.id,
               a.pessoa_nome,
@@ -1755,7 +1905,25 @@ router.get("/geo/localizacoes", async (req, res) => {
             WHERE a.localizacao IS NOT NULL
               AND a.tenant_id = $1;
         `;
-        const result = await pool.query(sql, [tenantId]);
+        const sqlNoTenant = `
+            SELECT
+              a.id,
+              a.pessoa_nome,
+              a.unidade_ensino,
+              a.id_pessoa,
+              a.transporte_escolar_publico_utiliza,
+              a.transporte_apto,
+              a.status,
+              a.zona,
+              a.bairro,
+              a.rua,
+              a.numero_pessoa_endereco,
+              ST_AsGeoJSON(a.localizacao)::json AS geom,
+              a.dentro_municipio
+            FROM alunos_municipais a
+            WHERE a.localizacao IS NOT NULL;
+        `;
+        const result = await queryWithOptionalTenant(pool, sqlTenant, [tenantId], sqlNoTenant, []);
         const rows = result.rows || [];
 
         const features = rows.map((row) => ({
@@ -1812,10 +1980,15 @@ router.get("/geo/municipio", async (req, res) => {
         try {
             ({ rows } = await pool.query(sql, [tenantId]));
         } catch (err) {
+            if (err && err.code === "42P01") {
+                return res.status(404).json({
+                    error: "Território municipal ainda não cadastrado."
+                });
+            }
             // Se a tabela ainda não é multi-tenant, NÃO fazemos fallback para evitar vazamento.
             if (err && err.code === "42703") {
-                return res.status(500).json({
-                    error: "territorios_municipios precisa ter coluna tenant_id (sem fallback por segurança)."
+                return res.status(404).json({
+                    error: "Território municipal ainda não cadastrado."
                 });
             }
             throw err;

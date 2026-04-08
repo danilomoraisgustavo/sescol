@@ -23,8 +23,12 @@ async function ensureBrandingRow(tenantId) {
     const tid = Number(tenantId) || 1;
     const query = `
         INSERT INTO ${TABLE_NAME} (tenant_id)
-        VALUES ($1)
-        ON CONFLICT (tenant_id) DO NOTHING;
+        SELECT $1
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM ${TABLE_NAME}
+            WHERE tenant_id = $1
+        );
     `;
     await pool.query(query, [tid]);
 }
@@ -252,26 +256,36 @@ export async function saveBrandingFromApi(tenantId, cfg, files) {
         updates[column] = currentValue;
     }
 
-    // Monta UPDATE dinâmico com ON CONFLICT
+    // Compatível com bases que ainda não têm UNIQUE(tenant_id)
     const cols = Object.keys(updates);
     const values = cols.map((c) => updates[c]);
 
-    const insertCols = ['tenant_id', ...cols];
-    const insertPlaceholders = insertCols.map((_, idx) => `$${idx + 1}`);
-    const insertValues = [tid, ...values];
-
     const setClause = cols
-        .map((col) => `${col} = EXCLUDED.${col}`)
+        .map((col, idx) => `${col} = $${idx + 2}`)
         .join(', ');
-
-    const query = `
-        INSERT INTO ${TABLE_NAME} (${insertCols.join(', ')})
-        VALUES (${insertPlaceholders.join(', ')})
-        ON CONFLICT (tenant_id)
-        DO UPDATE SET ${setClause};
+    const updateQuery = `
+        UPDATE ${TABLE_NAME}
+        SET ${setClause}
+        WHERE tenant_id = $1;
     `;
+    const updateResult = await pool.query(updateQuery, [tid, ...values]);
 
-    await pool.query(query, insertValues);
+    if (!updateResult.rowCount) {
+        const insertCols = ['tenant_id', ...cols];
+        const insertPlaceholders = insertCols.map((_, idx) => `$${idx + 1}`);
+        const insertValues = [tid, ...values];
+        const insertQuery = `
+            INSERT INTO ${TABLE_NAME} (${insertCols.join(', ')})
+            SELECT ${insertPlaceholders.join(', ')}
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM ${TABLE_NAME}
+                WHERE tenant_id = $1
+            );
+        `;
+        await pool.query(insertQuery, insertValues);
+        await pool.query(updateQuery, [tid, ...values]);
+    }
 
     // Retorna linha atualizada
     const row = await getBrandingRow(tid);

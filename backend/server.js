@@ -227,6 +227,19 @@ app.get('/auth-logout.html', (req, res) => {
     return res.redirect('/');
 });
 
+app.get('/api/public-config.js', (req, res) => {
+    const mapsKey = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_MAPS_KEY || '';
+    res.type('application/javascript');
+    res.setHeader('Cache-Control', 'no-store');
+    return res.send(
+        `window.APP_PUBLIC_CONFIG = Object.assign({}, window.APP_PUBLIC_CONFIG || {}, ${JSON.stringify({
+            googleMapsApiKey: mapsKey,
+        })});
+window.GOOGLE_MAPS_API_KEY = window.APP_PUBLIC_CONFIG.googleMapsApiKey || '';
+window.GMAPS_KEY = window.APP_PUBLIC_CONFIG.googleMapsApiKey || '';`
+    );
+});
+
 /**
  * ==========================
  *  ARQUIVOS ESTÁTICOS

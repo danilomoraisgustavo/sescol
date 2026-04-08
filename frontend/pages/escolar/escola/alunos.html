@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="../../../css/feather.css">
     <link rel="stylesheet" href="../../../css/app-light.css" id="lightTheme" disabled>
     <link rel="stylesheet" href="../../../css/app-dark.css" id="darkTheme">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         .aluno-avatar-cell {
             display: flex;
@@ -56,14 +55,37 @@
             padding: 1rem;
             margin-bottom: 1rem;
         }
+        .matricula-photo-preview {
+            width: 112px;
+            height: 112px;
+            object-fit: cover;
+            border-radius: .9rem;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: rgba(0, 0, 0, 0.03);
+        }
+        .matricula-camera-frame {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: .85rem;
+            padding: .75rem;
+        }
+        .matricula-camera-video {
+            width: 100%;
+            max-height: 240px;
+            border-radius: .75rem;
+            background: #000;
+        }
         body[data-theme-mode="dark"] .matricula-modal-hero,
         body[data-theme-mode="dark"] .matricula-map,
         body[data-theme-mode="dark"] .matricula-route-map,
         body[data-theme-mode="dark"] .matricula-tab-card,
+        body[data-theme-mode="dark"] .matricula-photo-preview,
+        body[data-theme-mode="dark"] .matricula-camera-frame,
         body.vertical.dark .matricula-modal-hero,
         body.vertical.dark .matricula-map,
         body.vertical.dark .matricula-route-map,
         body.vertical.dark .matricula-tab-card,
+        body.vertical.dark .matricula-photo-preview,
+        body.vertical.dark .matricula-camera-frame,
         body.vertical.dark .aluno-turma-banner {
             border-color: rgba(255, 255, 255, 0.12);
         }
@@ -120,10 +142,10 @@
                                 <div class="table-responsive">
                                     <table class="table table-hover mb-0">
                                         <thead class="thead-light">
-                                            <tr><th>Aluno</th><th>Turma</th><th>Ano letivo</th><th>Etapa</th><th>Responsável</th><th>Contato</th><th>Transporte</th></tr>
+                                            <tr><th>Aluno</th><th>Turma</th><th>Ano letivo</th><th>Etapa</th><th>Responsável</th><th>Contato</th><th>Transporte</th><th class="text-right">Ações</th></tr>
                                         </thead>
                                         <tbody id="alunos-body">
-                                            <tr><td colspan="7" class="text-center text-muted py-4">Carregando alunos...</td></tr>
+                                            <tr><td colspan="8" class="text-center text-muted py-4">Carregando alunos...</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -159,8 +181,7 @@
 
                         <ul class="nav nav-tabs matricula-nav mb-3" role="tablist">
                             <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tab-matricula" role="tab">Matrícula</a></li>
-                            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-identificacao" role="tab">Identificação</a></li>
-                            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-documentacao" role="tab">Documentação</a></li>
+                            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-identificacao" role="tab">Identificação e documentação</a></li>
                             <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-escolar" role="tab">Dados escolares</a></li>
                             <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-familia" role="tab">Família e contatos</a></li>
                             <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tab-endereco" role="tab">Endereço e mapa</a></li>
@@ -184,7 +205,7 @@
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label for="matricula-data-matricula">Data da matrícula</label>
-                                            <input type="date" class="form-control" id="matricula-data-matricula">
+                                            <input type="date" class="form-control" id="matricula-data-matricula" readonly>
                                         </div>
                                     </div>
                                     <div class="form-row">
@@ -200,12 +221,32 @@
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label for="matricula-id-pessoa">ID/Matrícula na rede</label>
-                                            <input type="text" class="form-control" id="matricula-id-pessoa" placeholder="Código interno ou matrícula">
+                                            <input type="text" class="form-control" id="matricula-id-pessoa" placeholder="Gerado automaticamente" readonly>
                                         </div>
                                         <div class="form-group col-md-4">
-                                            <label for="matricula-foto-url">Foto do aluno</label>
-                                            <input type="url" class="form-control" id="matricula-foto-url" placeholder="https://...">
+                                            <label>Foto do aluno</label>
+                                            <input type="hidden" id="matricula-foto-url">
+                                            <div class="d-flex align-items-start">
+                                                <img src="../../../assets/icons/user.png" alt="Pré-visualização da foto" class="matricula-photo-preview mr-3" id="matricula-foto-preview">
+                                                <div class="flex-fill">
+                                                    <div class="mb-2">
+                                                        <button type="button" class="btn btn-outline-primary btn-sm mr-2" id="btn-abrir-camera-foto">Usar câmera</button>
+                                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-upload-foto">Enviar arquivo</button>
+                                                        <input type="file" id="matricula-foto-file" accept="image/*" capture="user" style="display:none;">
+                                                    </div>
+                                                    <small class="form-text text-muted">Você pode tirar a foto pela câmera do computador ou enviar uma imagem.</small>
+                                                </div>
+                                            </div>
                                         </div>
+                                    </div>
+                                    <div class="matricula-camera-frame mt-2" id="matricula-camera-wrapper" style="display:none;">
+                                        <div class="small text-muted mb-2">Prévia da câmera</div>
+                                        <video class="matricula-camera-video mb-3" id="matricula-camera-video" autoplay playsinline muted></video>
+                                        <div class="d-flex">
+                                            <button type="button" class="btn btn-primary btn-sm mr-2" id="btn-capturar-foto">Capturar foto</button>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-fechar-camera-foto">Fechar câmera</button>
+                                        </div>
+                                        <canvas id="matricula-camera-canvas" style="display:none;"></canvas>
                                     </div>
                                 </div>
                             </div>
@@ -288,11 +329,8 @@
                                             <input type="text" class="form-control" id="matricula-numero-rede">
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            <div class="tab-pane fade" id="tab-documentacao" role="tabpanel">
-                                <div class="matricula-tab-card">
+                                    <hr class="my-4">
+                                    <h6 class="mb-3">Documentação complementar</h6>
                                     <div class="form-row">
                                         <div class="form-group col-md-3">
                                             <label for="matricula-orgao-emissor-rg">Órgão emissor do RG</label>
@@ -427,26 +465,64 @@
 
                             <div class="tab-pane fade" id="tab-familia" role="tabpanel">
                                 <div class="matricula-tab-card">
+                                    <h6 class="mb-3">Filiação e responsáveis</h6>
                                     <div class="form-row">
-                                        <div class="form-group col-md-6">
+                                        <div class="form-group col-md-4">
                                             <label for="matricula-filiacao-1">Filiação 1</label>
                                             <input type="text" class="form-control" id="matricula-filiacao-1">
                                         </div>
-                                        <div class="form-group col-md-6">
+                                        <div class="form-group col-md-4">
                                             <label for="matricula-telefone-filiacao-1">Telefone filiação 1</label>
                                             <input type="text" class="form-control" id="matricula-telefone-filiacao-1">
                                         </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-cpf-filiacao-1">CPF filiação 1</label>
+                                            <input type="text" class="form-control" id="matricula-cpf-filiacao-1">
+                                        </div>
                                     </div>
                                     <div class="form-row">
-                                        <div class="form-group col-md-6">
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-parentesco-filiacao-1">Parentesco filiação 1</label>
+                                            <input type="text" class="form-control" id="matricula-parentesco-filiacao-1" placeholder="Ex.: mãe, pai, avó">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-profissao-filiacao-1">Profissão filiação 1</label>
+                                            <input type="text" class="form-control" id="matricula-profissao-filiacao-1">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-escolaridade-filiacao-1">Escolaridade filiação 1</label>
+                                            <input type="text" class="form-control" id="matricula-escolaridade-filiacao-1">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
                                             <label for="matricula-filiacao-2">Filiação 2</label>
                                             <input type="text" class="form-control" id="matricula-filiacao-2">
                                         </div>
-                                        <div class="form-group col-md-6">
+                                        <div class="form-group col-md-4">
                                             <label for="matricula-telefone-filiacao-2">Telefone filiação 2</label>
                                             <input type="text" class="form-control" id="matricula-telefone-filiacao-2">
                                         </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-cpf-filiacao-2">CPF filiação 2</label>
+                                            <input type="text" class="form-control" id="matricula-cpf-filiacao-2">
+                                        </div>
                                     </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-parentesco-filiacao-2">Parentesco filiação 2</label>
+                                            <input type="text" class="form-control" id="matricula-parentesco-filiacao-2" placeholder="Ex.: mãe, pai, avó">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-profissao-filiacao-2">Profissão filiação 2</label>
+                                            <input type="text" class="form-control" id="matricula-profissao-filiacao-2">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-escolaridade-filiacao-2">Escolaridade filiação 2</label>
+                                            <input type="text" class="form-control" id="matricula-escolaridade-filiacao-2">
+                                        </div>
+                                    </div>
+                                    <hr class="my-4">
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
                                             <label for="matricula-responsavel">Responsável principal</label>
@@ -481,6 +557,10 @@
                                             <input type="text" class="form-control" id="matricula-cpf-responsavel">
                                         </div>
                                         <div class="form-group col-md-4">
+                                            <label for="matricula-parentesco-responsavel">Parentesco do responsável</label>
+                                            <input type="text" class="form-control" id="matricula-parentesco-responsavel">
+                                        </div>
+                                        <div class="form-group col-md-4">
                                             <label for="matricula-profissao-responsavel">Profissão do responsável</label>
                                             <input type="text" class="form-control" id="matricula-profissao-responsavel">
                                         </div>
@@ -494,6 +574,36 @@
                                                 <option value="medio_completo">Médio completo</option>
                                                 <option value="superior">Superior</option>
                                             </select>
+                                        </div>
+                                    </div>
+                                    <hr class="my-4">
+                                    <h6 class="mb-3">Pessoa que realizou a matrícula</h6>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-matriculante-nome">Nome do matriculante</label>
+                                            <input type="text" class="form-control" id="matricula-matriculante-nome">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-matriculante-cpf">CPF do matriculante</label>
+                                            <input type="text" class="form-control" id="matricula-matriculante-cpf">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-matriculante-parentesco">Vínculo com o aluno</label>
+                                            <input type="text" class="form-control" id="matricula-matriculante-parentesco" placeholder="Ex.: mãe, pai, tutor, servidor">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-matriculante-telefone">Telefone do matriculante</label>
+                                            <input type="text" class="form-control" id="matricula-matriculante-telefone">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-matriculante-email">E-mail do matriculante</label>
+                                            <input type="email" class="form-control" id="matricula-matriculante-email">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-matriculante-documento">Documento complementar</label>
+                                            <input type="text" class="form-control" id="matricula-matriculante-documento" placeholder="RG, termo ou outro">
                                         </div>
                                     </div>
                                 </div>
@@ -635,13 +745,10 @@
 
                                     <div id="bloco-transporte-fluxo" class="transporte-flow" style="display:none;">
                                         <div class="alert alert-light border">
-                                            O percurso abaixo considera a rota a pé entre a localização cadastrada do aluno e a escola. Depois da análise, você pode aprovar o transporte e definir o ponto de parada.
+                                            O percurso abaixo considera automaticamente a melhor rota a pé entre a residência cadastrada do aluno e a escola.
                                         </div>
                                         <div class="form-row">
-                                            <div class="form-group col-md-8">
-                                                <button type="button" class="btn btn-outline-primary btn-block" id="btn-calcular-trajeto-transporte">Calcular trajeto a pé até a escola</button>
-                                            </div>
-                                            <div class="form-group col-md-4">
+                                            <div class="form-group col-md-12">
                                                 <input type="text" class="form-control" id="matricula-transporte-provider" readonly placeholder="Origem do cálculo">
                                             </div>
                                         </div>
@@ -677,6 +784,15 @@
                                                 </div>
                                             </div>
                                             <div class="form-group col-md-4">
+                                                <label for="matricula-tipo-transporte">Tipo de deslocamento</label>
+                                                <select class="form-control" id="matricula-tipo-transporte">
+                                                    <option value="">Selecione</option>
+                                                    <option value="terrestre">Terrestre</option>
+                                                    <option value="fluvial">Fluvial</option>
+                                                    <option value="misto">Misto</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group col-md-4">
                                                 <label for="matricula-poder-publico-transporte">Poder público responsável</label>
                                                 <select class="form-control" id="matricula-poder-publico-transporte">
                                                     <option value="">Selecione</option>
@@ -686,14 +802,42 @@
                                                 </select>
                                                 <small class="form-text text-muted">No Censo Escolar, as opções oficiais são município ou estado.</small>
                                             </div>
-                                            <div class="form-group col-md-4">
-                                                <div class="custom-control custom-switch mt-2">
-                                                    <input type="checkbox" class="custom-control-input" id="matricula-emitir-carteirinha" checked>
-                                                    <label class="custom-control-label" for="matricula-emitir-carteirinha">Emitir carteirinha ao concluir</label>
-                                                </div>
-                                            </div>
                                         </div>
                                         <div id="bloco-ponto-parada" style="display:none;">
+                                            <div class="form-row">
+                                                <div class="form-group col-md-8">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <label class="mb-0">Associar ponto de parada</label>
+                                                        <span class="small text-muted" id="matricula-ponto-selecionado-label">Nenhum ponto selecionado</span>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group col-md-4">
+                                                    <label>&nbsp;</label>
+                                                    <a href="../pontos-parada.html" target="_blank" class="btn btn-outline-secondary btn-block">Cadastro rápido de ponto</a>
+                                                </div>
+                                            </div>
+                                            <div class="matricula-route-map mb-3" id="matricula-pontos-mapa"></div>
+                                            <input type="hidden" id="matricula-ponto-id">
+                                            <div class="alert alert-light border" id="matricula-sem-pontos-alerta" style="display:none;">
+                                                Nenhum ponto de parada cadastrado para esta escola. Você pode informar uma referência manual abaixo ou abrir o cadastro rápido.
+                                            </div>
+                                            <div class="form-row" id="matricula-ponto-manual-wrapper" style="display:none;">
+                                                <div class="form-group col-md-5">
+                                                    <label for="matricula-ponto-manual-referencia">Referência do ponto</label>
+                                                    <input type="text" class="form-control" id="matricula-ponto-manual-referencia" placeholder="Ex.: esquina da praça, porto da comunidade">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="matricula-ponto-manual-latitude">Latitude do ponto</label>
+                                                    <input type="number" step="any" class="form-control" id="matricula-ponto-manual-latitude">
+                                                </div>
+                                                <div class="form-group col-md-3">
+                                                    <label for="matricula-ponto-manual-longitude">Longitude do ponto</label>
+                                                    <input type="number" step="any" class="form-control" id="matricula-ponto-manual-longitude">
+                                                </div>
+                                                <div class="form-group col-md-1 d-flex align-items-end">
+                                                    <button type="button" class="btn btn-outline-secondary btn-block" id="btn-usar-casa-como-ponto">Casa</button>
+                                                </div>
+                                            </div>
                                             <div class="form-row">
                                                 <div class="form-group col-md-4">
                                                     <label for="matricula-categoria-transporte-censo">Categoria do transporte</label>
@@ -726,45 +870,10 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="d-flex align-items-center justify-content-between mb-2">
-                                                <strong>Associar ponto de parada</strong>
-                                                <span class="small text-muted" id="matricula-ponto-selecionado-label">Nenhum ponto selecionado</span>
-                                            </div>
-                                            <div class="matricula-route-map mb-3" id="matricula-pontos-mapa"></div>
-                                            <input type="hidden" id="matricula-ponto-id">
-                                            <div class="alert alert-light border" id="matricula-sem-pontos-alerta" style="display:none;">
-                                                Nenhum ponto de parada cadastrado para esta escola. Você pode informar uma referência manual abaixo ou fazer um cadastro rápido.
-                                            </div>
-                                            <div class="form-row" id="matricula-ponto-manual-wrapper" style="display:none;">
-                                                <div class="form-group col-md-5">
-                                                    <label for="matricula-ponto-manual-referencia">Referência do ponto</label>
-                                                    <input type="text" class="form-control" id="matricula-ponto-manual-referencia" placeholder="Ex.: esquina da praça, porto da comunidade">
-                                                </div>
-                                                <div class="form-group col-md-3">
-                                                    <label for="matricula-ponto-manual-latitude">Latitude do ponto</label>
-                                                    <input type="number" step="any" class="form-control" id="matricula-ponto-manual-latitude">
-                                                </div>
-                                                <div class="form-group col-md-3">
-                                                    <label for="matricula-ponto-manual-longitude">Longitude do ponto</label>
-                                                    <input type="number" step="any" class="form-control" id="matricula-ponto-manual-longitude">
-                                                </div>
-                                                <div class="form-group col-md-1 d-flex align-items-end">
-                                                    <button type="button" class="btn btn-outline-secondary btn-block" id="btn-usar-casa-como-ponto">Casa</button>
-                                                </div>
-                                            </div>
                                         </div>
                                     </div>
 
                                     <div class="form-row">
-                                        <div class="form-group col-md-3">
-                                            <label for="matricula-tipo-transporte">Tipo de transporte</label>
-                                            <select class="form-control" id="matricula-tipo-transporte">
-                                                <option value="">Selecione</option>
-                                                <option value="terrestre">Terrestre</option>
-                                                <option value="fluvial">Fluvial</option>
-                                                <option value="misto">Misto</option>
-                                            </select>
-                                        </div>
                                         <div class="form-group col-md-3">
                                             <label for="matricula-turno-retorno">Turno do retorno</label>
                                             <select class="form-control" id="matricula-turno-retorno">
@@ -800,6 +909,14 @@
                                             <div class="custom-control custom-switch mt-4">
                                                 <input type="checkbox" class="custom-control-input" id="matricula-usa-barco">
                                                 <label class="custom-control-label" for="matricula-usa-barco">Trecho fluvial/barco</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <div class="custom-control custom-switch mt-2">
+                                                <input type="checkbox" class="custom-control-input" id="matricula-emitir-carteirinha" checked>
+                                                <label class="custom-control-label" for="matricula-emitir-carteirinha">Emitir carteirinha ao concluir</label>
                                             </div>
                                         </div>
                                     </div>
@@ -892,6 +1009,38 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-recebe-bpc">Recebe BPC/benefício assistencial</label>
+                                            <input type="text" class="form-control" id="matricula-recebe-bpc">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-idioma-familiar">Idioma predominante na família</label>
+                                            <input type="text" class="form-control" id="matricula-idioma-familiar">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-unidade-saude">Unidade de saúde de referência</label>
+                                            <input type="text" class="form-control" id="matricula-unidade-saude">
+                                        </div>
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-prontuario-saude">Número do prontuário/registro de saúde</label>
+                                            <input type="text" class="form-control" id="matricula-prontuario-saude">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-autorizados-busca">Pessoas autorizadas para embarque/desembarque</label>
+                                            <input type="text" class="form-control" id="matricula-autorizados-busca" placeholder="Separe por vírgula">
+                                        </div>
+                                        <div class="form-group col-md-4">
+                                            <label for="matricula-vulnerabilidade-social">Situação de vulnerabilidade</label>
+                                            <input type="text" class="form-control" id="matricula-vulnerabilidade-social">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="matricula-observacoes-convivencia">Convivência, rotina familiar e observações socioeducacionais</label>
+                                        <textarea class="form-control" id="matricula-observacoes-convivencia" rows="3"></textarea>
+                                    </div>
                                     <div class="form-group">
                                         <label for="matricula-observacoes-gerais">Observações gerais</label>
                                         <textarea class="form-control" id="matricula-observacoes-gerais" rows="4"></textarea>
@@ -914,10 +1063,10 @@
     <script src="../../../js/bootstrap.min.js"></script>
     <script src="../../../js/simplebar.min.js"></script>
     <script src="../../../js/jquery.stickOnScroll.js"></script>
+    <script src="/api/public-config.js"></script>
     <script src="../../../js/tinycolor-min.js"></script>
     <script src="../../../js/config.js"></script>
     <script src="../../../js/apps.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../../../js/escola-contexto.js"></script>
     <script src="../../../js/sidebar-escola.js"></script>
     <script>
@@ -931,6 +1080,10 @@
         var marcadorEscolaTransporte = null;
         var marcadoresPontosParada = [];
         var escolaAtualCache = null;
+        var googleMapsLoader = null;
+        var geocoderGoogle = null;
+        var directionsRendererTransporte = null;
+        var cameraStreamFoto = null;
 
         function escapeHtml(value) {
             return String(value == null ? '' : value)
@@ -955,6 +1108,44 @@
             };
         }
 
+        function getGoogleMapsKey() {
+            return window.GOOGLE_MAPS_API_KEY || window.GMAPS_KEY || '';
+        }
+
+        function loadGoogleMapsOnce() {
+            if (window.google && window.google.maps) return Promise.resolve();
+            if (googleMapsLoader) return googleMapsLoader;
+
+            var key = getGoogleMapsKey();
+            if (!key) {
+                return Promise.reject(new Error('Google Maps API key não configurada.'));
+            }
+
+            googleMapsLoader = new Promise(function (resolve, reject) {
+                var script = document.createElement('script');
+                script.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key) + '&libraries=geometry';
+                script.async = true;
+                script.defer = true;
+                script.onload = resolve;
+                script.onerror = function () { reject(new Error('Falha ao carregar Google Maps API.')); };
+                document.head.appendChild(script);
+            }).then(function () {
+                geocoderGoogle = new google.maps.Geocoder();
+            });
+
+            return googleMapsLoader;
+        }
+
+        function atualizarEstadoControlesDeficiencia() {
+            var possuiDeficiencia = String($('#matricula-deficiencia').val() || '').trim().length > 0;
+            ['#matricula-transporte-apto', '#matricula-carro-adaptado', '#matricula-rota-exclusiva'].forEach(function (selector) {
+                $(selector).prop('disabled', !possuiDeficiencia);
+                if (!possuiDeficiencia) {
+                    $(selector).prop('checked', false);
+                }
+            });
+        }
+
         function atualizarEstadoFluxoTransporte() {
             var deseja = $('#matricula-deseja-transporte').is(':checked');
             var aprovado = $('#matricula-transporte-aprovado').is(':checked');
@@ -965,145 +1156,189 @@
 
             if (deseja) {
                 setTimeout(function () {
-                    if (mapaTransporteRota) mapaTransporteRota.invalidateSize();
-                    if (mapaPontosParada) mapaPontosParada.invalidateSize();
+                    if (mapaTransporteRota && window.google && window.google.maps) google.maps.event.trigger(mapaTransporteRota, 'resize');
+                    if (mapaPontosParada && window.google && window.google.maps) google.maps.event.trigger(mapaPontosParada, 'resize');
                 }, 180);
             }
         }
 
-        function garantirMapaTransporte() {
-            if (!mapaTransporteRota) {
-                mapaTransporteRota = L.map('matricula-transporte-rota-mapa', {
-                    center: [-6.0, -49.9],
-                    zoom: 12,
-                    zoomControl: true
+        function preencherEnderecoPorCoordenada(lat, lng) {
+            return fetch('/api/escolas/geocode/reverse?lat=' + encodeURIComponent(lat) + '&lng=' + encodeURIComponent(lng), {
+                credentials: 'include'
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao identificar endereço.');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    $('#matricula-rua').val(data.logradouro || $('#matricula-rua').val());
+                    $('#matricula-numero').val(data.numero || $('#matricula-numero').val());
+                    $('#matricula-bairro').val(data.bairro || $('#matricula-bairro').val());
+                    $('#matricula-cep').val(data.cep || $('#matricula-cep').val());
+                    $('#matricula-ponto-referencia').val(data.referencia || $('#matricula-ponto-referencia').val());
+                    return data;
+                })
+                .catch(function (err) {
+                    console.warn(err);
+                    return null;
                 });
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap'
-                }).addTo(mapaTransporteRota);
-            }
-            setTimeout(function () { mapaTransporteRota.invalidateSize(); }, 150);
+        }
+
+        function garantirMapaTransporte() {
+            return loadGoogleMapsOnce().then(function () {
+                if (!mapaTransporteRota) {
+                    mapaTransporteRota = new google.maps.Map(document.getElementById('matricula-transporte-rota-mapa'), {
+                        center: { lat: -6.0, lng: -49.9 },
+                        zoom: 12,
+                        mapTypeId: google.maps.MapTypeId.HYBRID
+                    });
+                    directionsRendererTransporte = new google.maps.DirectionsRenderer({
+                        suppressMarkers: true,
+                        preserveViewport: false
+                    });
+                    directionsRendererTransporte.setMap(mapaTransporteRota);
+                }
+                setTimeout(function () { google.maps.event.trigger(mapaTransporteRota, 'resize'); }, 150);
+            });
         }
 
         function garantirMapaPontosParada() {
-            if (!mapaPontosParada) {
-                mapaPontosParada = L.map('matricula-pontos-mapa', {
-                    center: [-6.0, -49.9],
-                    zoom: 12,
-                    zoomControl: true
-                });
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; OpenStreetMap'
-                }).addTo(mapaPontosParada);
-            }
-            setTimeout(function () { mapaPontosParada.invalidateSize(); }, 150);
-        }
-
-        function renderizarTrajetoTransporte(data) {
-            garantirMapaTransporte();
-            if (camadaRotaTransporte) {
-                mapaTransporteRota.removeLayer(camadaRotaTransporte);
-                camadaRotaTransporte = null;
-            }
-            if (marcadorAlunoTransporte) mapaTransporteRota.removeLayer(marcadorAlunoTransporte);
-            if (marcadorEscolaTransporte) mapaTransporteRota.removeLayer(marcadorEscolaTransporte);
-
-            var path = (((data || {}).trajeto || {}).path || []).map(function (item) {
-                return [Number(item[0]), Number(item[1])];
-            }).filter(function (item) {
-                return Number.isFinite(item[0]) && Number.isFinite(item[1]);
+            return loadGoogleMapsOnce().then(function () {
+                if (!mapaPontosParada) {
+                    mapaPontosParada = new google.maps.Map(document.getElementById('matricula-pontos-mapa'), {
+                        center: { lat: -6.0, lng: -49.9 },
+                        zoom: 12,
+                        mapTypeId: google.maps.MapTypeId.HYBRID
+                    });
+                }
+                setTimeout(function () { google.maps.event.trigger(mapaPontosParada, 'resize'); }, 150);
             });
-
-            if (path.length) {
-                camadaRotaTransporte = L.polyline(path, { color: '#2f7de1', weight: 4, opacity: 0.9 }).addTo(mapaTransporteRota);
-                mapaTransporteRota.fitBounds(camadaRotaTransporte.getBounds(), { padding: [20, 20] });
-            }
-
-            if (data && data.origem) {
-                marcadorAlunoTransporte = L.marker([data.origem.lat, data.origem.lng]).addTo(mapaTransporteRota).bindPopup('Residência do aluno');
-            }
-            if (data && data.destino) {
-                marcadorEscolaTransporte = L.marker([data.destino.lat, data.destino.lng]).addTo(mapaTransporteRota).bindPopup('Escola');
-            }
-
-            $('#matricula-distancia-km').val(data && data.trajeto ? (Number(data.trajeto.distance_meters || 0) / 1000).toFixed(2) : '');
-            $('#matricula-tempo-deslocamento').val(data && data.trajeto ? Math.round(Number(data.trajeto.duration_seconds || 0) / 60) : '');
-            $('#matricula-transporte-provider').val(data && data.trajeto ? (data.trajeto.provider || '').toUpperCase() : '');
         }
 
         function limparPontosParadaMapa() {
-            if (!mapaPontosParada) return;
             marcadoresPontosParada.forEach(function (marker) {
-                mapaPontosParada.removeLayer(marker);
+                if (marker && marker.setMap) marker.setMap(null);
             });
             marcadoresPontosParada = [];
             $('#matricula-ponto-id').val('');
             $('#matricula-ponto-selecionado-label').text('Nenhum ponto selecionado');
         }
 
-        function carregarPontosParadaTransporte(escolaId) {
-            garantirMapaPontosParada();
-            limparPontosParadaMapa();
+        function renderizarTrajetoTransporte(data) {
+            return garantirMapaTransporte().then(function () {
+                if (camadaRotaTransporte && camadaRotaTransporte.setMap) camadaRotaTransporte.setMap(null);
+                if (marcadorAlunoTransporte && marcadorAlunoTransporte.setMap) marcadorAlunoTransporte.setMap(null);
+                if (marcadorEscolaTransporte && marcadorEscolaTransporte.setMap) marcadorEscolaTransporte.setMap(null);
 
-            return fetch('/api/alunos/0/pontos-parada-por-escola?escola_id=' + encodeURIComponent(escolaId), {
-                credentials: 'include'
-            })
-                .then(function (resp) {
-                    if (!resp.ok) throw new Error('Erro ao carregar pontos de parada');
-                    return resp.json();
-                })
-                .then(function (pontos) {
-                    $('#matricula-sem-pontos-alerta').toggle(!(pontos || []).length);
-                    $('#matricula-ponto-manual-wrapper').toggle(!(pontos || []).length);
-                    var bounds = [];
-                    (pontos || []).forEach(function (ponto) {
-                        if (!Number.isFinite(Number(ponto.latitude)) || !Number.isFinite(Number(ponto.longitude))) return;
-                        var marker = L.marker([Number(ponto.latitude), Number(ponto.longitude)]).addTo(mapaPontosParada);
-                        marker.bindPopup('<strong>' + escapeHtml(ponto.area || 'Ponto de parada') + '</strong><div class="small mt-1">' + escapeHtml([ponto.logradouro, ponto.numero, ponto.bairro].filter(Boolean).join(', ')) + '</div>');
-                        marker.on('click', function () {
-                            $('#matricula-ponto-id').val(ponto.id);
-                            $('#matricula-ponto-selecionado-label').text((ponto.area || 'Ponto') + ' #' + ponto.id);
-                        });
-                        marcadoresPontosParada.push(marker);
-                        bounds.push([Number(ponto.latitude), Number(ponto.longitude)]);
-                    });
-
-                    var geo = {
-                        lat: Number($('#matricula-latitude').val()),
-                        lng: Number($('#matricula-longitude').val())
-                    };
-                    if (Number.isFinite(geo.lat) && Number.isFinite(geo.lng)) {
-                        var alunoMarker = L.circleMarker([geo.lat, geo.lng], {
-                            radius: 7,
-                            color: '#d9534f',
-                            weight: 2,
-                            fillColor: '#d9534f',
-                            fillOpacity: 0.8
-                        }).addTo(mapaPontosParada).bindPopup('Aluno');
-                        marcadoresPontosParada.push(alunoMarker);
-                        bounds.push([geo.lat, geo.lng]);
-                    }
-                    if (escolaAtualCache && escolaAtualCache.localizacao_geojson) {
-                        var escolaGeo = valorGeoJsonParaLatLng(escolaAtualCache.localizacao_geojson);
-                        if (escolaGeo) {
-                            var escolaMarker = L.circleMarker([escolaGeo.latitude, escolaGeo.longitude], {
-                                radius: 7,
-                                color: '#28a745',
-                                weight: 2,
-                                fillColor: '#28a745',
-                                fillOpacity: 0.8
-                            }).addTo(mapaPontosParada).bindPopup('Escola');
-                            marcadoresPontosParada.push(escolaMarker);
-                            bounds.push([escolaGeo.latitude, escolaGeo.longitude]);
-                        }
-                    }
-
-                    if (bounds.length) {
-                        mapaPontosParada.fitBounds(bounds, { padding: [20, 20] });
-                    }
+                var path = (((data || {}).trajeto || {}).path || []).map(function (item) {
+                    return { lat: Number(item[0]), lng: Number(item[1]) };
+                }).filter(function (item) {
+                    return Number.isFinite(item.lat) && Number.isFinite(item.lng);
                 });
+
+                if (directionsRendererTransporte) {
+                    directionsRendererTransporte.setDirections({ routes: [] });
+                }
+
+                if (path.length > 1) {
+                    camadaRotaTransporte = new google.maps.Polyline({
+                        path: path,
+                        strokeColor: '#2f7de1',
+                        strokeOpacity: 0.95,
+                        strokeWeight: 4,
+                        map: mapaTransporteRota
+                    });
+                    var bounds = new google.maps.LatLngBounds();
+                    path.forEach(function (point) { bounds.extend(point); });
+                    mapaTransporteRota.fitBounds(bounds);
+                }
+
+                if (data && data.origem) {
+                    marcadorAlunoTransporte = new google.maps.Marker({
+                        position: { lat: Number(data.origem.lat), lng: Number(data.origem.lng) },
+                        map: mapaTransporteRota,
+                        title: 'Residência do aluno'
+                    });
+                }
+                if (data && data.destino) {
+                    marcadorEscolaTransporte = new google.maps.Marker({
+                        position: { lat: Number(data.destino.lat), lng: Number(data.destino.lng) },
+                        map: mapaTransporteRota,
+                        title: 'Escola'
+                    });
+                }
+
+                $('#matricula-distancia-km').val(data && data.trajeto ? (Number(data.trajeto.distance_meters || 0) / 1000).toFixed(2) : '');
+                $('#matricula-tempo-deslocamento').val(data && data.trajeto ? Math.round(Number(data.trajeto.duration_seconds || 0) / 60) : '');
+                $('#matricula-transporte-provider').val(data && data.trajeto ? ('Trajeto a pé calculado via ' + String(data.trajeto.provider || '').toUpperCase()) : '');
+            });
+        }
+
+        function carregarPontosParadaTransporte(escolaId) {
+            return garantirMapaPontosParada().then(function () {
+                limparPontosParadaMapa();
+                return fetch('/api/alunos/0/pontos-parada-por-escola?escola_id=' + encodeURIComponent(escolaId), {
+                    credentials: 'include'
+                });
+            }).then(function (resp) {
+                if (!resp.ok) throw new Error('Erro ao carregar pontos de parada');
+                return resp.json();
+            }).then(function (pontos) {
+                $('#matricula-sem-pontos-alerta').toggle(!(pontos || []).length);
+                $('#matricula-ponto-manual-wrapper').toggle(!(pontos || []).length);
+                var bounds = new google.maps.LatLngBounds();
+                var hasBounds = false;
+
+                (pontos || []).forEach(function (ponto) {
+                    if (!Number.isFinite(Number(ponto.latitude)) || !Number.isFinite(Number(ponto.longitude))) return;
+                    var pos = { lat: Number(ponto.latitude), lng: Number(ponto.longitude) };
+                    var marker = new google.maps.Marker({
+                        position: pos,
+                        map: mapaPontosParada,
+                        title: ponto.area || 'Ponto de parada'
+                    });
+                    marker.addListener('click', function () {
+                        $('#matricula-ponto-id').val(ponto.id);
+                        $('#matricula-ponto-selecionado-label').text((ponto.area || 'Ponto') + ' #' + ponto.id);
+                    });
+                    marcadoresPontosParada.push(marker);
+                    bounds.extend(pos);
+                    hasBounds = true;
+                });
+
+                var geo = {
+                    lat: Number($('#matricula-latitude').val()),
+                    lng: Number($('#matricula-longitude').val())
+                };
+                if (Number.isFinite(geo.lat) && Number.isFinite(geo.lng)) {
+                    var alunoMarker = new google.maps.Marker({
+                        position: { lat: geo.lat, lng: geo.lng },
+                        map: mapaPontosParada,
+                        title: 'Aluno'
+                    });
+                    marcadoresPontosParada.push(alunoMarker);
+                    bounds.extend({ lat: geo.lat, lng: geo.lng });
+                    hasBounds = true;
+                }
+
+                if (escolaAtualCache && escolaAtualCache.localizacao_geojson) {
+                    var escolaGeo = valorGeoJsonParaLatLng(escolaAtualCache.localizacao_geojson);
+                    if (escolaGeo) {
+                        var escolaMarker = new google.maps.Marker({
+                            position: { lat: escolaGeo.latitude, lng: escolaGeo.longitude },
+                            map: mapaPontosParada,
+                            title: 'Escola'
+                        });
+                        marcadoresPontosParada.push(escolaMarker);
+                        bounds.extend({ lat: escolaGeo.latitude, lng: escolaGeo.longitude });
+                        hasBounds = true;
+                    }
+                }
+
+                if (hasBounds) {
+                    mapaPontosParada.fitBounds(bounds);
+                }
+            });
         }
 
         function emitirCarteirinhaTransporte(alunoId, escolaId) {
@@ -1131,6 +1366,50 @@
                 });
         }
 
+        function abrirPdfEmNovaAba(url, nomeArquivo) {
+            return fetch(url, { credentials: 'include' })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().catch(function () { return null; }).then(function (body) {
+                            throw new Error(body && body.error ? body.error : 'Erro ao gerar documento');
+                        });
+                    }
+                    return resp.blob();
+                })
+                .then(function (blob) {
+                    var blobUrl = URL.createObjectURL(blob);
+                    var aba = window.open(blobUrl, '_blank');
+                    if (!aba) {
+                        var link = document.createElement('a');
+                        link.href = blobUrl;
+                        link.target = '_blank';
+                        link.download = nomeArquivo || 'documento.pdf';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                    window.setTimeout(function () {
+                        URL.revokeObjectURL(blobUrl);
+                    }, 60 * 1000);
+                });
+        }
+
+        function definirFotoAluno(dataUrl) {
+            var foto = dataUrl || '../../../assets/icons/user.png';
+            $('#matricula-foto-url').val(dataUrl || '');
+            $('#matricula-foto-preview').attr('src', foto);
+        }
+
+        function encerrarCameraFoto() {
+            if (cameraStreamFoto) {
+                cameraStreamFoto.getTracks().forEach(function (track) { track.stop(); });
+                cameraStreamFoto = null;
+            }
+            $('#matricula-camera-wrapper').hide();
+            var video = document.getElementById('matricula-camera-video');
+            if (video) video.srcObject = null;
+        }
+
         function preencherSelectTurmasMatricula(turmaFiltro, anoLetivoFiltro) {
             var $select = $('#matricula-turma');
             $select.empty();
@@ -1156,48 +1435,92 @@
 
         function atualizarMarcadorMapa(lat, lng, centralizar) {
             if (!mapaMatricula || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+            var pos = { lat: Number(lat), lng: Number(lng) };
             if (!marcadorMatricula) {
-                marcadorMatricula = L.marker([lat, lng], { draggable: true }).addTo(mapaMatricula);
-                marcadorMatricula.on('dragend', function (event) {
-                    var pos = event.target.getLatLng();
-                    $('#matricula-latitude').val(pos.lat.toFixed(7));
-                    $('#matricula-longitude').val(pos.lng.toFixed(7));
+                marcadorMatricula = new google.maps.Marker({
+                    position: pos,
+                    map: mapaMatricula,
+                    draggable: true,
+                    title: 'Residência do aluno'
+                });
+                marcadorMatricula.addListener('dragend', function (event) {
+                    var novoLat = event.latLng.lat();
+                    var novoLng = event.latLng.lng();
+                    $('#matricula-latitude').val(novoLat.toFixed(7));
+                    $('#matricula-longitude').val(novoLng.toFixed(7));
+                    preencherEnderecoPorCoordenada(novoLat, novoLng);
+                    if ($('#matricula-deseja-transporte').is(':checked')) {
+                        calcularTrajetoTransporteAutomatico();
+                    }
                 });
             } else {
-                marcadorMatricula.setLatLng([lat, lng]);
+                marcadorMatricula.setPosition(pos);
+                marcadorMatricula.setMap(mapaMatricula);
             }
-            if (centralizar !== false) mapaMatricula.setView([lat, lng], Math.max(mapaMatricula.getZoom(), 15));
+            if (centralizar !== false) {
+                mapaMatricula.setCenter(pos);
+                if ((mapaMatricula.getZoom() || 0) < 17) mapaMatricula.setZoom(17);
+            }
         }
 
         function garantirMapaMatricula() {
-            if (mapaMatricula) {
-                setTimeout(function () { mapaMatricula.invalidateSize(); }, 150);
-                return;
+            return loadGoogleMapsOnce().then(function () {
+                if (!mapaMatricula) {
+                    mapaMatricula = new google.maps.Map(document.getElementById('matricula-aluno-mapa'), {
+                        center: { lat: -6.0, lng: -49.9 },
+                        zoom: 12,
+                        mapTypeId: google.maps.MapTypeId.HYBRID
+                    });
+
+                    mapaMatricula.addListener('click', function (event) {
+                        var lat = event.latLng.lat();
+                        var lng = event.latLng.lng();
+                        $('#matricula-latitude').val(lat.toFixed(7));
+                        $('#matricula-longitude').val(lng.toFixed(7));
+                        atualizarMarcadorMapa(lat, lng, false);
+                        preencherEnderecoPorCoordenada(lat, lng);
+                        if ($('#matricula-deseja-transporte').is(':checked')) {
+                            calcularTrajetoTransporteAutomatico();
+                        }
+                    });
+                }
+                setTimeout(function () { google.maps.event.trigger(mapaMatricula, 'resize'); }, 150);
+            });
+        }
+
+        function calcularTrajetoTransporteAutomatico() {
+            var lat = Number($('#matricula-latitude').val());
+            var lng = Number($('#matricula-longitude').val());
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                return Promise.resolve();
             }
-            mapaMatricula = L.map('matricula-aluno-mapa', {
-                center: [-6.0, -49.9],
-                zoom: 12,
-                zoomControl: true
-            });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; OpenStreetMap'
-            }).addTo(mapaMatricula);
 
-            mapaMatricula.on('click', function (event) {
-                var lat = event.latlng.lat;
-                var lng = event.latlng.lng;
-                $('#matricula-latitude').val(lat.toFixed(7));
-                $('#matricula-longitude').val(lng.toFixed(7));
-                atualizarMarcadorMapa(lat, lng, false);
-            });
-
-            setTimeout(function () { mapaMatricula.invalidateSize(); }, 150);
+            return fetch('/api/escolas/' + window.EscolaContexto.obterEscolaIdDaUrl() + '/transporte/rota-pedestre', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitude: lat, longitude: lng })
+            })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().then(function (data) {
+                            throw new Error(data && data.error ? data.error : 'Erro ao calcular trajeto');
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function (data) {
+                    return renderizarTrajetoTransporte(data);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
         }
 
         function limparFormularioMatricula() {
             $('#form-matricula-aluno')[0].reset();
             $('#matricula-aluno-id').val('');
+            $('#matricula-id-pessoa').val('');
             $('#matricula-ponto-id').val('');
             $('#matricula-ponto-selecionado-label').text('Nenhum ponto selecionado');
             $('#matricula-transporte-provider').val('');
@@ -1212,15 +1535,21 @@
             $('#matricula-deseja-transporte').prop('checked', false);
             $('#matricula-transporte-aprovado').prop('checked', false);
             $('#matricula-emitir-carteirinha').prop('checked', true);
+            $('#matricula-data-matricula').val(new Date().toISOString().slice(0, 10));
+            definirFotoAluno('');
+            encerrarCameraFoto();
             atualizarEstadoFluxoTransporte();
+            atualizarEstadoControlesDeficiencia();
             if (marcadorMatricula) {
-                mapaMatricula.removeLayer(marcadorMatricula);
+                marcadorMatricula.setMap(null);
                 marcadorMatricula = null;
             }
-            if (camadaRotaTransporte && mapaTransporteRota) {
-                mapaTransporteRota.removeLayer(camadaRotaTransporte);
+            if (camadaRotaTransporte && camadaRotaTransporte.setMap) {
+                camadaRotaTransporte.setMap(null);
                 camadaRotaTransporte = null;
             }
+            if (marcadorAlunoTransporte && marcadorAlunoTransporte.setMap) marcadorAlunoTransporte.setMap(null);
+            if (marcadorEscolaTransporte && marcadorEscolaTransporte.setMap) marcadorEscolaTransporte.setMap(null);
             limparPontosParadaMapa();
         }
 
@@ -1254,7 +1583,7 @@
             $('#matricula-status').val(data.status || 'ativo');
             $('#matricula-data-matricula').val(data.data_matricula ? String(data.data_matricula).slice(0, 10) : '');
             $('#matricula-id-pessoa').val(data.id_pessoa || '');
-            $('#matricula-foto-url').val(data.foto_url || '');
+            definirFotoAluno(data.foto_url || '');
             $('#matricula-ano').val(data.ano || '');
             $('#matricula-etapa').val(data.etapa || '');
             $('#matricula-modalidade').val(data.modalidade || '');
@@ -1277,8 +1606,23 @@
             $('#matricula-telefone-emergencia').val(data.telefone_emergencia || '');
             $('#matricula-contato-parentesco').val(data.contato_emergencia_parentesco || '');
             $('#matricula-cpf-responsavel').val((data.dados_complementares && data.dados_complementares.cpf_responsavel) || '');
+            $('#matricula-parentesco-responsavel').val((data.dados_complementares && data.dados_complementares.parentesco_responsavel) || '');
             $('#matricula-profissao-responsavel').val((data.dados_complementares && data.dados_complementares.profissao_responsavel) || '');
             $('#matricula-escolaridade-responsavel').val((data.dados_complementares && data.dados_complementares.escolaridade_responsavel) || '');
+            $('#matricula-cpf-filiacao-1').val((data.dados_complementares && data.dados_complementares.cpf_filiacao_1) || '');
+            $('#matricula-parentesco-filiacao-1').val((data.dados_complementares && data.dados_complementares.parentesco_filiacao_1) || '');
+            $('#matricula-profissao-filiacao-1').val((data.dados_complementares && data.dados_complementares.profissao_filiacao_1) || '');
+            $('#matricula-escolaridade-filiacao-1').val((data.dados_complementares && data.dados_complementares.escolaridade_filiacao_1) || '');
+            $('#matricula-cpf-filiacao-2').val((data.dados_complementares && data.dados_complementares.cpf_filiacao_2) || '');
+            $('#matricula-parentesco-filiacao-2').val((data.dados_complementares && data.dados_complementares.parentesco_filiacao_2) || '');
+            $('#matricula-profissao-filiacao-2').val((data.dados_complementares && data.dados_complementares.profissao_filiacao_2) || '');
+            $('#matricula-escolaridade-filiacao-2').val((data.dados_complementares && data.dados_complementares.escolaridade_filiacao_2) || '');
+            $('#matricula-matriculante-nome').val((data.dados_complementares && data.dados_complementares.matriculante_nome) || '');
+            $('#matricula-matriculante-cpf').val((data.dados_complementares && data.dados_complementares.matriculante_cpf) || '');
+            $('#matricula-matriculante-parentesco').val((data.dados_complementares && data.dados_complementares.matriculante_parentesco) || '');
+            $('#matricula-matriculante-telefone').val((data.dados_complementares && data.dados_complementares.matriculante_telefone) || '');
+            $('#matricula-matriculante-email').val((data.dados_complementares && data.dados_complementares.matriculante_email) || '');
+            $('#matricula-matriculante-documento').val((data.dados_complementares && data.dados_complementares.matriculante_documento) || '');
             $('#matricula-cep').val(data.cep || '');
             $('#matricula-rua').val(data.rua || '');
             $('#matricula-numero').val(data.numero_pessoa_endereco || '');
@@ -1335,13 +1679,22 @@
             $('#matricula-acesso-internet').prop('checked', Boolean(data.dados_complementares && data.dados_complementares.acesso_internet));
             $('#matricula-possui-dispositivo').prop('checked', Boolean(data.dados_complementares && data.dados_complementares.possui_dispositivo));
             $('#matricula-autoriza-imagem').prop('checked', Boolean(data.dados_complementares && data.dados_complementares.autoriza_imagem));
+            $('#matricula-recebe-bpc').val((data.dados_complementares && data.dados_complementares.recebe_bpc) || '');
+            $('#matricula-idioma-familiar').val((data.dados_complementares && data.dados_complementares.idioma_familiar) || '');
+            $('#matricula-unidade-saude').val((data.dados_complementares && data.dados_complementares.unidade_saude_referencia) || '');
+            $('#matricula-prontuario-saude').val((data.dados_complementares && data.dados_complementares.numero_prontuario_saude) || '');
+            $('#matricula-autorizados-busca').val((data.dados_complementares && data.dados_complementares.autorizados_busca) || '');
+            $('#matricula-vulnerabilidade-social').val((data.dados_complementares && data.dados_complementares.vulnerabilidade_social) || '');
+            $('#matricula-observacoes-convivencia').val((data.dados_complementares && data.dados_complementares.observacoes_convivencia) || '');
             $('#matricula-observacoes-gerais').val(data.observacoes_gerais || '');
 
             if (geo) {
-                garantirMapaMatricula();
-                atualizarMarcadorMapa(geo.latitude, geo.longitude);
+                garantirMapaMatricula().then(function () {
+                    atualizarMarcadorMapa(geo.latitude, geo.longitude);
+                });
             }
             atualizarEstadoFluxoTransporte();
+            atualizarEstadoControlesDeficiencia();
         }
 
         function coletarPayloadMatricula() {
@@ -1413,9 +1766,24 @@
                     escola_origem: $('#matricula-escola-origem').val(),
                     rede_origem: $('#matricula-rede-origem').val(),
                     situacao_escolar: $('#matricula-situacao-escolar').val(),
+                    cpf_filiacao_1: $('#matricula-cpf-filiacao-1').val(),
+                    parentesco_filiacao_1: $('#matricula-parentesco-filiacao-1').val(),
+                    profissao_filiacao_1: $('#matricula-profissao-filiacao-1').val(),
+                    escolaridade_filiacao_1: $('#matricula-escolaridade-filiacao-1').val(),
+                    cpf_filiacao_2: $('#matricula-cpf-filiacao-2').val(),
+                    parentesco_filiacao_2: $('#matricula-parentesco-filiacao-2').val(),
+                    profissao_filiacao_2: $('#matricula-profissao-filiacao-2').val(),
+                    escolaridade_filiacao_2: $('#matricula-escolaridade-filiacao-2').val(),
                     cpf_responsavel: $('#matricula-cpf-responsavel').val(),
+                    parentesco_responsavel: $('#matricula-parentesco-responsavel').val(),
                     profissao_responsavel: $('#matricula-profissao-responsavel').val(),
                     escolaridade_responsavel: $('#matricula-escolaridade-responsavel').val(),
+                    matriculante_nome: $('#matricula-matriculante-nome').val(),
+                    matriculante_cpf: $('#matricula-matriculante-cpf').val(),
+                    matriculante_parentesco: $('#matricula-matriculante-parentesco').val(),
+                    matriculante_telefone: $('#matricula-matriculante-telefone').val(),
+                    matriculante_email: $('#matricula-matriculante-email').val(),
+                    matriculante_documento: $('#matricula-matriculante-documento').val(),
                     apoio_escolar: $('#matricula-apoio-escolar').val(),
                     deseja_transporte: $('#matricula-deseja-transporte').is(':checked'),
                     transporte_aprovado: $('#matricula-transporte-aprovado').is(':checked'),
@@ -1455,7 +1823,14 @@
                     cadunico: $('#matricula-cadunico').val(),
                     acesso_internet: $('#matricula-acesso-internet').is(':checked'),
                     possui_dispositivo: $('#matricula-possui-dispositivo').is(':checked'),
-                    autoriza_imagem: $('#matricula-autoriza-imagem').is(':checked')
+                    autoriza_imagem: $('#matricula-autoriza-imagem').is(':checked'),
+                    recebe_bpc: $('#matricula-recebe-bpc').val(),
+                    idioma_familiar: $('#matricula-idioma-familiar').val(),
+                    unidade_saude_referencia: $('#matricula-unidade-saude').val(),
+                    numero_prontuario_saude: $('#matricula-prontuario-saude').val(),
+                    autorizados_busca: $('#matricula-autorizados-busca').val(),
+                    vulnerabilidade_social: $('#matricula-vulnerabilidade-social').val(),
+                    observacoes_convivencia: $('#matricula-observacoes-convivencia').val()
                 },
                 localizacao: {
                     latitude: $('#matricula-latitude').val(),
@@ -1514,7 +1889,7 @@
                     }
 
                     if (!alunos.length) {
-                        $('#alunos-body').html('<tr><td colspan="7" class="text-center text-muted py-4">Nenhum aluno vinculado a esta seleção.</td></tr>');
+                        $('#alunos-body').html('<tr><td colspan="8" class="text-center text-muted py-4">Nenhum aluno vinculado a esta seleção.</td></tr>');
                         return;
                     }
 
@@ -1523,6 +1898,7 @@
                         var badge = aluno.transporte_apto
                             ? '<span class="badge badge-success">Apto</span>'
                             : '<span class="badge badge-secondary">Nao apto</span>';
+                        var nomeArquivo = (aluno.nome || ('aluno_' + aluno.id)).toString().toLowerCase().replace(/[^a-z0-9]+/g, '_');
                         return '<tr>' +
                             '<td>' +
                                 '<div class="aluno-avatar-cell">' +
@@ -1539,12 +1915,56 @@
                             '<td>' + escapeHtml(aluno.responsavel || 'Não informado') + '</td>' +
                             '<td>' + escapeHtml(aluno.telefone_responsavel || 'Não informado') + '</td>' +
                             '<td>' + badge + '</td>' +
+                            '<td class="text-right">' +
+                                '<div class="btn-group">' +
+                                    '<button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+                                        'Documentos' +
+                                    '</button>' +
+                                    '<div class="dropdown-menu dropdown-menu-right">' +
+                                        '<button type="button" class="dropdown-item acao-atestado-matricula" data-aluno-id="' + aluno.id + '" data-arquivo="' + escapeHtml(nomeArquivo) + '">Atestado de matrícula</button>' +
+                                        '<button type="button" class="dropdown-item acao-carteira-escolar" data-aluno-id="' + aluno.id + '">Carteira escolar</button>' +
+                                        '<button type="button" class="dropdown-item acao-ficha-matricula" data-aluno-id="' + aluno.id + '" data-arquivo="' + escapeHtml(nomeArquivo) + '">Ficha de matrícula</button>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</td>' +
                             '</tr>';
                     }).join(''));
                 })
                 .catch(function () {
-                    $('#alunos-body').html('<tr><td colspan="7" class="text-center text-danger py-4">Erro ao carregar alunos.</td></tr>');
+                    $('#alunos-body').html('<tr><td colspan="8" class="text-center text-danger py-4">Erro ao carregar alunos.</td></tr>');
                 });
+
+            $('#alunos-body').on('click', '.acao-atestado-matricula', function () {
+                var alunoId = $(this).data('aluno-id');
+                var arquivo = $(this).data('arquivo') || ('aluno_' + alunoId);
+                abrirPdfEmNovaAba(
+                    '/api/escolas/' + escolaId + '/alunos/' + alunoId + '/atestado-matricula-pdf',
+                    'atestado_matricula_' + arquivo + '.pdf'
+                ).catch(function (err) {
+                    console.error(err);
+                    window.alert(err.message || 'Não foi possível gerar o atestado de matrícula.');
+                });
+            });
+
+            $('#alunos-body').on('click', '.acao-ficha-matricula', function () {
+                var alunoId = $(this).data('aluno-id');
+                var arquivo = $(this).data('arquivo') || ('aluno_' + alunoId);
+                abrirPdfEmNovaAba(
+                    '/api/escolas/' + escolaId + '/alunos/' + alunoId + '/ficha-matricula-pdf',
+                    'ficha_matricula_' + arquivo + '.pdf'
+                ).catch(function (err) {
+                    console.error(err);
+                    window.alert(err.message || 'Não foi possível gerar a ficha de matrícula.');
+                });
+            });
+
+            $('#alunos-body').on('click', '.acao-carteira-escolar', function () {
+                var alunoId = $(this).data('aluno-id');
+                emitirCarteirinhaTransporte(alunoId, escolaId).catch(function (err) {
+                    console.error(err);
+                    window.alert(err.message || 'Não foi possível gerar a carteira escolar.');
+                });
+            });
 
             $('#btn-matricular-aluno').on('click', function () {
                 limparFormularioMatricula();
@@ -1561,13 +1981,17 @@
                 garantirMapaMatricula();
             });
 
+            $('#modal-matricula-aluno').on('hidden.bs.modal', function () {
+                encerrarCameraFoto();
+            });
+
             $('a[data-toggle="tab"][href="#tab-endereco"]').on('shown.bs.tab', function () {
                 garantirMapaMatricula();
             });
 
             $('a[data-toggle="tab"][href="#tab-transporte"]').on('shown.bs.tab', function () {
                 if ($('#matricula-deseja-transporte').is(':checked')) {
-                    garantirMapaTransporte();
+                    garantirMapaTransporte().then(calcularTrajetoTransporteAutomatico);
                     if ($('#matricula-transporte-aprovado').is(':checked')) {
                         garantirMapaPontosParada();
                     }
@@ -1577,10 +2001,7 @@
             $('#matricula-deseja-transporte, #matricula-transporte-aprovado').on('change', function () {
                 atualizarEstadoFluxoTransporte();
                 if ($('#matricula-deseja-transporte').is(':checked')) {
-                    garantirMapaTransporte();
-                    if ($('#matricula-latitude').val() && $('#matricula-longitude').val()) {
-                        $('#btn-calcular-trajeto-transporte').trigger('click');
-                    }
+                    garantirMapaTransporte().then(calcularTrajetoTransporteAutomatico);
                 }
                 if ($('#matricula-deseja-transporte').is(':checked') && $('#matricula-transporte-aprovado').is(':checked')) {
                     carregarPontosParadaTransporte(escolaId).catch(function (err) {
@@ -1589,6 +2010,7 @@
                 }
             });
 
+            $('#matricula-deficiencia').on('input change', atualizarEstadoControlesDeficiencia);
             $('#matricula-categoria-transporte-censo').on('change', atualizarEstadoFluxoTransporte);
 
             $('#btn-usar-casa-como-ponto').on('click', function () {
@@ -1596,46 +2018,66 @@
                 $('#matricula-ponto-manual-longitude').val($('#matricula-longitude').val());
             });
 
-            $('#btn-calcular-trajeto-transporte').on('click', function () {
-                var lat = Number($('#matricula-latitude').val());
-                var lng = Number($('#matricula-longitude').val());
-                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                    window.alert('Informe a geolocalização do aluno na aba de endereço antes de calcular o trajeto.');
+            $('#btn-upload-foto').on('click', function () {
+                $('#matricula-foto-file').trigger('click');
+            });
+
+            $('#matricula-foto-file').on('change', function (event) {
+                var file = event.target.files && event.target.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    definirFotoAluno(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            $('#btn-abrir-camera-foto').on('click', function () {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    window.alert('A câmera não está disponível neste navegador.');
                     return;
                 }
-
-                fetch('/api/escolas/' + escolaId + '/transporte/rota-pedestre', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ latitude: lat, longitude: lng })
-                })
-                    .then(function (resp) {
-                        if (!resp.ok) {
-                            return resp.json().then(function (data) {
-                                throw new Error(data && data.error ? data.error : 'Erro ao calcular trajeto');
-                            });
-                        }
-                        return resp.json();
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+                    .then(function (stream) {
+                        cameraStreamFoto = stream;
+                        var video = document.getElementById('matricula-camera-video');
+                        video.srcObject = stream;
+                        $('#matricula-camera-wrapper').show();
                     })
-                    .then(function (data) {
-                        renderizarTrajetoTransporte(data);
-                    })
-                    .catch(function (err) {
-                        console.error(err);
-                        window.alert(err.message || 'Não foi possível calcular o trajeto a pé.');
+                    .catch(function () {
+                        window.alert('Não foi possível acessar a câmera.');
                     });
             });
 
+            $('#btn-capturar-foto').on('click', function () {
+                var video = document.getElementById('matricula-camera-video');
+                var canvas = document.getElementById('matricula-camera-canvas');
+                if (!video || !canvas || !video.videoWidth || !video.videoHeight) return;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                definirFotoAluno(canvas.toDataURL('image/jpeg', 0.92));
+                encerrarCameraFoto();
+            });
+
+            $('#btn-fechar-camera-foto').on('click', function () {
+                encerrarCameraFoto();
+            });
+
             $('#btn-centralizar-mapa-aluno').on('click', function () {
-                garantirMapaMatricula();
                 var lat = Number($('#matricula-latitude').val());
                 var lng = Number($('#matricula-longitude').val());
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
                     window.alert('Informe latitude e longitude válidas.');
                     return;
                 }
-                atualizarMarcadorMapa(lat, lng);
+                garantirMapaMatricula().then(function () {
+                    atualizarMarcadorMapa(lat, lng);
+                    preencherEnderecoPorCoordenada(lat, lng);
+                    if ($('#matricula-deseja-transporte').is(':checked')) {
+                        calcularTrajetoTransporteAutomatico();
+                    }
+                });
             });
 
             $('#form-matricula-aluno').on('submit', function (event) {
@@ -1643,7 +2085,7 @@
 
                 var payload = coletarPayloadMatricula();
                 if (!payload.aluno_id && !payload.aluno.pessoa_nome) {
-                    window.alert('Informe o nome do aluno ou selecione um cadastro existente.');
+                    window.alert('Informe o nome do aluno.');
                     return;
                 }
                 if (!payload.ano_letivo) {

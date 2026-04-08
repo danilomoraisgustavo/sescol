@@ -1,5 +1,7 @@
 import express from "express";
+import PDFDocument from "pdfkit";
 import pool from "../db.js";
+import { getBranding, drawCabecalho, drawRodape } from "../services/brandingConfig.js";
 
 const router = express.Router();
 let tenantColumnCache = null;
@@ -66,6 +68,10 @@ async function getColumnSupport() {
         alunosMunicipaisPessoaNome: grouped.alunos_municipais?.has('pessoa_nome') || false,
         alunosMunicipaisTurno: grouped.alunos_municipais?.has('turno') || false,
         alunosMunicipaisFormatoLetivo: grouped.alunos_municipais?.has('formato_letivo') || false,
+        alunosMunicipaisTenantId: grouped.alunos_municipais?.has('tenant_id') || false,
+        alunosMunicipaisRotaExclusiva: grouped.alunos_municipais?.has('rota_exclusiva') || false,
+        alunosMunicipaisCarroAdaptado: grouped.alunos_municipais?.has('carro_adaptado') || false,
+        alunosMunicipaisTurnoSimplificado: grouped.alunos_municipais?.has('turno_simplificado') || false,
     };
     columnCacheAt = now;
     return columnCache;
@@ -179,6 +185,30 @@ async function ensureAlunoComplementosTable() {
     `);
 
     alunoComplementosTableEnsured = true;
+}
+
+async function generateNextNetworkEnrollmentId(client, tenantId) {
+    const tenantSupport = await getTenantColumnSupport();
+    await client.query('SELECT pg_advisory_xact_lock($1)', [Number(tenantId) > 0 ? Number(tenantId) : 987654]);
+    const params = [];
+    let tenantWhere = '';
+
+    if (tenantSupport.alunos_municipais && tenantId) {
+        params.push(tenantId);
+        tenantWhere = `WHERE tenant_id = $1`;
+    }
+
+    const result = await client.query(
+        `
+        SELECT COALESCE(MAX((id_pessoa::text)::bigint), 0) + 1 AS next_id
+        FROM alunos_municipais
+        ${tenantWhere}
+          ${tenantWhere ? 'AND' : 'WHERE'} id_pessoa::text ~ '^[0-9]+$'
+        `,
+        params,
+    );
+
+    return String(result.rows?.[0]?.next_id || 1);
 }
 
 function normalizeTurmaKey(nome, anoLetivo) {
@@ -359,6 +389,22 @@ function sanitizeComplementarValue(value) {
     return text ? text : null;
 }
 
+function formatDatePtBr(value) {
+    if (!value) return "Não informado";
+    const date = new Date(value);
+    if (Number.isNaN(date.valueOf())) return "Não informado";
+    return date.toLocaleDateString("pt-BR");
+}
+
+function formatEnderecoAluno(aluno) {
+    return [
+        aluno?.rua,
+        aluno?.numero_pessoa_endereco,
+        aluno?.bairro,
+        aluno?.cep,
+    ].filter(Boolean).join(", ") || "Não informado";
+}
+
 /**
  * Tenta resolver o tenant_id do request de forma compatível com diferentes middlewares.
  * - Preferência: req.user.tenant_id / req.user.tenantId
@@ -504,11 +550,14 @@ async function loadEscolaDashboardData(escolaId, tenantId, options = {}) {
             ${alunoTurnoExpr} AS turno,
             a.etapa,
             a.modalidade,
+            a.status,
+            a.deficiencia,
             a.responsavel,
             a.telefone_responsavel,
             a.data_nascimento,
             a.bairro,
             a.transporte_apto,
+            ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson,
             ae.ano_letivo,
             ae.turma AS turma_escola,
             ae.atualizado_em,
@@ -688,6 +737,7 @@ async function loadEscolaTurmasData(escolaId, tenantId) {
 async function loadAlunoMatriculaDetalhes({ escolaId, alunoId, tenantId }) {
     await ensureAlunoComplementosTable();
     const tenantSupport = await getTenantColumnSupport();
+    const columnSupport = await getColumnSupport();
 
     const params = [alunoId];
     const alunoTenantWhere = tenantSupport.alunos_municipais && tenantId ? 'AND a.tenant_id = $2' : '';
@@ -723,13 +773,13 @@ async function loadAlunoMatriculaDetalhes({ escolaId, alunoId, tenantId }) {
             a.responsavel,
             a.telefone_responsavel,
             a.deficiencia,
-            a.rota_exclusiva,
-            a.carro_adaptado,
+            ${columnSupport.alunosMunicipaisRotaExclusiva ? 'a.rota_exclusiva' : 'false AS rota_exclusiva'},
+            ${columnSupport.alunosMunicipaisCarroAdaptado ? 'a.carro_adaptado' : 'false AS carro_adaptado'},
             a.modalidade,
             a.formato_letivo,
             a.etapa,
             a.codigo_inep,
-            a.turno_simplificado,
+            ${columnSupport.alunosMunicipaisTurnoSimplificado ? 'a.turno_simplificado' : 'NULL::text AS turno_simplificado'},
             ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson,
             ae.ano_letivo,
             ae.turma AS turma_escola,
@@ -995,13 +1045,68 @@ router.get("/:id/dashboard", async (req, res) => {
 
         const tenantId = getTenantId(req);
         const [dashboardData, turmasData] = await Promise.all([
-            loadEscolaDashboardData(id, tenantId, { limitAlunos: 25 }),
+            loadEscolaDashboardData(id, tenantId, { limitAlunos: 500 }),
             loadEscolaTurmasData(id, tenantId),
         ]);
 
         if (!dashboardData || !turmasData) {
             return res.status(404).json({ error: "Escola não encontrada" });
         }
+
+        const alunos = Array.isArray(dashboardData.alunos) ? dashboardData.alunos : [];
+        const turmas = Array.isArray(turmasData.turmas) ? turmasData.turmas : [];
+        const alunosRecentes = alunos
+            .slice()
+            .sort((a, b) => new Date(b?.atualizado_em || 0).valueOf() - new Date(a?.atualizado_em || 0).valueOf())
+            .slice(0, 12);
+
+        const pendenciasSecretaria = {
+            sem_turma: alunos.filter((aluno) => !parseOptionalText(aluno?.turma_escola) && !parseOptionalText(aluno?.turma)).length,
+            sem_turno: alunos.filter((aluno) => !parseOptionalText(aluno?.turno)).length,
+            sem_responsavel: alunos.filter((aluno) => !parseOptionalText(aluno?.responsavel)).length,
+            sem_contato: alunos.filter((aluno) => !parseOptionalText(aluno?.telefone_responsavel)).length,
+            sem_cpf: alunos.filter((aluno) => !parseOptionalText(aluno?.cpf)).length,
+            sem_geolocalizacao: alunos.filter((aluno) => !aluno?.localizacao_geojson?.coordinates).length,
+        };
+
+        const metricasPedagogicas = {
+            turmas_sem_alunos: turmas.filter((turma) => Number(turma?.total_alunos || 0) === 0).length,
+            turmas_multisseriadas: turmas.filter((turma) => turma?.multisseriada === true).length,
+            turmas_com_transporte: turmas.filter((turma) => Number(turma?.total_apto_transporte || 0) > 0).length,
+            alunos_com_deficiencia: alunos.filter((aluno) => parseOptionalText(aluno?.deficiencia)).length,
+        };
+
+        const distribuicoes = {
+            etapas: Object.entries(
+                alunos.reduce((acc, aluno) => {
+                    const key = parseOptionalText(aluno?.etapa) || 'nao_informada';
+                    acc[key] = (acc[key] || 0) + 1;
+                    return acc;
+                }, {})
+            ).map(([chave, total]) => ({ chave, total })).sort((a, b) => b.total - a.total),
+            turnos: Object.entries(
+                alunos.reduce((acc, aluno) => {
+                    const key = parseOptionalText(aluno?.turno) || 'nao_informado';
+                    acc[key] = (acc[key] || 0) + 1;
+                    return acc;
+                }, {})
+            ).map(([chave, total]) => ({ chave, total })).sort((a, b) => b.total - a.total),
+            modalidades: Object.entries(
+                alunos.reduce((acc, aluno) => {
+                    const key = parseOptionalText(aluno?.modalidade) || 'nao_informada';
+                    acc[key] = (acc[key] || 0) + 1;
+                    return acc;
+                }, {})
+            ).map(([chave, total]) => ({ chave, total })).sort((a, b) => b.total - a.total),
+        };
+
+        const alertas = [
+            pendenciasSecretaria.sem_turma ? { tipo: 'warning', titulo: 'Alunos sem turma definida', detalhe: `${pendenciasSecretaria.sem_turma} cadastro(s) exigem enturmação.` } : null,
+            pendenciasSecretaria.sem_geolocalizacao ? { tipo: 'warning', titulo: 'Alunos sem geolocalização', detalhe: `${pendenciasSecretaria.sem_geolocalizacao} cadastro(s) ainda sem ponto no mapa.` } : null,
+            pendenciasSecretaria.sem_responsavel ? { tipo: 'danger', titulo: 'Cadastros sem responsável', detalhe: `${pendenciasSecretaria.sem_responsavel} aluno(s) sem responsável principal informado.` } : null,
+            metricasPedagogicas.turmas_sem_alunos ? { tipo: 'info', titulo: 'Turmas sem alunos', detalhe: `${metricasPedagogicas.turmas_sem_alunos} turma(s) cadastradas ainda sem matrícula.` } : null,
+            metricasPedagogicas.alunos_com_deficiencia ? { tipo: 'primary', titulo: 'Acompanhamento inclusivo', detalhe: `${metricasPedagogicas.alunos_com_deficiencia} aluno(s) com deficiência/condição registrada.` } : null,
+        ].filter(Boolean);
 
         return res.json({
             escola: dashboardData.escola,
@@ -1010,7 +1115,14 @@ router.get("/:id/dashboard", async (req, res) => {
                 ...turmasData.resumo,
             },
             turmas: turmasData.turmas,
-            alunos: dashboardData.alunos,
+            alunos,
+            alunos_recentes: alunosRecentes,
+            indicadores: {
+                pendencias_secretaria: pendenciasSecretaria,
+                metricas_pedagogicas: metricasPedagogicas,
+                distribuicoes,
+                alertas,
+            },
         });
     } catch (err) {
         console.error("Erro ao carregar dashboard da escola:", err);
@@ -1273,6 +1385,7 @@ router.post("/:id/matriculas", async (req, res) => {
 
         const tenantId = getTenantId(req);
         const tenantSupport = await getTenantColumnSupport();
+        const columnSupport = await getColumnSupport();
         const alunoPayload = req.body?.aluno || {};
         const complementarPayload = req.body?.complementar || {};
         const localizacaoPayload = req.body?.localizacao || {};
@@ -1318,6 +1431,8 @@ router.post("/:id/matriculas", async (req, res) => {
             return res.status(404).json({ error: "Escola não encontrada." });
         }
 
+        let generatedIdPessoa = parseOptionalText(alunoPayload.id_pessoa);
+
         if (Number.isFinite(alunoId) && alunoId > 0) {
             const alunoParams = [alunoId];
             let alunoTenantWhere = '';
@@ -1341,105 +1456,81 @@ router.post("/:id/matriculas", async (req, res) => {
                 await client.query("ROLLBACK");
                 return res.status(404).json({ error: "Aluno não encontrado." });
             }
-        } else {
-            const createParams = [
-                tenantId,
-                pessoaNome,
-                parseOptionalText(alunoPayload.cpf),
-                parseOptionalDate(alunoPayload.data_nascimento),
-                parseOptionalText(alunoPayload.sexo),
-                parseOptionalText(escolaResult.rows[0].codigo_inep),
-                parseOptionalDate(alunoPayload.data_matricula) || new Date().toISOString().slice(0, 10),
-                parseOptionalText(alunoPayload.status) || 'ativo',
-                parseOptionalText(escolaResult.rows[0].nome),
-                parseOptionalText(alunoPayload.ano),
-                turma,
-                parseOptionalText(alunoPayload.modalidade),
-                parseOptionalText(alunoPayload.formato_letivo),
-                parseOptionalText(alunoPayload.etapa),
-                parseOptionalText(alunoPayload.cep),
-                parseOptionalText(alunoPayload.rua),
-                parseOptionalText(alunoPayload.bairro),
-                parseOptionalText(alunoPayload.numero_pessoa_endereco),
-                parseOptionalText(alunoPayload.zona),
-                parseOptionalText(alunoPayload.filiacao_1),
-                parseOptionalText(alunoPayload.telefone_filiacao_1),
-                parseOptionalText(alunoPayload.filiacao_2),
-                parseOptionalText(alunoPayload.telefone_filiacao_2),
-                parseOptionalText(alunoPayload.responsavel),
-                parseOptionalText(alunoPayload.telefone_responsavel),
-                parseOptionalText(alunoPayload.deficiencia),
-                parseOptionalBoolean(alunoPayload.rota_exclusiva) ?? false,
-                parseOptionalBoolean(alunoPayload.carro_adaptado) ?? false,
-                parseOptionalText(alunoPayload.transporte_escolar_publico_utiliza),
-                parseOptionalBoolean(alunoPayload.transporte_apto) ?? false,
-                parseOptionalText(alunoPayload.id_pessoa),
-                parseOptionalText(alunoPayload.turno_simplificado),
-            ];
 
-            const locationSql = (latitude !== null && longitude !== null)
-                ? ', ST_SetSRID(ST_MakePoint($34, $33), 4326)'
-                : ', NULL';
+            if (!generatedIdPessoa) {
+                generatedIdPessoa = await generateNextNetworkEnrollmentId(client, tenantId);
+            }
+        } else {
+            if (!generatedIdPessoa) {
+                generatedIdPessoa = await generateNextNetworkEnrollmentId(client, tenantId);
+            }
+
+            const insertColumns = [];
+            const insertParams = [];
+
+            function pushInsert(column, value) {
+                insertColumns.push(column);
+                insertParams.push(value);
+            }
+
+            if (columnSupport.alunosMunicipaisTenantId) pushInsert('tenant_id', tenantId);
+            pushInsert('pessoa_nome', pessoaNome);
+            pushInsert('cpf', parseOptionalText(alunoPayload.cpf));
+            pushInsert('data_nascimento', parseOptionalDate(alunoPayload.data_nascimento));
+            pushInsert('sexo', parseOptionalText(alunoPayload.sexo));
+            pushInsert('codigo_inep', parseOptionalText(escolaResult.rows[0].codigo_inep));
+            pushInsert('data_matricula', parseOptionalDate(alunoPayload.data_matricula) || new Date().toISOString().slice(0, 10));
+            pushInsert('status', parseOptionalText(alunoPayload.status) || 'ativo');
+            pushInsert('unidade_ensino', parseOptionalText(escolaResult.rows[0].nome));
+            pushInsert('ano', parseOptionalText(alunoPayload.ano));
+            pushInsert('turma', turma);
+            pushInsert('modalidade', parseOptionalText(alunoPayload.modalidade));
+            pushInsert('formato_letivo', parseOptionalText(alunoPayload.formato_letivo));
+            pushInsert('etapa', parseOptionalText(alunoPayload.etapa));
+            pushInsert('cep', parseOptionalText(alunoPayload.cep));
+            pushInsert('rua', parseOptionalText(alunoPayload.rua));
+            pushInsert('bairro', parseOptionalText(alunoPayload.bairro));
+            pushInsert('numero_pessoa_endereco', parseOptionalText(alunoPayload.numero_pessoa_endereco));
+            pushInsert('zona', parseOptionalText(alunoPayload.zona));
+            pushInsert('filiacao_1', parseOptionalText(alunoPayload.filiacao_1));
+            pushInsert('telefone_filiacao_1', parseOptionalText(alunoPayload.telefone_filiacao_1));
+            pushInsert('filiacao_2', parseOptionalText(alunoPayload.filiacao_2));
+            pushInsert('telefone_filiacao_2', parseOptionalText(alunoPayload.telefone_filiacao_2));
+            pushInsert('responsavel', parseOptionalText(alunoPayload.responsavel));
+            pushInsert('telefone_responsavel', parseOptionalText(alunoPayload.telefone_responsavel));
+            pushInsert('deficiencia', parseOptionalText(alunoPayload.deficiencia));
+            if (columnSupport.alunosMunicipaisRotaExclusiva) pushInsert('rota_exclusiva', parseOptionalBoolean(alunoPayload.rota_exclusiva) ?? false);
+            if (columnSupport.alunosMunicipaisCarroAdaptado) pushInsert('carro_adaptado', parseOptionalBoolean(alunoPayload.carro_adaptado) ?? false);
+            pushInsert('transporte_escolar_publico_utiliza', parseOptionalText(alunoPayload.transporte_escolar_publico_utiliza));
+            pushInsert('transporte_apto', parseOptionalBoolean(alunoPayload.transporte_apto) ?? false);
+            pushInsert('id_pessoa', generatedIdPessoa);
+            if (columnSupport.alunosMunicipaisTurnoSimplificado) pushInsert('turno_simplificado', parseOptionalText(alunoPayload.turno_simplificado));
+
+            insertColumns.push('localizacao');
+            let localizacaoValueSql = 'NULL';
+            if (latitude !== null && longitude !== null) {
+                const latParam = insertParams.length + 1;
+                const lngParam = insertParams.length + 2;
+                insertParams.push(latitude, longitude);
+                localizacaoValueSql = `ST_SetSRID(ST_MakePoint($${lngParam}, $${latParam}), 4326)`;
+            }
+
+            const columnList = insertColumns.join(', ');
+            const valueList = insertColumns.map(function (column, index) {
+                if (column === 'localizacao') return localizacaoValueSql;
+                return `$${index + 1}`;
+            }).join(', ');
 
             const insertResult = await client.query(
                 `
-                INSERT INTO alunos_municipais (
-                    tenant_id,
-                    pessoa_nome,
-                    cpf,
-                    data_nascimento,
-                    sexo,
-                    codigo_inep,
-                    data_matricula,
-                    status,
-                    unidade_ensino,
-                    ano,
-                    turma,
-                    modalidade,
-                    formato_letivo,
-                    etapa,
-                    cep,
-                    rua,
-                    bairro,
-                    numero_pessoa_endereco,
-                    zona,
-                    filiacao_1,
-                    telefone_filiacao_1,
-                    filiacao_2,
-                    telefone_filiacao_2,
-                    responsavel,
-                    telefone_responsavel,
-                    deficiencia,
-                    rota_exclusiva,
-                    carro_adaptado,
-                    transporte_escolar_publico_utiliza,
-                    transporte_apto,
-                    id_pessoa,
-                    turno_simplificado,
-                    localizacao
-                )
-                VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8,
-                    $9, $10, $11, $12, $13, $14, $15, $16,
-                    $17, $18, $19, $20, $21, $22, $23, $24,
-                    $25, $26, $27, $28, $29, $30, $31, $32
-                    ${locationSql}
-                )
+                INSERT INTO alunos_municipais (${columnList})
+                VALUES (${valueList})
                 RETURNING id
                 `,
-                latitude !== null && longitude !== null
-                    ? [...createParams, latitude, longitude]
-                    : createParams,
+                insertParams,
             );
 
             alunoId = Number(insertResult.rows[0].id);
-
-            if (!parseOptionalText(alunoPayload.id_pessoa)) {
-                await client.query(
-                    `UPDATE alunos_municipais SET id_pessoa = id::text WHERE id = $1 AND tenant_id = $2`,
-                    [alunoId, tenantId],
-                );
-            }
         }
 
         if (tenantSupport.alunos_escolas) {
@@ -1495,106 +1586,70 @@ router.post("/:id/matriculas", async (req, res) => {
         }
 
         const escola = escolaResult.rows[0];
-        if (tenantSupport.alunos_municipais && tenantId) {
-            await client.query(
-                `
-                UPDATE alunos_municipais
-                SET
-                    pessoa_nome = COALESCE($1, pessoa_nome),
-                    cpf = COALESCE($2, cpf),
-                    data_nascimento = COALESCE($3, data_nascimento),
-                    sexo = COALESCE($4, sexo),
-                    codigo_inep = COALESCE($5, codigo_inep),
-                    data_matricula = COALESCE($6, data_matricula),
-                    status = COALESCE($7, status),
-                    unidade_ensino = COALESCE($8, unidade_ensino),
-                    ano = COALESCE($9, ano),
-                    turma = COALESCE($10, turma),
-                    modalidade = COALESCE($11, modalidade),
-                    formato_letivo = COALESCE($12, formato_letivo),
-                    etapa = COALESCE($13, etapa),
-                    cep = COALESCE($14, cep),
-                    rua = COALESCE($15, rua),
-                    bairro = COALESCE($16, bairro),
-                    numero_pessoa_endereco = COALESCE($17, numero_pessoa_endereco),
-                    zona = COALESCE($18, zona),
-                    filiacao_1 = COALESCE($19, filiacao_1),
-                    telefone_filiacao_1 = COALESCE($20, telefone_filiacao_1),
-                    filiacao_2 = COALESCE($21, filiacao_2),
-                    telefone_filiacao_2 = COALESCE($22, telefone_filiacao_2),
-                    responsavel = COALESCE($23, responsavel),
-                    telefone_responsavel = COALESCE($24, telefone_responsavel),
-                    deficiencia = COALESCE($25, deficiencia),
-                    rota_exclusiva = COALESCE($26, rota_exclusiva),
-                    carro_adaptado = COALESCE($27, carro_adaptado),
-                    transporte_escolar_publico_utiliza = COALESCE($28, transporte_escolar_publico_utiliza),
-                    transporte_apto = COALESCE($29, transporte_apto),
-                    id_pessoa = COALESCE($30, id_pessoa),
-                    turno_simplificado = COALESCE($31, turno_simplificado),
-                    localizacao = COALESCE(
-                        CASE
-                            WHEN $32::double precision IS NOT NULL AND $33::double precision IS NOT NULL
-                                THEN ST_SetSRID(ST_MakePoint($33, $32), 4326)
-                            ELSE NULL
-                        END,
-                        localizacao
-                    ),
-                    atualizado_em = NOW()
-                WHERE id = $34
-                  AND tenant_id = $35
-                `,
-                [
-                    pessoaNome,
-                    parseOptionalText(alunoPayload.cpf),
-                    parseOptionalDate(alunoPayload.data_nascimento),
-                    parseOptionalText(alunoPayload.sexo),
-                    escola.codigo_inep,
-                    parseOptionalDate(alunoPayload.data_matricula),
-                    parseOptionalText(alunoPayload.status) || 'ativo',
-                    escola.nome,
-                    parseOptionalText(alunoPayload.ano),
-                    turma,
-                    parseOptionalText(alunoPayload.modalidade),
-                    parseOptionalText(alunoPayload.formato_letivo),
-                    parseOptionalText(alunoPayload.etapa),
-                    parseOptionalText(alunoPayload.cep),
-                    parseOptionalText(alunoPayload.rua),
-                    parseOptionalText(alunoPayload.bairro),
-                    parseOptionalText(alunoPayload.numero_pessoa_endereco),
-                    parseOptionalText(alunoPayload.zona),
-                    parseOptionalText(alunoPayload.filiacao_1),
-                    parseOptionalText(alunoPayload.telefone_filiacao_1),
-                    parseOptionalText(alunoPayload.filiacao_2),
-                    parseOptionalText(alunoPayload.telefone_filiacao_2),
-                    parseOptionalText(alunoPayload.responsavel),
-                    parseOptionalText(alunoPayload.telefone_responsavel),
-                    parseOptionalText(alunoPayload.deficiencia),
-                    parseOptionalBoolean(alunoPayload.rota_exclusiva),
-                    parseOptionalBoolean(alunoPayload.carro_adaptado),
-                    parseOptionalText(alunoPayload.transporte_escolar_publico_utiliza),
-                    parseOptionalBoolean(alunoPayload.transporte_apto),
-                    parseOptionalText(alunoPayload.id_pessoa),
-                    parseOptionalText(alunoPayload.turno_simplificado),
-                    latitude,
-                    longitude,
-                    alunoId,
-                    tenantId,
-                ]
-            );
-        } else {
-            await client.query(
-                `
-                UPDATE alunos_municipais
-                SET
-                    unidade_ensino = COALESCE($1, unidade_ensino),
-                    codigo_inep = COALESCE($2, codigo_inep),
-                    turma = COALESCE($3, turma),
-                    atualizado_em = NOW()
-                WHERE id = $4
-                `,
-                [escola.nome, escola.codigo_inep, turma, alunoId]
-            );
+        const updateSets = [];
+        const updateParams = [];
+
+        function pushUpdate(column, value) {
+            updateParams.push(value);
+            updateSets.push(`${column} = COALESCE($${updateParams.length}, ${column})`);
         }
+
+        pushUpdate('pessoa_nome', pessoaNome);
+        pushUpdate('cpf', parseOptionalText(alunoPayload.cpf));
+        pushUpdate('data_nascimento', parseOptionalDate(alunoPayload.data_nascimento));
+        pushUpdate('sexo', parseOptionalText(alunoPayload.sexo));
+        pushUpdate('codigo_inep', escola.codigo_inep);
+        pushUpdate('data_matricula', parseOptionalDate(alunoPayload.data_matricula));
+        pushUpdate('status', parseOptionalText(alunoPayload.status) || 'ativo');
+        pushUpdate('unidade_ensino', escola.nome);
+        pushUpdate('ano', parseOptionalText(alunoPayload.ano));
+        pushUpdate('turma', turma);
+        pushUpdate('modalidade', parseOptionalText(alunoPayload.modalidade));
+        pushUpdate('formato_letivo', parseOptionalText(alunoPayload.formato_letivo));
+        pushUpdate('etapa', parseOptionalText(alunoPayload.etapa));
+        pushUpdate('cep', parseOptionalText(alunoPayload.cep));
+        pushUpdate('rua', parseOptionalText(alunoPayload.rua));
+        pushUpdate('bairro', parseOptionalText(alunoPayload.bairro));
+        pushUpdate('numero_pessoa_endereco', parseOptionalText(alunoPayload.numero_pessoa_endereco));
+        pushUpdate('zona', parseOptionalText(alunoPayload.zona));
+        pushUpdate('filiacao_1', parseOptionalText(alunoPayload.filiacao_1));
+        pushUpdate('telefone_filiacao_1', parseOptionalText(alunoPayload.telefone_filiacao_1));
+        pushUpdate('filiacao_2', parseOptionalText(alunoPayload.filiacao_2));
+        pushUpdate('telefone_filiacao_2', parseOptionalText(alunoPayload.telefone_filiacao_2));
+        pushUpdate('responsavel', parseOptionalText(alunoPayload.responsavel));
+        pushUpdate('telefone_responsavel', parseOptionalText(alunoPayload.telefone_responsavel));
+        pushUpdate('deficiencia', parseOptionalText(alunoPayload.deficiencia));
+        if (columnSupport.alunosMunicipaisRotaExclusiva) pushUpdate('rota_exclusiva', parseOptionalBoolean(alunoPayload.rota_exclusiva));
+        if (columnSupport.alunosMunicipaisCarroAdaptado) pushUpdate('carro_adaptado', parseOptionalBoolean(alunoPayload.carro_adaptado));
+        pushUpdate('transporte_escolar_publico_utiliza', parseOptionalText(alunoPayload.transporte_escolar_publico_utiliza));
+        pushUpdate('transporte_apto', parseOptionalBoolean(alunoPayload.transporte_apto));
+        pushUpdate('id_pessoa', generatedIdPessoa);
+        if (columnSupport.alunosMunicipaisTurnoSimplificado) pushUpdate('turno_simplificado', parseOptionalText(alunoPayload.turno_simplificado));
+
+        if (latitude !== null && longitude !== null) {
+            updateParams.push(latitude, longitude);
+            const latParam = updateParams.length - 1;
+            const lngParam = updateParams.length;
+            updateSets.push(`localizacao = COALESCE(ST_SetSRID(ST_MakePoint($${lngParam}, $${latParam}), 4326), localizacao)`);
+        }
+
+        updateSets.push('atualizado_em = NOW()');
+
+        updateParams.push(alunoId);
+        let updateWhere = `WHERE id = $${updateParams.length}`;
+        if (columnSupport.alunosMunicipaisTenantId && tenantId) {
+            updateParams.push(tenantId);
+            updateWhere += ` AND tenant_id = $${updateParams.length}`;
+        }
+
+        await client.query(
+            `
+            UPDATE alunos_municipais
+            SET ${updateSets.join(', ')}
+            ${updateWhere}
+            `,
+            updateParams
+        );
 
         await saveAlunoComplementos(client, tenantId, alunoId, complementarPayload);
 
@@ -1605,6 +1660,7 @@ router.post("/:id/matriculas", async (req, res) => {
             escola_id: escolaId,
             ano_letivo: anoLetivo,
             turma,
+            id_pessoa: generatedIdPessoa,
         });
     } catch (err) {
         try { await client.query("ROLLBACK"); } catch (_) { }
@@ -1665,6 +1721,160 @@ router.get("/:id/alunos/:alunoId/matricula", async (req, res) => {
     } catch (err) {
         console.error("Erro ao carregar ficha de matrícula do aluno:", err);
         return res.status(500).json({ error: "Erro ao carregar ficha de matrícula do aluno" });
+    }
+});
+
+router.get("/:id/alunos/:alunoId/atestado-matricula-pdf", async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        if (isNaN(escolaId) || isNaN(alunoId)) {
+            return res.status(400).json({ error: "Identificador inválido." });
+        }
+
+        const tenantId = getTenantId(req);
+        const aluno = await loadAlunoMatriculaDetalhes({ escolaId, alunoId, tenantId });
+        if (!aluno) {
+            return res.status(404).json({ error: "Aluno não encontrado." });
+        }
+
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="atestado_matricula_${alunoId}.pdf"`);
+
+        const doc = new PDFDocument({ size: "A4", margin: 50 });
+        doc.pipe(res);
+
+        drawCabecalho(doc, branding);
+        doc.y = 130;
+        doc.font("Helvetica-Bold").fontSize(15).text("ATESTADO DE MATRÍCULA", { align: "center" });
+        doc.moveDown(2);
+        doc.font("Helvetica").fontSize(12);
+        doc.text(`Atestamos, para os devidos fins, que o(a) estudante ${aluno.pessoa_nome || "Não informado"}, CPF ${aluno.cpf || "não informado"}, encontra-se regularmente matriculado(a) nesta unidade escolar.`);
+        doc.moveDown(1);
+        doc.text(`Escola: ${aluno.escola_nome || aluno.unidade_ensino || "Não informada"}`);
+        doc.text(`Código INEP: ${aluno.codigo_inep || "Não informado"}`);
+        doc.text(`Ano letivo: ${aluno.ano_letivo || "Não informado"}`);
+        doc.text(`Turma: ${aluno.turma_escola || aluno.turma || "Não informada"}`);
+        doc.text(`Etapa/modalidade: ${[aluno.etapa, aluno.modalidade].filter(Boolean).join(" • ") || "Não informada"}`);
+        doc.text(`Data da matrícula: ${formatDatePtBr(aluno.data_matricula)}`);
+        doc.moveDown(1.5);
+        doc.text("O presente atestado é emitido a pedido do interessado para fins de comprovação junto aos órgãos e instituições que se fizerem necessários.", { align: "justify" });
+        doc.moveDown(3);
+        doc.text(`${branding?.cidade_uf || ""}, ${new Date().toLocaleDateString("pt-BR")}.`, { align: "right" });
+        doc.moveDown(4);
+        doc.text("__________________________________________", { align: "center" });
+        doc.font("Helvetica-Bold").text("Secretaria Escolar", { align: "center" });
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar atestado de matrícula:", err);
+        return res.status(500).json({ error: "Erro ao gerar atestado de matrícula" });
+    }
+});
+
+router.get("/:id/alunos/:alunoId/ficha-matricula-pdf", async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        if (isNaN(escolaId) || isNaN(alunoId)) {
+            return res.status(400).json({ error: "Identificador inválido." });
+        }
+
+        const tenantId = getTenantId(req);
+        const aluno = await loadAlunoMatriculaDetalhes({ escolaId, alunoId, tenantId });
+        if (!aluno) {
+            return res.status(404).json({ error: "Aluno não encontrado." });
+        }
+
+        const extras = aluno.dados_complementares || {};
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="ficha_matricula_${alunoId}.pdf"`);
+
+        const doc = new PDFDocument({ size: "A4", margin: 45 });
+        doc.pipe(res);
+        drawCabecalho(doc, branding);
+        doc.y = 120;
+        doc.font("Helvetica-Bold").fontSize(15).text("FICHA DE MATRÍCULA DO ESTUDANTE", { align: "center" });
+        doc.moveDown(1.4);
+
+        function section(title) {
+            doc.moveDown(0.8);
+            doc.font("Helvetica-Bold").fontSize(11).text(title);
+            doc.moveDown(0.25);
+            doc.font("Helvetica").fontSize(10.5);
+        }
+        function line(label, value) {
+            doc.font("Helvetica-Bold").text(label + ": ", { continued: true });
+            doc.font("Helvetica").text(value || "Não informado");
+        }
+
+        section("1. Identificação do estudante");
+        line("Nome completo", aluno.pessoa_nome);
+        line("Nome social", aluno.nome_social);
+        line("CPF", aluno.cpf);
+        line("ID/Matrícula na rede", aluno.id_pessoa ? String(aluno.id_pessoa) : null);
+        line("Data de nascimento", formatDatePtBr(aluno.data_nascimento));
+        line("Sexo", aluno.sexo);
+        line("RG", aluno.rg);
+        line("Certidão de nascimento", aluno.certidao_nascimento);
+        line("NIS", aluno.nis);
+        line("Cartão SUS", aluno.cartao_sus);
+
+        section("2. Dados escolares");
+        line("Escola", aluno.escola_nome || aluno.unidade_ensino);
+        line("Código INEP", aluno.codigo_inep);
+        line("Ano letivo", aluno.ano_letivo ? String(aluno.ano_letivo) : null);
+        line("Turma", aluno.turma_escola || aluno.turma);
+        line("Ano/Série", aluno.ano);
+        line("Etapa", aluno.etapa);
+        line("Modalidade", aluno.modalidade);
+        line("Formato letivo", aluno.formato_letivo);
+        line("Data da matrícula", formatDatePtBr(aluno.data_matricula));
+        line("Status", aluno.status);
+
+        section("3. Filiação e responsáveis");
+        line("Filiação 1", aluno.filiacao_1);
+        line("Telefone filiação 1", aluno.telefone_filiacao_1);
+        line("Filiação 2", aluno.filiacao_2);
+        line("Telefone filiação 2", aluno.telefone_filiacao_2);
+        line("Responsável principal", aluno.responsavel);
+        line("Telefone do responsável", aluno.telefone_responsavel);
+        line("E-mail do responsável", aluno.email_responsavel);
+        line("Contato de emergência", aluno.contato_emergencia_nome);
+        line("Telefone de emergência", aluno.telefone_emergencia);
+
+        section("4. Endereço e localização");
+        line("Endereço", formatEnderecoAluno(aluno));
+        line("Complemento", aluno.complemento_endereco);
+        line("Ponto de referência", aluno.ponto_referencia);
+        line("Zona", aluno.zona);
+
+        section("5. Saúde, inclusão e transporte");
+        line("Deficiência/condição", aluno.deficiencia);
+        line("Diagnósticos", aluno.diagnosticos);
+        line("Medicações", aluno.medicacoes);
+        line("Restrições de saúde", aluno.restricoes_saude);
+        line("Alergias", aluno.alergias);
+        line("Transporte escolar público utiliza", aluno.transporte_escolar_publico_utiliza);
+        line("Apto ao transporte", aluno.transporte_apto ? "Sim" : "Não");
+
+        section("6. Informações complementares");
+        line("Benefício social", extras.beneficio_social);
+        line("Escola de origem", extras.escola_origem);
+        line("Rede de origem", extras.rede_origem);
+        line("Situação escolar", extras.situacao_escolar);
+        line("Matriculante", extras.matriculante_nome);
+        line("CPF do matriculante", extras.matriculante_cpf);
+        line("Vínculo do matriculante", extras.matriculante_parentesco);
+        line("Observações gerais", aluno.observacoes_gerais || extras.observacoes_convivencia);
+
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar ficha de matrícula:", err);
+        return res.status(500).json({ error: "Erro ao gerar ficha de matrícula" });
     }
 });
 

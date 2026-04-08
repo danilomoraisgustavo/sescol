@@ -13,9 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&amp;display=swap"
         rel="stylesheet" />
     <link href="../../css/feather.css" rel="stylesheet" />
-    <script>
-        window.GOOGLE_MAPS_API_KEY = "AIzaSyAw5m0VNubftWh7FO5yJ8OeENkLMpAFcU0";
-    </script>
+    <script src="/api/public-config.js"></script>
     <link disabled="" href="../../css/app-light.css" id="lightTheme" rel="stylesheet" />
     <link href="../../css/app-dark.css" id="darkTheme" rel="stylesheet" />
     <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet" />
@@ -54,6 +52,70 @@
         .aluno-popup-btn:hover {
             filter: brightness(0.95);
             text-decoration: none;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: .25rem;
+        }
+
+        #tabela-alunos {
+            width: 100%;
+            min-width: 1180px;
+            table-layout: auto;
+        }
+
+        #tabela-alunos th,
+        #tabela-alunos td {
+            vertical-align: middle;
+            padding: .9rem .85rem;
+        }
+
+        #tabela-alunos thead th {
+            white-space: nowrap;
+        }
+
+        #tabela-alunos th:nth-child(3),
+        #tabela-alunos td:nth-child(3) {
+            min-width: 280px;
+            white-space: normal;
+        }
+
+        #tabela-alunos th:nth-child(4),
+        #tabela-alunos td:nth-child(4) {
+            min-width: 260px;
+            white-space: normal;
+        }
+
+        #tabela-alunos th:nth-child(5),
+        #tabela-alunos td:nth-child(5) {
+            min-width: 160px;
+        }
+
+        #tabela-alunos th:nth-child(7),
+        #tabela-alunos td:nth-child(7) {
+            min-width: 180px;
+            white-space: normal;
+        }
+
+        #tabela-alunos th:last-child,
+        #tabela-alunos td:last-child {
+            width: 120px;
+            min-width: 120px;
+            text-align: right;
+        }
+
+        #tabela-alunos tbody td p,
+        #tabela-alunos tbody td small,
+        #tabela-alunos tbody td strong,
+        #tabela-alunos tbody td span {
+            white-space: normal;
+            word-break: break-word;
+        }
+
+        #tabela-alunos tbody td:last-child .dropdown-toggle {
+            min-width: 96px;
         }
 
 
@@ -304,22 +366,6 @@
                 white-space: normal;
             }
 
-            .table-responsive {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                border-radius: .25rem;
-            }
-
-            #tabela-alunos {
-                min-width: 920px;
-            }
-
-            #tabela-alunos th,
-            #tabela-alunos td {
-                white-space: nowrap;
-                vertical-align: middle;
-            }
-
             #paginacao-alunos {
                 flex-wrap: wrap;
                 justify-content: center !important;
@@ -373,7 +419,6 @@
 
             #modal-solicitar-transporte .modal-footer,
             #modal-editar-aluno .modal-footer,
-            #modal-importar-alunos .modal-footer,
             #modal-selecionar-ponto .modal-footer,
             #modal-riscos-reavaliacao .modal-footer,
             #modal-termo-desembarque .modal-footer,
@@ -385,7 +430,6 @@
 
             #modal-solicitar-transporte .modal-footer .btn,
             #modal-editar-aluno .modal-footer .btn,
-            #modal-importar-alunos .modal-footer .btn,
             #modal-selecionar-ponto .modal-footer .btn,
             #modal-riscos-reavaliacao .modal-footer .btn,
             #modal-termo-desembarque .modal-footer .btn,
@@ -465,7 +509,6 @@
             #modal-mapa-alunos .form-group,
             #modal-solicitar-transporte .form-group,
             #modal-editar-aluno .form-group,
-            #modal-importar-alunos .form-group,
             #modal-selecionar-ponto .form-group,
             #modal-riscos-reavaliacao .form-group {
                 margin-bottom: .85rem;
@@ -505,7 +548,6 @@
 
             #modal-solicitar-transporte .modal-footer .btn,
             #modal-editar-aluno .modal-footer .btn,
-            #modal-importar-alunos .modal-footer .btn,
             #modal-selecionar-ponto .modal-footer .btn,
             #modal-riscos-reavaliacao .modal-footer .btn,
             #modal-termo-desembarque .modal-footer .btn,
@@ -547,7 +589,6 @@
                 font-size: .9rem;
             }
 
-            #modal-importar-alunos .alert,
             #modal-solicitar-transporte .alert,
             #modal-termo-desembarque .alert {
                 font-size: .84rem;
@@ -764,15 +805,6 @@
                                                     id="btn-mapear-alunos" type="button">
                                                     Mapear alunos
                                                 </button>
-                                                <button class="btn btn-outline-success float-right ml-2"
-                                                    id="btn-cadastrar-aluno-estadual" type="button">
-                                                    Cadastrar aluno estadual
-                                                </button>
-                                                <button class="btn btn-primary float-right ml-3"
-                                                    data-target="#modal-importar-alunos" data-toggle="modal"
-                                                    id="btn-abrir-importar-alunos" type="button">
-                                                    Importar planilha (XLSX)
-                                                </button>
                                                 <button aria-expanded="false" aria-haspopup="true"
                                                     class="btn btn-secondary dropdown-toggle" data-toggle="dropdown"
                                                     id="acoesAlunosMenu" type="button">
@@ -800,14 +832,14 @@
                                                                 for="check-all-alunos"></label>
                                                         </div>
                                                     </td>
-                                                    <th style="width: 80px;">Foto</th>
+                                                    <th style="width: 92px;">Foto</th>
                                                     <th>Aluno</th>
                                                     <th>Escola / Unidade</th>
-                                                    <th style="width: 140px;">Turma</th>
-                                                    <th style="width: 120px;">Turno</th>
-                                                    <th style="width: 160px;">Transporte</th>
-                                                    <th style="width: 120px;">Status</th>
-                                                    <th style="width: 80px;">Ações</th>
+                                                    <th style="width: 170px;">Turma</th>
+                                                    <th style="width: 130px;">Turno</th>
+                                                    <th style="width: 190px;">Transporte</th>
+                                                    <th style="width: 130px;">Status</th>
+                                                    <th style="width: 120px;">Ações</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="tbody-alunos"></tbody>
@@ -833,59 +865,6 @@
                 </div>
             </div>
         </main>
-    </div>
-    <!-- Modal importar alunos -->
-    <div aria-hidden="true" aria-labelledby="modalImportarAlunosLabel" class="modal fade" id="modal-importar-alunos"
-        role="dialog" tabindex="-1">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <form enctype="multipart/form-data" id="form-importar-alunos">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalImportarAlunosLabel">
-                            Importar planilha de alunos (XLSX)
-                        </h5>
-                        <button aria-label="Fechar" class="close" data-dismiss="modal" type="button">
-                            <span aria-hidden="true">×</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                        <p>
-                            Selecione a planilha no formato XLSX com as colunas:
-                            <code>
-                UNIDADE_ENSINO, ANO, TURMA, MODALIDADE, FORMATO_LETIVO, ETAPA, STATUS, cpf, pessoa_nome,
-                data_nascimento, sexo, CODIGO_INEP, data_matricula, id_pessoa, cep, numero_pessoa_endereco,
-                bairro, zona, filiacao_1, telefone_filiacao_1, filiacao_2, telefone_filiacao_2, responsavel,
-                telefone_responsavel, deficiencia, transporte_escolar_publico_utiliza
-              </code>.
-                        </p>
-                        <div class="form-group">
-                            <label for="arquivo-alunos">Arquivo XLSX</label>
-                            <input accept=".xlsx" class="form-control-file" id="arquivo-alunos" name="arquivo"
-                                required="" type="file" />
-                        </div>
-                        <div class="alert alert-secondary small mb-0" role="alert">
-                            A associação com as escolas será feita com base na coluna
-                            <strong>UNIDADE_ENSINO</strong>,
-                            incluindo automaticamente os prefixos
-                            <strong>EMEF, EMEB, EMEIF, EEEM, NEI</strong>
-                            para encontrar o nome exato na tabela de escolas.
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-outline-secondary" data-dismiss="modal" type="button">
-                            Cancelar
-                        </button>
-                        <button class="btn btn-primary" id="btn-importar-alunos" type="submit">
-                            <span class="import-label">Importar</span>
-                            <span aria-hidden="true" class="import-loading d-none">
-                                <span class="spinner-border spinner-border-sm ml-2" role="status"></span>
-                                <span class="ml-2 import-dots">...</span>
-                            </span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
     <!-- Modal mapa de alunos (carregamento sob demanda) -->
     <div aria-hidden="true" aria-labelledby="modalMapaAlunosLabel" class="modal fade" id="modal-mapa-alunos"
@@ -5064,73 +5043,6 @@
                 });
             });
 
-            $('#form-importar-alunos').on('submit', function (e) {
-                e.preventDefault();
-
-                var arquivoInput = document.getElementById('arquivo-alunos');
-                if (!arquivoInput.files || !arquivoInput.files.length) {
-                    mostrarMensagemSistema('Atenção', 'Selecione um arquivo XLSX para importar.');
-                    return;
-                }
-
-                var formData = new FormData();
-                formData.append('arquivo', arquivoInput.files[0]);
-
-                // UI: mostra carregamento no botão enquanto importa
-                var $formImport = $(this);
-                var $btnImport = $formImport.find('button[type="submit"]');
-                var btnImportOriginalHtml = $btnImport.html();
-                $btnImport.prop('disabled', true);
-                arquivoInput.disabled = true;
-                $btnImport.html(
-                    '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>' +
-                    'Importando<span class="import-dots"></span>'
-                );
-                var dotCount = 0;
-                var $dots = $btnImport.find('.import-dots');
-                var dotsTimer = setInterval(function () {
-                    dotCount = (dotCount + 1) % 4;
-                    $dots.text('.'.repeat(dotCount));
-                }, 450);
-
-                apiFetch(apiImportAlunos, {
-                    method: 'POST',
-                    body: formData
-                }).then(function (resp) {
-                    if (!resp.ok) {
-                        return resp.json().then(function (data) {
-                            throw new Error(data.error || 'Erro ao importar planilha.');
-                        });
-                    }
-                    return resp.json();
-                }).then(function (data) {
-                    var msg = ''
-                        + 'Importação concluída.<br>'
-                        + 'Total de linhas lidas: ' + (data.total_linhas_lidas || 0) + '<br>'
-                        + 'Alunos novos inseridos: ' + (data.alunos_novos_inseridos || 0) + '<br>'
-                        + 'Ignorados por falta de escola: ' + (data.alunos_ignorados_sem_escola || 0) + '<br>'
-                        + 'Alunos inativados: ' + (data.alunos_inativados || 0) + '<br>'
-                        + 'Erros: ' + (data.erros || 0);
-
-                    $('#modal-importar-alunos').modal('hide');
-                    mostrarMensagemSistema('Importação de alunos', msg);
-                    carregarAlunos(1);
-                    if (isModalMapaAlunosAberto()) {
-                        stGarantirMapaAlunosInicializado().then(function () {
-                            carregarMarcadoresAlunos();
-                        });
-                    }
-                }).catch(function (err) {
-                    console.error(err);
-                    mostrarMensagemSistema('Erro', err.message || 'Erro ao importar planilha.');
-                }).finally(function () {
-                    try { clearInterval(dotsTimer); } catch (e) { }
-                    $btnImport.html(btnImportOriginalHtml);
-                    $btnImport.prop('disabled', false);
-                    arquivoInput.disabled = false;
-                });
-            });
-
             $(document).on('click', '.acao-excluir-aluno', function (e) {
                 e.preventDefault();
                 var id = $(this).data('id');
@@ -5332,14 +5244,6 @@
                 e.preventDefault();
                 stAbrirModalMapaTodos();
             });
-
-
-            // Cadastro manual de aluno estadual (inicia fluxo do "Solicitar transporte")
-            $('#btn-cadastrar-aluno-estadual').off('click').on('click', function (e) {
-                e.preventDefault();
-                stAbrirCadastroAlunoEstadual();
-            });
-
 
             // Botões do modal
             $('#btn-mapa-alunos-carregar-todos').off('click').on('click', function () {
@@ -6382,80 +6286,6 @@
         gtag('js', new Date());
         gtag('config', 'UA-56159088-1');
     </script>
-    <script>
-        (function () {
-            function getImportButton() {
-                return document.getElementById('btn-importar-alunos');
-            }
-
-            var dotsTimer = null;
-            function setImportLoading(isLoading) {
-                var btn = getImportButton();
-                if (!btn) return;
-
-                var label = btn.querySelector('.import-label');
-                var loading = btn.querySelector('.import-loading');
-                var dots = btn.querySelector('.import-dots');
-
-                if (isLoading) {
-                    btn.disabled = true;
-                    if (label) label.textContent = 'Importando';
-                    if (loading) loading.classList.remove('d-none');
-
-                    if (dots) {
-                        var state = 0;
-                        dots.textContent = '.';
-                        if (dotsTimer) clearInterval(dotsTimer);
-                        dotsTimer = setInterval(function () {
-                            state = (state + 1) % 3;
-                            dots.textContent = state === 0 ? '.' : state === 1 ? '..' : '...';
-                        }, 450);
-                    }
-                } else {
-                    btn.disabled = false;
-                    if (label) label.textContent = 'Importar';
-                    if (loading) loading.classList.add('d-none');
-                    if (dotsTimer) {
-                        clearInterval(dotsTimer);
-                        dotsTimer = null;
-                    }
-                }
-            }
-
-            // Ativa o loading assim que o formulário é submetido (captura antes de outros handlers)
-            document.addEventListener('submit', function (ev) {
-                if (ev && ev.target && ev.target.id === 'form-importar-alunos') {
-                    setImportLoading(true);
-                }
-            }, true);
-
-            // Desativa o loading quando o modal fecha (se o usuário cancelar/fechar)
-            $('#modal-importar-alunos').on('hidden.bs.modal', function () {
-                setImportLoading(false);
-                var input = document.getElementById('arquivo-alunos');
-                if (input) input.value = '';
-            });
-
-            // Garante loading/desloading mesmo se o fetch for chamado em outro lugar
-            if (window.fetch) {
-                var _fetch = window.fetch.bind(window);
-                window.fetch = async function () {
-                    try {
-                        var url = arguments[0] && typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url);
-                        var isImport = url && String(url).includes('/api/alunos/import-xlsx');
-                        if (isImport) setImportLoading(true);
-                        var resp = await _fetch.apply(null, arguments);
-                        return resp;
-                    } finally {
-                        var url2 = arguments[0] && typeof arguments[0] === 'string' ? arguments[0] : (arguments[0] && arguments[0].url);
-                        var isImport2 = url2 && String(url2).includes('/api/alunos/import-xlsx');
-                        if (isImport2) setImportLoading(false);
-                    }
-                };
-            }
-        })();
-    </script>
-
     <script>
         (function () {
             function aplicarLabelsTabelaAlunos() {
