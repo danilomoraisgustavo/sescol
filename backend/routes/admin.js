@@ -37,6 +37,20 @@ function pick(obj, keys) {
   return out;
 }
 
+let userColumnsCache = null;
+
+async function getUserColumns() {
+  if (userColumnsCache) return userColumnsCache;
+  const { rows } = await pool.query(`
+    SELECT column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'usuarios'
+  `);
+  userColumnsCache = new Set((rows || []).map((row) => row.column_name));
+  return userColumnsCache;
+}
+
 router.use(requireAdmin);
 
 // GET /api/admin/me
@@ -104,8 +118,12 @@ router.get('/users', async (req, res) => {
   if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
   if (!userId) return res.status(401).json({ message: 'Usuário inválido no token.' });
 
+  const userCols = await getUserColumns();
+  const fornecedorSelect = userCols.has('fornecedor_id')
+    ? 'fornecedor_id'
+    : 'NULL::bigint AS fornecedor_id';
   const { rows } = await pool.query(
-    `SELECT id, tenant_id, nome, email, cargo::text AS cargo, fornecedor_id, init, ativo, telefone
+    `SELECT id, tenant_id, nome, email, cargo::text AS cargo, ${fornecedorSelect}, init, ativo, telefone
      FROM usuarios
      WHERE tenant_id = $1
      ORDER BY id DESC`,
@@ -120,6 +138,7 @@ router.post('/users', async (req, res) => {
   if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
   if (!userId) return res.status(401).json({ message: 'Usuário inválido no token.' });
 
+  const userCols = await getUserColumns();
   const body = req.body || {};
   const nome = String(body.nome || '').trim();
   const email = String(body.email || '').trim().toLowerCase();
@@ -151,11 +170,20 @@ router.post('/users', async (req, res) => {
   }
 
   try {
+    const insertCols = ['tenant_id', 'nome', 'email', 'telefone', 'senha_hash', 'cargo', 'init', 'ativo'];
+    const insertValues = ['$1','$2','$3','$4','$5','$6::cargo_usuario','$7','$8'];
+    const params = [tenantId, nome, email, telefone, senha_hash, cargo, init, ativo];
+    if (userCols.has('fornecedor_id')) {
+      insertCols.splice(6, 0, 'fornecedor_id');
+      insertValues.splice(6, 0, `$${params.length + 1}`);
+      params.push(cargo === 'FORNECEDOR_ESCOLAR' ? fornecedorId : null);
+    }
+    const returningFornecedor = userCols.has('fornecedor_id') ? 'fornecedor_id' : 'NULL::bigint AS fornecedor_id';
     const { rows } = await pool.query(
-      `INSERT INTO usuarios (tenant_id, nome, email, telefone, senha_hash, cargo, fornecedor_id, init, ativo)
-       VALUES ($1,$2,$3,$4,$5,$6::cargo_usuario,$7,$8,$9)
-       RETURNING id, tenant_id, nome, email, cargo::text AS cargo, fornecedor_id, init, ativo, telefone`,
-      [tenantId, nome, email, telefone, senha_hash, cargo, (cargo === 'FORNECEDOR_ESCOLAR' ? fornecedorId : null), init, ativo]
+      `INSERT INTO usuarios (${insertCols.join(', ')})
+       VALUES (${insertValues.join(', ')})
+       RETURNING id, tenant_id, nome, email, cargo::text AS cargo, ${returningFornecedor}, init, ativo, telefone`,
+      params
     );
     return res.status(201).json(rows[0]);
   } catch (e) {
@@ -174,6 +202,7 @@ router.put('/users/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!id) return res.status(400).json({ message: 'ID inválido.' });
 
+  const userCols = await getUserColumns();
   const body = req.body || {};
   const nome = String(body.nome || '').trim();
   const email = String(body.email || '').trim().toLowerCase();
@@ -203,9 +232,8 @@ router.put('/users/:id', async (req, res) => {
     "email=$2",
     "telefone=$3",
     "cargo=$4::cargo_usuario",
-    "fornecedor_id=$5",
-    "init=$6",
-    "ativo=$7"
+    "init=$5",
+    "ativo=$6"
   ];
 
   const params = [
@@ -213,10 +241,14 @@ router.put('/users/:id', async (req, res) => {
     email,
     telefone,
     cargo,
-    (cargo === 'FORNECEDOR_ESCOLAR' ? fornecedorId : null),
     init,
     ativo
   ];
+
+  if (userCols.has('fornecedor_id')) {
+    setParts.splice(4, 0, `fornecedor_id=$${params.length + 1}`);
+    params.splice(4, 0, (cargo === 'FORNECEDOR_ESCOLAR' ? fornecedorId : null));
+  }
 
   let senhaIdx = null;
   if (senha) {
@@ -238,7 +270,7 @@ router.put('/users/:id', async (req, res) => {
       `UPDATE usuarios
        SET ${setParts.join(', ')}
        WHERE id=$${params.length - 1} AND tenant_id=$${params.length}
-       RETURNING id, tenant_id, nome, email, cargo::text AS cargo, fornecedor_id, init, ativo, telefone`,
+       RETURNING id, tenant_id, nome, email, cargo::text AS cargo, ${userCols.has('fornecedor_id') ? 'fornecedor_id' : 'NULL::bigint AS fornecedor_id'}, init, ativo, telefone`,
       params
     );
     return res.json(rows[0]);

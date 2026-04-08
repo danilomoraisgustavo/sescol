@@ -9,6 +9,35 @@ const router = express.Router();
 // Protege TODAS as rotas e fixa o tenant a partir do JWT/cookie (sem aceitar spoof por header/query)
 router.use(authMiddleware, tenantMiddleware);
 
+let pontosParadaSchemaCache = null;
+
+async function getPontosParadaSchema() {
+    if (pontosParadaSchemaCache) return pontosParadaSchemaCache;
+    const { rows } = await pool.query(`
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND (
+            (table_name = 'pontos_parada' AND column_name IN ('tenant_id'))
+            OR
+            (table_name = 'zoneamentos' AND column_name IN ('tenant_id'))
+          )
+    `);
+
+    const support = {
+        pontosTenant: false,
+        zoneamentosTenant: false
+    };
+
+    for (const row of rows || []) {
+        if (row.table_name === 'pontos_parada' && row.column_name === 'tenant_id') support.pontosTenant = true;
+        if (row.table_name === 'zoneamentos' && row.column_name === 'tenant_id') support.zoneamentosTenant = true;
+    }
+
+    pontosParadaSchemaCache = support;
+    return support;
+}
+
 /**
  * Monta expressão de POINT para uso direto em SQL.
  * localizacao é GEOMETRY(Point, 4326) no PostGIS.
@@ -27,7 +56,10 @@ function buildPointFromLatLng(lat, lng) {
  *  - distancia_m
  */
 async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
+    const schema = await getPontosParadaSchema();
     const pointExpr = buildPointFromLatLng(lat, lng);
+    const tenantWhere = schema.zoneamentosTenant ? 'tenant_id = $1 AND' : '';
+    const params = schema.zoneamentosTenant ? [tenantId] : [];
 
     // 1) POLÍGONO que INTERSECTA o ponto
     const sqlPoligonoIntersect = `
@@ -37,7 +69,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
       'poligono_intersecta'::text AS tipo_relacao,
       0::double precision AS distancia_m
     FROM zoneamentos
-    WHERE tenant_id = $1
+    WHERE ${tenantWhere}
       AND geom IS NOT NULL
       AND (
             tipo_geometria = 'polygon'
@@ -48,7 +80,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
     LIMIT 1;
   `;
 
-    const resultPoligonoIntersect = await pool.query(sqlPoligonoIntersect, [tenantId]);
+    const resultPoligonoIntersect = await pool.query(sqlPoligonoIntersect, params);
     if (resultPoligonoIntersect.rows.length) return resultPoligonoIntersect.rows[0];
 
     // 2) POLÍGONO mais próximo
@@ -60,7 +92,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
       'poligono_proximo'::text AS tipo_relacao,
       ST_Distance(geom::geography, ${pointExpr}::geography) AS distancia_m
     FROM zoneamentos
-    WHERE tenant_id = $1
+    WHERE ${tenantWhere}
       AND geom IS NOT NULL
       AND (
             tipo_geometria = 'polygon'
@@ -71,7 +103,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
     LIMIT 1;
   `;
 
-    const resultPoligonoProximo = await pool.query(sqlPoligonoProximo, [tenantId]);
+    const resultPoligonoProximo = await pool.query(sqlPoligonoProximo, params);
     if (resultPoligonoProximo.rows.length) return resultPoligonoProximo.rows[0];
 
     // 3) LINHA que INTERSECTA diretamente o ponto
@@ -82,7 +114,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
       'linha_intersecta'::text AS tipo_relacao,
       ST_Distance(geom::geography, ${pointExpr}::geography) AS distancia_m
     FROM zoneamentos
-    WHERE tenant_id = $1
+    WHERE ${tenantWhere}
       AND geom IS NOT NULL
       AND (
             tipo_geometria = 'line'
@@ -93,7 +125,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
     LIMIT 1;
   `;
 
-    const resultLinhaIntersect = await pool.query(sqlLinhaIntersect, [tenantId]);
+    const resultLinhaIntersect = await pool.query(sqlLinhaIntersect, params);
     if (resultLinhaIntersect.rows.length) return resultLinhaIntersect.rows[0];
 
     // 4) LINHA mais próxima dentro de um raio
@@ -105,7 +137,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
       'linha_proxima'::text AS tipo_relacao,
       ST_Distance(geom::geography, ${pointExpr}::geography) AS distancia_m
     FROM zoneamentos
-    WHERE tenant_id = $1
+    WHERE ${tenantWhere}
       AND geom IS NOT NULL
       AND (
             tipo_geometria = 'line'
@@ -116,7 +148,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
     LIMIT 1;
   `;
 
-    const resultLinhaProxima = await pool.query(sqlLinhaProxima, [tenantId]);
+    const resultLinhaProxima = await pool.query(sqlLinhaProxima, params);
     if (resultLinhaProxima.rows.length) return resultLinhaProxima.rows[0];
 
     // 5) ÚLTIMO RECURSO: linha mais próxima SEM LIMITE
@@ -127,7 +159,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
       'linha_mais_proxima_sem_limite'::text AS tipo_relacao,
       ST_Distance(geom::geography, ${pointExpr}::geography) AS distancia_m
     FROM zoneamentos
-    WHERE tenant_id = $1
+    WHERE ${tenantWhere}
       AND geom IS NOT NULL
       AND (
             tipo_geometria = 'line'
@@ -137,7 +169,7 @@ async function encontrarZoneamentoParaPonto(lat, lng, tenantId) {
     LIMIT 1;
   `;
 
-    const resultLinhaSemLimite = await pool.query(sqlLinhaMaisProximaSemLimite, [tenantId]);
+    const resultLinhaSemLimite = await pool.query(sqlLinhaMaisProximaSemLimite, params);
     if (resultLinhaSemLimite.rows.length) return resultLinhaSemLimite.rows[0];
 
     return null;
@@ -151,6 +183,12 @@ router.get("/", async (req, res) => {
     const tenantId = req.tenantId;
 
     try {
+        const schema = await getPontosParadaSchema();
+        const joinTenantClause = schema.zoneamentosTenant && schema.pontosTenant
+            ? 'AND z.tenant_id = p.tenant_id'
+            : '';
+        const whereClause = schema.pontosTenant ? 'WHERE p.tenant_id = $1' : '';
+        const params = schema.pontosTenant ? [tenantId] : [];
         const sql = `
       SELECT 
         p.id,
@@ -173,12 +211,12 @@ router.get("/", async (req, res) => {
       FROM pontos_parada p
       LEFT JOIN zoneamentos z 
         ON z.id = p.zoneamento_id
-       AND z.tenant_id = p.tenant_id
-      WHERE p.tenant_id = $1
+       ${joinTenantClause}
+      ${whereClause}
       ORDER BY p.id ASC;
     `;
 
-        const result = await pool.query(sql, [tenantId]);
+        const result = await pool.query(sql, params);
         return res.json(result.rows);
     } catch (err) {
         console.error("Erro ao listar pontos de parada:", err);
@@ -512,7 +550,11 @@ router.get("/:id", async (req, res) => {
     const tenantId = req.tenantId;
 
     try {
+        const schema = await getPontosParadaSchema();
         const { id } = req.params;
+        const joinTenantClause = schema.zoneamentosTenant && schema.pontosTenant
+            ? 'AND z.tenant_id = p.tenant_id'
+            : '';
         const sql = `
       SELECT 
         p.id,
@@ -535,7 +577,7 @@ router.get("/:id", async (req, res) => {
       FROM pontos_parada p
       LEFT JOIN zoneamentos z 
         ON z.id = p.zoneamento_id
-       AND z.tenant_id = p.tenant_id
+       ${joinTenantClause}
       WHERE p.id = $1
         AND p.tenant_id = $2
       LIMIT 1;
@@ -555,6 +597,7 @@ router.post("/", async (req, res) => {
     const tenantId = req.tenantId;
 
     try {
+        const schema = await getPontosParadaSchema();
         const {
             area,
             logradouro,
@@ -597,9 +640,13 @@ router.post("/", async (req, res) => {
             }
         } else {
             // Se veio zoneamento_id, valida se ele pertence ao tenant
+            const zoneamentoWhere = schema.zoneamentosTenant
+                ? 'WHERE id = $1 AND tenant_id = $2'
+                : 'WHERE id = $1';
+            const zoneamentoParams = schema.zoneamentosTenant ? [zonaId, tenantId] : [zonaId];
             const zCheck = await pool.query(
-                `SELECT id, tipo_zona FROM zoneamentos WHERE id = $1 AND tenant_id = $2 LIMIT 1;`,
-                [zonaId, tenantId]
+                `SELECT id, tipo_zona FROM zoneamentos ${zoneamentoWhere} LIMIT 1;`,
+                zoneamentoParams
             );
             if (!zCheck.rows.length) {
                 return res.status(400).json({ error: "zoneamento_id inválido para este tenant." });
@@ -650,6 +697,9 @@ router.post("/", async (req, res) => {
         ]);
 
         const novoId = result.rows[0].id;
+        const joinTenantClause = schema.zoneamentosTenant && schema.pontosTenant
+            ? 'AND z.tenant_id = p.tenant_id'
+            : '';
 
         // Se encontrou zoneamento, grava também na tabela de associação
         if (zonaId) {
@@ -690,7 +740,7 @@ router.post("/", async (req, res) => {
       FROM pontos_parada p
       LEFT JOIN zoneamentos z 
         ON z.id = p.zoneamento_id
-       AND z.tenant_id = p.tenant_id
+       ${joinTenantClause}
       WHERE p.id = $1
         AND p.tenant_id = $2
       LIMIT 1;
@@ -709,6 +759,7 @@ router.put("/:id", async (req, res) => {
     const tenantId = req.tenantId;
 
     try {
+        const schema = await getPontosParadaSchema();
         const { id } = req.params;
         const {
             area,
@@ -750,9 +801,13 @@ router.put("/:id", async (req, res) => {
                 distancia_m = typeof z.distancia_m === "number" ? z.distancia_m : 0;
             }
         } else {
+            const zoneamentoWhere = schema.zoneamentosTenant
+                ? 'WHERE id = $1 AND tenant_id = $2'
+                : 'WHERE id = $1';
+            const zoneamentoParams = schema.zoneamentosTenant ? [zonaId, tenantId] : [zonaId];
             const zCheck = await pool.query(
-                `SELECT id, tipo_zona FROM zoneamentos WHERE id = $1 AND tenant_id = $2 LIMIT 1;`,
-                [zonaId, tenantId]
+                `SELECT id, tipo_zona FROM zoneamentos ${zoneamentoWhere} LIMIT 1;`,
+                zoneamentoParams
             );
             if (!zCheck.rows.length) {
                 return res.status(400).json({ error: "zoneamento_id inválido para este tenant." });

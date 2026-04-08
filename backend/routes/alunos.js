@@ -148,6 +148,7 @@ async function getAlunosColumnSupport() {
         alunosMunicipaisTenantId: grouped.alunos_municipais?.has('tenant_id') || false,
         alunosMunicipaisRotaExclusiva: grouped.alunos_municipais?.has('rota_exclusiva') || false,
         alunosMunicipaisCarroAdaptado: grouped.alunos_municipais?.has('carro_adaptado') || false,
+        alunosMunicipaisTurnoSimplificado: grouped.alunos_municipais?.has('turno_simplificado') || false,
         alunosMunicipaisLocalizacao: grouped.alunos_municipais?.has('localizacao') || false,
         alunosEscolasTenantId: grouped.alunos_escolas?.has('tenant_id') || false,
         escolasTenantId: grouped.escolas?.has('tenant_id') || false,
@@ -199,6 +200,17 @@ function last2Cpf(cpf) {
     const digits = normalizeCpf(cpf);
     if (!digits || digits.length < 2) return null;
     return digits.slice(-2);
+}
+
+function formatHistoricoTipo(tipo) {
+    const raw = String(tipo || '').trim().toUpperCase();
+    const mapa = {
+        MATRICULA: 'Matrícula',
+        ATUALIZACAO_MATRICULA: 'Atualização de matrícula',
+        TRANSFERENCIA_SAIDA: 'Transferência de saída',
+        TRANSFERENCIA_ENTRADA: 'Transferência de entrada'
+    };
+    return mapa[raw] || raw || 'Movimentação';
 }
 
 function levenshtein(a, b) {
@@ -1696,7 +1708,7 @@ router.get("/mapa", async (req, res) => {
 
         // filtros extras
         // turno (usa turno_simplificado: MAT | VESP | NOT | INT)
-        if (turno) {
+        if (turno && columnSupport.alunosMunicipaisTurnoSimplificado) {
             const t = String(turno).trim().toUpperCase();
             const mapa = { 'MANHA': 'MAT', 'MANHÃ': 'MAT', 'TARDE': 'VESP', 'NOITE': 'NOT', 'INTEGRAL': 'INT' };
             const code = mapa[t] || t;
@@ -1760,7 +1772,7 @@ router.get("/mapa", async (req, res) => {
               e.id AS escola_id,
               e.nome AS escola_nome,
               ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson,
-              MAX(a.turno_simplificado) AS turno_simplificado,
+              ${columnSupport.alunosMunicipaisTurnoSimplificado ? 'MAX(a.turno_simplificado)' : 'NULL::text'} AS turno_simplificado,
               MAX(ap.ponto_id) AS ponto_id,
               MAX(ap.associado_em) AS ponto_associado_em,
               COALESCE(array_remove(array_agg(DISTINCT ap.ponto_id), NULL), '{}'::int[]) AS ponto_ids
@@ -1813,7 +1825,7 @@ router.get("/mapa", async (req, res) => {
               e.id AS escola_id,
               e.nome AS escola_nome,
               ST_AsGeoJSON(a.localizacao)::json AS localizacao_geojson,
-              MAX(a.turno_simplificado) AS turno_simplificado,
+              ${columnSupport.alunosMunicipaisTurnoSimplificado ? 'MAX(a.turno_simplificado)' : 'NULL::text'} AS turno_simplificado,
               MAX(ap.ponto_id) AS ponto_id,
               MAX(ap.associado_em) AS ponto_associado_em,
               COALESCE(array_remove(array_agg(DISTINCT ap.ponto_id), NULL), '{}'::int[]) AS ponto_ids
@@ -2334,77 +2346,7 @@ router.put("/:id", async (req, res) => {
     const syncDelete = ["1", "true", "yes", "sim"].includes(String((req.query?.sync_delete ?? req.body?.sync_delete ?? "")).toLowerCase());
 
     try {
-        const sql = `
-            UPDATE alunos_municipais
-            SET
-                pessoa_nome = $1,
-                cpf = $2,
-                data_nascimento = $3,
-                sexo = $4,
-                codigo_inep = $5,
-                data_matricula = $6,
-                status = $7,
-
-                unidade_ensino = $8,
-                ano = $9,
-                turma = $10,
-                modalidade = $11,
-                formato_letivo = $12,
-                etapa = $13,
-
-                cep = $14,
-                bairro = $15,
-                numero_pessoa_endereco = $16,
-                zona = $17,
-
-                filiacao_1 = $18,
-                telefone_filiacao_1 = $19,
-                filiacao_2 = $20,
-                telefone_filiacao_2 = $21,
-                responsavel = $22,
-                telefone_responsavel = $23,
-
-	                deficiencia = $24,
-	                rota_exclusiva = COALESCE($25, rota_exclusiva),
-	                carro_adaptado = COALESCE($26, carro_adaptado),
-	                transporte_escolar_publico_utiliza = $27,
-	                transporte_apto = COALESCE($28, transporte_apto),
-
-                atualizado_em = NOW()
-	            WHERE id = $29 AND tenant_id = $30
-            RETURNING
-                id,
-                pessoa_nome,
-                cpf,
-                data_nascimento,
-                sexo,
-                codigo_inep,
-                data_matricula,
-                status,
-                unidade_ensino,
-                ano,
-                turma,
-                modalidade,
-                formato_letivo,
-                etapa,
-                cep,
-                bairro,
-                numero_pessoa_endereco,
-                zona,
-                filiacao_1,
-                telefone_filiacao_1,
-                filiacao_2,
-                telefone_filiacao_2,
-                responsavel,
-                telefone_responsavel,
-                deficiencia,
-                transporte_escolar_publico_utiliza,
-	                transporte_apto,
-	                rota_exclusiva,
-	                carro_adaptado,
-                ST_AsGeoJSON(localizacao)::json AS localizacao_geojson,
-                atualizado_em;
-        `;
+        const columnSupport = await getAlunosColumnSupport();
 
         // Datas (aceita string vazia/undefined -> null)
         const dataNascimento = body.data_nascimento ? new Date(body.data_nascimento) : null;
@@ -2461,16 +2403,95 @@ router.put("/:id", async (req, res) => {
             sanitizeField(body.telefone_filiacao_2),
             sanitizeField(body.responsavel),
             sanitizeField(body.telefone_responsavel),
-
             sanitizeField(body.deficiencia),
-            rotaExclusiva,
-            carroAdaptado,
-            sanitizeField(body.transporte_escolar_publico_utiliza),
-            transporteApto,
-
-            id,
-            tenantId
+            sanitizeField(body.transporte_escolar_publico_utiliza)
         ];
+        const setParts = [
+            'pessoa_nome = $1',
+            'cpf = $2',
+            'data_nascimento = $3',
+            'sexo = $4',
+            'codigo_inep = $5',
+            'data_matricula = $6',
+            'status = $7',
+            'unidade_ensino = $8',
+            'ano = $9',
+            'turma = $10',
+            'modalidade = $11',
+            'formato_letivo = $12',
+            'etapa = $13',
+            'cep = $14',
+            'bairro = $15',
+            'numero_pessoa_endereco = $16',
+            'zona = $17',
+            'filiacao_1 = $18',
+            'telefone_filiacao_1 = $19',
+            'filiacao_2 = $20',
+            'telefone_filiacao_2 = $21',
+            'responsavel = $22',
+            'telefone_responsavel = $23',
+            'deficiencia = $24',
+            'transporte_escolar_publico_utiliza = $25'
+        ];
+        if (columnSupport.alunosMunicipaisRotaExclusiva) {
+            params.push(rotaExclusiva);
+            setParts.push(`rota_exclusiva = COALESCE($${params.length}, rota_exclusiva)`);
+        }
+        if (columnSupport.alunosMunicipaisCarroAdaptado) {
+            params.push(carroAdaptado);
+            setParts.push(`carro_adaptado = COALESCE($${params.length}, carro_adaptado)`);
+        }
+        params.push(transporteApto);
+        setParts.push(`transporte_apto = COALESCE($${params.length}, transporte_apto)`);
+        setParts.push('atualizado_em = NOW()');
+        params.push(id);
+        const idIdx = params.length;
+        let tenantWhere = '';
+        if (columnSupport.alunosMunicipaisTenantId) {
+            params.push(tenantId);
+            tenantWhere = ` AND tenant_id = $${params.length}`;
+        }
+        const localizacaoExpr = columnSupport.alunosMunicipaisLocalizacao
+            ? 'ST_AsGeoJSON(localizacao)::json AS localizacao_geojson'
+            : 'NULL::json AS localizacao_geojson';
+        const sql = `
+            UPDATE alunos_municipais
+            SET
+                ${setParts.join(',\n                ')}
+            WHERE id = $${idIdx}${tenantWhere}
+            RETURNING
+                id,
+                pessoa_nome,
+                cpf,
+                data_nascimento,
+                sexo,
+                codigo_inep,
+                data_matricula,
+                status,
+                unidade_ensino,
+                ano,
+                turma,
+                modalidade,
+                formato_letivo,
+                etapa,
+                cep,
+                bairro,
+                numero_pessoa_endereco,
+                zona,
+                filiacao_1,
+                telefone_filiacao_1,
+                filiacao_2,
+                telefone_filiacao_2,
+                responsavel,
+                telefone_responsavel,
+                deficiencia,
+                transporte_escolar_publico_utiliza,
+                transporte_apto,
+                ${columnSupport.alunosMunicipaisRotaExclusiva ? 'rota_exclusiva' : 'false AS rota_exclusiva'},
+                ${columnSupport.alunosMunicipaisCarroAdaptado ? 'carro_adaptado' : 'false AS carro_adaptado'},
+                ${localizacaoExpr},
+                atualizado_em;
+        `;
 
         const result = await pool.query(sql, params);
         if (result.rowCount === 0) {
@@ -2483,6 +2504,180 @@ router.put("/:id", async (req, res) => {
     } catch (err) {
         console.error("Erro ao atualizar aluno:", err);
         return res.status(500).json({ error: "Erro ao salvar aluno." });
+    }
+});
+
+router.get("/:id/historico", async (req, res) => {
+    try {
+        const alunoId = parseInt(req.params.id, 10);
+        if (Number.isNaN(alunoId)) {
+            return res.status(400).json({ error: "ID de aluno inválido." });
+        }
+
+        const tenantId = requireTenantId(req);
+        const columnSupport = await getAlunosColumnSupport();
+
+        const alunoParams = [alunoId];
+        let alunoTenantWhere = '';
+        if (columnSupport.alunosMunicipaisTenantId) {
+            alunoParams.push(tenantId);
+            alunoTenantWhere = 'AND a.tenant_id = $2';
+        }
+
+        const alunoSql = `
+            SELECT
+                a.id,
+                a.id_pessoa,
+                a.pessoa_nome,
+                a.cpf,
+                a.status,
+                a.unidade_ensino,
+                a.turma,
+                a.ano,
+                a.modalidade,
+                a.etapa,
+                a.data_matricula,
+                a.responsavel,
+                a.telefone_responsavel
+            FROM alunos_municipais a
+            WHERE a.id = $1
+            ${alunoTenantWhere}
+            LIMIT 1
+        `;
+
+        const alunoResult = await pool.query(alunoSql, alunoParams);
+        if (!alunoResult.rowCount) {
+            return res.status(404).json({ error: "Aluno não encontrado." });
+        }
+
+        const vinculosTenantJoin = columnSupport.alunosEscolasTenantId && columnSupport.escolasTenantId
+            ? 'AND e.tenant_id = ae.tenant_id'
+            : '';
+        const vinculosWhereTenant = columnSupport.alunosEscolasTenantId
+            ? 'AND ae.tenant_id = $2'
+            : '';
+        const vinculosParams = columnSupport.alunosEscolasTenantId ? [alunoId, tenantId] : [alunoId];
+        const vinculosSql = `
+            SELECT
+                ae.id,
+                ae.escola_id,
+                e.nome AS escola_nome,
+                ae.ano_letivo,
+                ae.turma,
+                ae.atualizado_em
+            FROM alunos_escolas ae
+            LEFT JOIN escolas e
+              ON e.id = ae.escola_id
+             ${vinculosTenantJoin}
+            WHERE ae.aluno_id = $1
+            ${vinculosWhereTenant}
+            ORDER BY ae.ano_letivo DESC NULLS LAST, ae.atualizado_em DESC NULLS LAST, ae.id DESC
+        `;
+        const vinculosResult = await pool.query(vinculosSql, vinculosParams);
+        const vinculos = vinculosResult.rows || [];
+
+        let historicoRows = [];
+        try {
+            const historicoParams = [alunoId];
+            let historicoTenantWhere = '';
+            if (columnSupport.alunosMunicipaisTenantId) {
+                historicoParams.push(tenantId);
+                historicoTenantWhere = 'AND h.tenant_id = $2';
+            }
+            const historicoSql = `
+                SELECT
+                    h.id,
+                    h.tipo_evento,
+                    h.ano_letivo,
+                    h.turma,
+                    h.turma_destino,
+                    h.status_aluno,
+                    h.criado_em,
+                    h.detalhes,
+                    eo.nome AS escola_nome,
+                    ed.nome AS escola_destino_nome
+                FROM alunos_escolas_historico h
+                LEFT JOIN escolas eo ON eo.id = h.escola_id
+                LEFT JOIN escolas ed ON ed.id = h.escola_destino_id
+                WHERE h.aluno_id = $1
+                ${historicoTenantWhere}
+                ORDER BY h.criado_em DESC, h.id DESC
+            `;
+            const historicoResult = await pool.query(historicoSql, historicoParams);
+            historicoRows = historicoResult.rows || [];
+        } catch (err) {
+            if (String(err?.code) !== '42P01') throw err;
+            historicoRows = [];
+        }
+
+        const timeline = [];
+        const seenSynthetic = new Set();
+
+        historicoRows.forEach((item) => {
+            timeline.push({
+                id: item.id,
+                origem: 'historico',
+                tipo_evento: item.tipo_evento,
+                tipo_label: formatHistoricoTipo(item.tipo_evento),
+                ano_letivo: item.ano_letivo,
+                escola_nome: item.escola_nome,
+                escola_destino_nome: item.escola_destino_nome,
+                turma: item.turma,
+                turma_destino: item.turma_destino,
+                status_aluno: item.status_aluno,
+                criado_em: item.criado_em,
+                detalhes: item.detalhes || {}
+            });
+            const key = `${item.ano_letivo || ''}::${item.escola_destino_nome || item.escola_nome || ''}::${item.turma_destino || item.turma || ''}`;
+            seenSynthetic.add(key);
+        });
+
+        vinculos.forEach((item) => {
+            const key = `${item.ano_letivo || ''}::${item.escola_nome || ''}::${item.turma || ''}`;
+            if (seenSynthetic.has(key)) return;
+            timeline.push({
+                id: `v-${item.id}`,
+                origem: 'vinculo_atual',
+                tipo_evento: 'VINCULO_REGISTRADO',
+                tipo_label: 'Vínculo escolar registrado',
+                ano_letivo: item.ano_letivo,
+                escola_nome: item.escola_nome,
+                escola_destino_nome: item.escola_nome,
+                turma: item.turma,
+                turma_destino: item.turma,
+                status_aluno: alunoResult.rows[0].status,
+                criado_em: item.atualizado_em,
+                detalhes: {}
+            });
+        });
+
+        timeline.sort((a, b) => {
+            const dateA = new Date(a?.criado_em || 0).valueOf();
+            const dateB = new Date(b?.criado_em || 0).valueOf();
+            if (dateA !== dateB) return dateB - dateA;
+            return Number(b?.ano_letivo || 0) - Number(a?.ano_letivo || 0);
+        });
+
+        const vinculoAtual = vinculos[0] || null;
+        const anos = Array.from(new Set(vinculos.map((item) => item.ano_letivo).filter(Boolean))).sort((a, b) => b - a);
+
+        return res.json({
+            aluno: alunoResult.rows[0],
+            resumo: {
+                status_atual: alunoResult.rows[0].status || null,
+                escola_atual: vinculoAtual?.escola_nome || alunoResult.rows[0].unidade_ensino || null,
+                turma_atual: vinculoAtual?.turma || alunoResult.rows[0].turma || null,
+                ano_letivo_atual: vinculoAtual?.ano_letivo || null,
+                total_vinculos: vinculos.length,
+                total_movimentacoes: timeline.length,
+                anos_letivos: anos
+            },
+            vinculos,
+            historico: timeline
+        });
+    } catch (err) {
+        console.error("Erro ao carregar histórico do aluno:", err);
+        return res.status(500).json({ error: "Erro ao carregar histórico do aluno." });
     }
 });
 

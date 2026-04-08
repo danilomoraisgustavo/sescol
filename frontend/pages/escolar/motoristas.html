@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="../../css/jquery.timepicker.css">
     <link rel="stylesheet" href="../../css/quill.snow.css">
     <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/escolar-table-standard.css">
+    <link rel="stylesheet" href="../../css/modal-slide-right.css">
     <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
     <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
 
@@ -337,9 +339,9 @@
                                             </div>
                                         </div>
 
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered table-hover mb-0" id="tabela-motoristas">
-                                                <thead class="thead-light">
+                                        <div class="table-responsive table-padrao-wrapper">
+                                            <table class="table table-hover mb-0 table-padrao-escolar" id="tabela-motoristas">
+                                                <thead>
                                                     <tr role="row">
                                                         <th style="width:70px;">ID</th>
                                                         <th>Nome</th>
@@ -373,7 +375,7 @@
             </div>
 
             <!-- MODAL CADASTRO/EDIÇÃO DE MOTORISTA -->
-            <div class="modal fade" id="modal-motorista" tabindex="-1" role="dialog"
+            <div class="modal fade modal-slide-right" id="modal-motorista" tabindex="-1" role="dialog"
                 aria-labelledby="modalMotoristaLabel" aria-hidden="true">
                 <div class="modal-dialog modal-xl" role="document">
                     <div class="modal-content">
@@ -523,7 +525,7 @@
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-sm mb-0 table-cursos">
-                                                <thead class="thead-light">
+                                                <thead>
                                                     <tr>
                                                         <th style="width:220px;">Tipo de curso</th>
                                                         <th style="width:150px;">Data de conclusão</th>
@@ -581,7 +583,7 @@
 
 
             <!-- MODAL ASSOCIAR ROTAS AO MOTORISTA -->
-            <div class="modal fade" id="modal-rotas-motorista" tabindex="-1" role="dialog"
+            <div class="modal fade modal-slide-right" id="modal-rotas-motorista" tabindex="-1" role="dialog"
                 aria-labelledby="modalRotasMotoristaLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg" role="document">
                     <div class="modal-content">

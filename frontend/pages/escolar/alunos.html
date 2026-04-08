@@ -14,6 +14,7 @@
         rel="stylesheet" />
     <link href="../../css/feather.css" rel="stylesheet" />
     <script src="/api/public-config.js"></script>
+    <link href="../../css/modal-slide-right.css" rel="stylesheet" />
     <link disabled="" href="../../css/app-light.css" id="lightTheme" rel="stylesheet" />
     <link href="../../css/app-dark.css" id="darkTheme" rel="stylesheet" />
     <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet" />
@@ -52,6 +53,30 @@
         .aluno-popup-btn:hover {
             filter: brightness(0.95);
             text-decoration: none;
+        }
+        .aluno-link-button {
+            background: none;
+            border: 0;
+            padding: 0;
+            color: inherit;
+            text-align: left;
+            width: 100%;
+        }
+        .aluno-historico-item {
+            position: relative;
+            padding: 0 0 1rem 1rem;
+            margin-left: .45rem;
+            border-left: 2px solid rgba(0, 0, 0, 0.08);
+        }
+        .aluno-historico-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: .15rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #1b68ff;
         }
 
         .table-responsive {
@@ -867,8 +892,8 @@
         </main>
     </div>
     <!-- Modal mapa de alunos (carregamento sob demanda) -->
-    <div aria-hidden="true" aria-labelledby="modalMapaAlunosLabel" class="modal fade" id="modal-mapa-alunos"
-        role="dialog" tabindex="-1">
+    <div aria-hidden="true" aria-labelledby="modalMapaAlunosLabel" class="modal fade modal-slide-right"
+        id="modal-mapa-alunos" role="dialog" tabindex="-1">
         <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1032,9 +1057,6 @@
                     <div id="mapa-alunos-modal"
                         style="width: 100%; height: 520px; border-radius: .25rem; overflow: hidden; border: 1px solid rgba(0,0,0,.1);">
                     </div>
-                    <p class="mt-2 mb-0 small text-muted">
-                        Para reduzir peso, o mapa só carrega ao abrir este modal.
-                    </p>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-outline-secondary" data-dismiss="modal" type="button">
@@ -1089,7 +1111,7 @@
         </div>
     </div>
     <!-- Modal solicitar transporte -->
-    <div aria-hidden="true" aria-labelledby="modalSolicitarTransporteLabel" class="modal fade"
+    <div aria-hidden="true" aria-labelledby="modalSolicitarTransporteLabel" class="modal fade modal-slide-right"
         id="modal-solicitar-transporte" role="dialog" tabindex="-1">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -1432,8 +1454,8 @@
         </div>
     </div>
     <!-- NOVO: Modal selecionar ponto de parada -->
-    <div aria-hidden="true" aria-labelledby="modalSelecionarPontoLabel" class="modal fade" id="modal-selecionar-ponto"
-        role="dialog" tabindex="-1">
+    <div aria-hidden="true" aria-labelledby="modalSelecionarPontoLabel" class="modal fade modal-slide-right"
+        id="modal-selecionar-ponto" role="dialog" tabindex="-1">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1471,8 +1493,8 @@
         </div>
     </div>
     <!-- Modal formulário de riscos para reavaliação -->
-    <div class="modal fade" id="modal-riscos-reavaliacao" role="dialog" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal fade modal-slide-right" id="modal-riscos-reavaliacao" role="dialog" tabindex="-1">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Formulário de Riscos – Reavaliação</h5>
@@ -1540,8 +1562,8 @@
         </div>
     </div>
     <!-- Modal edição de aluno -->
-    <div aria-hidden="true" aria-labelledby="modalEditarAlunoLabel" class="modal fade" id="modal-editar-aluno"
-        role="dialog" tabindex="-1">
+    <div aria-hidden="true" aria-labelledby="modalEditarAlunoLabel" class="modal fade modal-slide-right"
+        id="modal-editar-aluno" role="dialog" tabindex="-1">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <form class="needs-validation" id="form-editar-aluno" novalidate="">
@@ -1570,8 +1592,6 @@
                             <div class="form-group col-md-4">
                                 <label for="ea-cpf">CPF</label>
                                 <input class="form-control" id="ea-cpf" name="cpf" type="text" />
-                                <small class="text-muted d-block mt-1">CPF é dado sensível (LGPD). Exibição mascarada.
-                                    Para alterar, use um fluxo administrativo específico.</small>
                             </div>
                             <div class="form-group col-md-4">
                                 <label for="ea-data-nascimento">Data de nascimento</label>
@@ -1756,6 +1776,32 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade modal-slide-right" id="modal-historico-aluno" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-1">Histórico do aluno</h5>
+                        <div class="small text-muted" id="historico-aluno-subtitulo">Movimentações, vínculos e status.</div>
+                    </div>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-3 mb-2"><div class="border rounded p-3 h-100"><div class="small text-muted">Status atual</div><div class="font-weight-bold" id="historico-status-atual">-</div></div></div>
+                        <div class="col-md-3 mb-2"><div class="border rounded p-3 h-100"><div class="small text-muted">Escola atual</div><div class="font-weight-bold" id="historico-escola-atual">-</div></div></div>
+                        <div class="col-md-3 mb-2"><div class="border rounded p-3 h-100"><div class="small text-muted">Turma atual</div><div class="font-weight-bold" id="historico-turma-atual">-</div></div></div>
+                        <div class="col-md-3 mb-2"><div class="border rounded p-3 h-100"><div class="small text-muted">Ano letivo</div><div class="font-weight-bold" id="historico-ano-atual">-</div></div></div>
+                    </div>
+                    <div id="historico-aluno-lista">
+                        <div class="text-muted">Carregando histórico...</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2520,6 +2566,62 @@
                 return 'Não informado';
             }
 
+            function formatarDataHoraHistorico(value) {
+                if (!value) return 'Data não informada';
+                var date = new Date(value);
+                if (isNaN(date.getTime())) return 'Data não informada';
+                return date.toLocaleString('pt-BR');
+            }
+
+            function renderHistoricoAluno(data) {
+                var aluno = data.aluno || {};
+                var resumo = data.resumo || {};
+                var historico = Array.isArray(data.historico) ? data.historico : [];
+                $('#historico-aluno-subtitulo').text((aluno.pessoa_nome || 'Aluno') + ' • ID ' + (aluno.id_pessoa || aluno.id || '-'));
+                $('#historico-status-atual').text(resumo.status_atual || 'Não informado');
+                $('#historico-escola-atual').text(resumo.escola_atual || 'Não informado');
+                $('#historico-turma-atual').text(resumo.turma_atual || 'Não informado');
+                $('#historico-ano-atual').text(resumo.ano_letivo_atual || 'Não informado');
+                if (!historico.length) {
+                    $('#historico-aluno-lista').html('<div class="text-muted">Nenhuma movimentação encontrada para este aluno.</div>');
+                    return;
+                }
+                $('#historico-aluno-lista').html(historico.map(function (item) {
+                    var escolaLinha = item.escola_destino_nome || item.escola_nome || 'Escola não informada';
+                    var turmaLinha = item.turma_destino || item.turma || 'Turma não informada';
+                    return '' +
+                        '<div class="aluno-historico-item">' +
+                            '<div class="d-flex align-items-start justify-content-between flex-wrap">' +
+                                '<div>' +
+                                    '<div class="font-weight-bold">' + escapeHtml(item.tipo_label || item.tipo_evento || 'Movimentação') + '</div>' +
+                                    '<div class="small text-muted">' + escapeHtml(escolaLinha) + ' • ' + escapeHtml(turmaLinha) + '</div>' +
+                                '</div>' +
+                                '<div class="small text-muted text-right">' + escapeHtml(item.ano_letivo || 'Sem ano') + '<br>' + escapeHtml(formatarDataHoraHistorico(item.criado_em)) + '</div>' +
+                            '</div>' +
+                            '<div class="small mt-2">Status: <strong>' + escapeHtml(item.status_aluno || 'Não informado') + '</strong></div>' +
+                        '</div>';
+                }).join(''));
+            }
+
+            function abrirHistoricoAluno(alunoId) {
+                $('#historico-aluno-lista').html('<div class="text-muted">Carregando histórico...</div>');
+                $('#modal-historico-aluno').modal('show');
+                return apiFetch(apiBaseAlunos + '/' + encodeURIComponent(alunoId) + '/historico')
+                    .then(function (data) {
+                        renderHistoricoAluno(data || {});
+                        return data;
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        $('#historico-aluno-lista').html('<div class="text-danger">Não foi possível carregar o histórico do aluno.</div>');
+                    });
+            }
+
+            function termoPareceCpf(termo) {
+                var digits = String(termo || '').replace(/\D/g, '');
+                return digits.length >= 6;
+            }
+
             function renderizarTabelaAlunos() {
                 var tbody = document.getElementById('tbody-alunos');
                 if (!tbody) return;
@@ -2608,9 +2710,14 @@
                     // Nome
                     var pNome = document.createElement('p');
                     pNome.className = 'mb-0 text-muted';
+                    var btnHistorico = document.createElement('button');
+                    btnHistorico.type = 'button';
+                    btnHistorico.className = 'aluno-link-button acao-historico-aluno';
+                    btnHistorico.setAttribute('data-id', a.id);
                     var strongNome = document.createElement('strong');
                     strongNome.textContent = a.pessoa_nome || '';
-                    pNome.appendChild(strongNome);
+                    btnHistorico.appendChild(strongNome);
+                    pNome.appendChild(btnHistorico);
                     tdAluno.appendChild(pNome);
 
                     // CPF
@@ -2840,6 +2947,12 @@
 
             function stAplicarBuscaLocal(termo) {
                 termo = (termo || '').trim();
+                if (termoPareceCpf(termo)) {
+                    stModoBuscaLocal = false;
+                    stResultadosBuscaLocal = [];
+                    stModoListaLocal = false;
+                    return false;
+                }
                 if (!Array.isArray(stCacheAlunosAll) || !stCacheAlunosAll.length) {
                     stModoBuscaLocal = false;
                     stResultadosBuscaLocal = [];
@@ -4975,6 +5088,17 @@
             $('#search-alunos').on('input', function () {
                 termoBuscaAtual = ($(this).val() || '').trim();
 
+                if (termoPareceCpf(termoBuscaAtual)) {
+                    stModoBuscaLocal = false;
+                    stModoListaLocal = false;
+                    stResultadosBuscaLocal = [];
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(function () {
+                        carregarAlunos(1);
+                    }, 150);
+                    return;
+                }
+
                 // feedback imediato: se já temos cache completo, filtra tudo localmente
                 if (stCacheAlunosStatus === 'ready') {
                     stAplicarBuscaLocal(termoBuscaAtual);
@@ -5109,6 +5233,14 @@
                         'A tela de edição ainda não foi implementada nesta interface.'
                     );
                 }
+            });
+
+            $(document).on('click', '.acao-historico-aluno', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var id = $(this).data('id');
+                if (!id) return;
+                abrirHistoricoAluno(id);
             });
 
 

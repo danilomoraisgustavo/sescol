@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="../../../css/simplebar.css">
     <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../../css/feather.css">
+    <link rel="stylesheet" href="../../../css/escolar-table-standard.css">
+    <link rel="stylesheet" href="../../../css/modal-slide-right.css">
     <link rel="stylesheet" href="../../../css/app-light.css" id="lightTheme" disabled>
     <link rel="stylesheet" href="../../../css/app-dark.css" id="darkTheme">
     <style>
@@ -81,7 +83,13 @@
                                 <h2 class="h4 mb-1" id="page-title">Turmas da escola</h2>
                                 <p class="text-muted mb-0" id="page-subtitle">Estrutura pedagogica e distribuicao de matriculas.</p>
                             </div>
-                            <div class="text-right">
+                            <div class="text-right d-flex align-items-center">
+                                <div class="mr-2 text-left">
+                                    <label for="filtro-ano-letivo" class="small text-muted d-block mb-1">Ano letivo</label>
+                                    <select class="form-control form-control-sm" id="filtro-ano-letivo" style="min-width: 150px;">
+                                        <option value="">Todos os anos</option>
+                                    </select>
+                                </div>
                                 <button type="button" class="btn btn-success btn-sm mr-2" id="btn-nova-turma">Nova turma</button>
                                 <a href="#" class="btn btn-outline-secondary btn-sm mr-2" id="link-dashboard">Dashboard</a>
                                 <a href="#" class="btn btn-primary btn-sm" id="link-alunos">Alunos</a>
@@ -100,9 +108,9 @@
                                 <span class="text-muted small" id="school-label">Carregando escola...</span>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="thead-light">
+                                <div class="table-responsive table-padrao-wrapper">
+                                    <table class="table table-hover mb-0 table-padrao-escolar">
+                                        <thead>
                                             <tr><th>Turma</th><th>Ano letivo</th><th>Turno</th><th>Capacidade</th><th>Alunos</th><th>Transporte</th><th class="text-right">Acoes</th></tr>
                                         </thead>
                                         <tbody id="turmas-body">
@@ -118,7 +126,7 @@
         </main>
     </div>
 
-    <div class="modal fade" id="modal-turma" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal fade modal-slide-right" id="modal-turma" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <form id="form-turma">
@@ -480,17 +488,23 @@
 
         function carregarTurmas() {
             var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
+            var anoLetivoFiltro = new URLSearchParams(window.location.search).get('ano_letivo') || '';
+            var apiUrl = '/api/escolas/' + escolaId + '/turmas' + (anoLetivoFiltro ? ('?ano_letivo=' + encodeURIComponent(anoLetivoFiltro)) : '');
 
-            return window.EscolaContexto.carregarJson('/api/escolas/' + escolaId + '/turmas')
+            return window.EscolaContexto.carregarJson(apiUrl)
                 .then(function (data) {
                     var escola = data.escola || {};
                     var resumo = data.resumo || {};
                     var turmas = data.turmas || [];
+                    var anosDisponiveis = Array.isArray(data.anos_disponiveis) ? data.anos_disponiveis : [];
 
                     document.title = 'SETRANE EXPRESS - Turmas - ' + (escola.nome || 'Escola');
                     $('#page-title').text('Turmas - ' + (escola.nome || 'Escola'));
                     $('#page-subtitle').text(window.EscolaContexto.formatarEndereco(escola) || 'Endereco nao informado');
                     $('#school-label').text(escola.nome || 'Escola');
+                    $('#filtro-ano-letivo').html('<option value="">Todos os anos</option>' + anosDisponiveis.map(function (ano) {
+                        return '<option value="' + ano + '"' + (String(ano) === String(anoLetivoFiltro) ? ' selected' : '') + '>' + ano + '</option>';
+                    }).join(''));
                     $('#kpi-turmas').text(resumo.total_turmas || 0);
                     $('#kpi-matriculas').text(resumo.total_matriculas || 0);
                     $('#kpi-transporte').text(resumo.total_alunos_apto_transporte || 0);
@@ -505,12 +519,27 @@
 
         $(document).ready(function () {
             var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
-            $('#link-dashboard').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'dashboard'));
-            $('#link-alunos').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'));
+            var urlParams = new URLSearchParams(window.location.search);
+            var anoLetivoFiltro = urlParams.get('ano_letivo') || '';
+            function montarUrlModuloComAno(modulo) {
+                var url = new URL(window.EscolaContexto.montarUrlModulo(escolaId, modulo), window.location.origin);
+                if (anoLetivoFiltro) url.searchParams.set('ano_letivo', anoLetivoFiltro);
+                return url.pathname + url.search;
+            }
+            $('#link-dashboard').attr('href', montarUrlModuloComAno('dashboard'));
+            $('#link-alunos').attr('href', montarUrlModuloComAno('alunos'));
             carregarTurmas();
 
             $('#btn-nova-turma').on('click', function () {
                 abrirModalTurma(null);
+            });
+
+            $('#filtro-ano-letivo').on('change', function () {
+                var url = new URL(window.location.href);
+                var valor = $(this).val();
+                if (valor) url.searchParams.set('ano_letivo', valor);
+                else url.searchParams.delete('ano_letivo');
+                window.location.href = url.pathname + url.search;
             });
 
             $('.turma-serie-item').on('change', function () {

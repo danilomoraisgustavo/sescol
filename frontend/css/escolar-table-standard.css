@@ -1,0 +1,52 @@
+.table-padrao-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: .25rem;
+}
+
+.table-padrao-escolar {
+    width: 100%;
+    min-width: 1080px;
+    table-layout: auto;
+}
+
+.table-padrao-escolar th,
+.table-padrao-escolar td {
+    vertical-align: middle;
+    padding: .9rem .85rem;
+}
+
+.table-padrao-escolar thead th {
+    white-space: nowrap;
+}
+
+.table-padrao-escolar tbody td p,
+.table-padrao-escolar tbody td small,
+.table-padrao-escolar tbody td strong,
+.table-padrao-escolar tbody td span,
+.table-padrao-escolar tbody td a,
+.table-padrao-escolar tbody td div {
+    word-break: break-word;
+}
+
+.table-padrao-escolar tbody td:last-child {
+    text-align: right;
+}
+
+.table-padrao-escolar tbody td:last-child .dropdown-toggle,
+.table-padrao-escolar tbody td:last-child .btn {
+    min-width: 96px;
+}
+
+.table-padrao-escolar .avatar,
+.table-padrao-escolar .avatar.avatar-md {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+}
+
+@media (max-width: 991.98px) {
+    .table-padrao-escolar {
+        min-width: 940px;
+    }
+}

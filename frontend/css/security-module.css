@@ -1,0 +1,213 @@
+.security-hero {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    background: linear-gradient(135deg, rgba(46, 112, 255, 0.12), rgba(50, 182, 122, 0.08));
+}
+
+.security-subtitle {
+    max-width: 70rem;
+    color: var(--muted, #6c757d);
+}
+
+.security-kpi {
+    border-radius: 0.9rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    min-height: 100%;
+}
+
+.security-kpi .kpi-label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #8391a2;
+}
+
+.security-kpi .kpi-value {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.security-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.security-chip-soft {
+    background: rgba(255, 255, 255, 0.06);
+    color: inherit;
+}
+
+.security-card {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.security-section-title {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8e9aab;
+    margin-bottom: 0.75rem;
+}
+
+.security-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.security-grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.security-grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.security-avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    background: rgba(46, 112, 255, 0.12);
+    color: #7fb2ff;
+}
+
+.security-table .table td,
+.security-table .table th {
+    vertical-align: middle;
+}
+
+.security-meta {
+    font-size: 0.82rem;
+    color: #8e9aab;
+}
+
+.security-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.security-list-item {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.9rem;
+    padding: 0.9rem 1rem;
+}
+
+.security-permission-matrix {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.security-permission-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1.1fr) repeat(4, minmax(120px, 0.75fr));
+    gap: 0.65rem;
+    align-items: center;
+}
+
+.security-permission-cell {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.8rem;
+    padding: 0.7rem 0.8rem;
+    min-height: 100%;
+}
+
+.security-log-level {
+    min-width: 6rem;
+    justify-content: center;
+}
+
+.security-log-level.info {
+    background: rgba(47, 128, 237, 0.16);
+    color: #8ec5ff;
+}
+
+.security-log-level.warn {
+    background: rgba(255, 183, 3, 0.18);
+    color: #ffd166;
+}
+
+.security-log-level.danger {
+    background: rgba(230, 57, 70, 0.18);
+    color: #ff9da6;
+}
+
+.security-setting-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.9rem 0;
+}
+
+.security-setting-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.security-unit-card {
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1rem;
+    height: 100%;
+}
+
+.security-unit-logo {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.9rem;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.security-switch-note {
+    font-size: 0.78rem;
+    color: #8e9aab;
+}
+
+.security-empty {
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 1rem;
+    padding: 2rem 1.2rem;
+    text-align: center;
+    color: #8e9aab;
+}
+
+body.light .security-hero,
+body:not(.dark) .security-hero {
+    border-color: rgba(31, 41, 55, 0.08);
+    background: linear-gradient(135deg, rgba(46, 112, 255, 0.08), rgba(50, 182, 122, 0.06));
+}
+
+body.light .security-card,
+body.light .security-kpi,
+body.light .security-list-item,
+body.light .security-permission-cell,
+body.light .security-unit-card,
+body:not(.dark) .security-card,
+body:not(.dark) .security-kpi,
+body:not(.dark) .security-list-item,
+body:not(.dark) .security-permission-cell,
+body:not(.dark) .security-unit-card {
+    border-color: rgba(31, 41, 55, 0.08);
+}
+
+body.light .security-chip-soft,
+body:not(.dark) .security-chip-soft {
+    background: rgba(31, 41, 55, 0.04);
+}
+
+@media (max-width: 991.98px) {
+    .security-permission-row {
+        grid-template-columns: 1fr;
+    }
+}

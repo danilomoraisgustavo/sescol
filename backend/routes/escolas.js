@@ -11,6 +11,7 @@ let columnCache = null;
 let columnCacheAt = 0;
 let escolaTurmasTableEnsured = false;
 let alunoComplementosTableEnsured = false;
+let matriculasHistoricoTableEnsured = false;
 
 function buildPoint(lat, lng) {
     return `ST_SetSRID(ST_Point(${lng}, ${lat}), 4326)`;
@@ -185,6 +186,34 @@ async function ensureAlunoComplementosTable() {
     `);
 
     alunoComplementosTableEnsured = true;
+}
+
+async function ensureMatriculasHistoricoTable() {
+    if (matriculasHistoricoTableEnsured) return;
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS alunos_escolas_historico (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            aluno_id INTEGER NOT NULL,
+            escola_id INTEGER NULL,
+            escola_destino_id INTEGER NULL,
+            ano_letivo INTEGER NULL,
+            turma TEXT NULL,
+            turma_destino TEXT NULL,
+            tipo_evento TEXT NOT NULL,
+            status_aluno TEXT NULL,
+            detalhes JSONB NOT NULL DEFAULT '{}'::jsonb,
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_alunos_escolas_historico_aluno
+        ON alunos_escolas_historico (aluno_id, ano_letivo, criado_em DESC)
+    `);
+
+    matriculasHistoricoTableEnsured = true;
 }
 
 async function generateNextNetworkEnrollmentId(client, tenantId) {
@@ -405,6 +434,38 @@ function formatEnderecoAluno(aluno) {
     ].filter(Boolean).join(", ") || "Não informado";
 }
 
+function sortAnosDesc(values) {
+    return Array.from(new Set((values || [])
+        .map((value) => parseOptionalInt(value))
+        .filter((value) => value !== null)))
+        .sort((a, b) => b - a);
+}
+
+async function registrarHistoricoMatricula(client, tenantId, payload = {}) {
+    await ensureMatriculasHistoricoTable();
+    await client.query(
+        `
+        INSERT INTO alunos_escolas_historico (
+            tenant_id, aluno_id, escola_id, escola_destino_id, ano_letivo,
+            turma, turma_destino, tipo_evento, status_aluno, detalhes
+        )
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb)
+        `,
+        [
+            tenantId || null,
+            payload.aluno_id || null,
+            payload.escola_id || null,
+            payload.escola_destino_id || null,
+            parseOptionalInt(payload.ano_letivo),
+            parseOptionalText(payload.turma),
+            parseOptionalText(payload.turma_destino),
+            parseOptionalText(payload.tipo_evento) || 'MATRICULA',
+            parseOptionalText(payload.status_aluno),
+            JSON.stringify(payload.detalhes || {}),
+        ],
+    );
+}
+
 /**
  * Tenta resolver o tenant_id do request de forma compatível com diferentes middlewares.
  * - Preferência: req.user.tenant_id / req.user.tenantId
@@ -590,18 +651,29 @@ async function loadEscolaDashboardData(escolaId, tenantId, options = {}) {
         },
         turmas: turmasResult.rows || [],
         alunos: alunosResult.rows || [],
+        anos_disponiveis: sortAnosDesc([
+            ...(turmasResult.rows || []).map((item) => item.ano_letivo),
+            ...(alunosResult.rows || []).map((item) => item.ano_letivo),
+        ]),
+        filtro_ano_letivo: anoLetivoFiltro,
     };
 }
 
-async function loadEscolaTurmasData(escolaId, tenantId) {
+async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
     await ensureEscolaTurmasTable();
 
-    const dashboardData = await loadEscolaDashboardData(escolaId, tenantId, { limitAlunos: 10 });
+    const anoLetivoFiltro = parseOptionalInt(options.anoLetivo);
+    const dashboardData = await loadEscolaDashboardData(escolaId, tenantId, { limitAlunos: 10, anoLetivo: anoLetivoFiltro });
     if (!dashboardData) return null;
 
     const params = [escolaId];
     const tenantClause = tenantId ? `AND (t.tenant_id = $2 OR t.tenant_id IS NULL)` : '';
     if (tenantId) params.push(tenantId);
+    let anoClause = '';
+    if (anoLetivoFiltro !== null) {
+        params.push(anoLetivoFiltro);
+        anoClause = `AND t.ano_letivo = $${params.length}`;
+    }
 
         const turmasCadastradasSql = `
         SELECT
@@ -634,6 +706,7 @@ async function loadEscolaTurmasData(escolaId, tenantId) {
         FROM escola_turmas t
         WHERE t.escola_id = $1
         ${tenantClause}
+        ${anoClause}
         ORDER BY t.ano_letivo DESC NULLS LAST, t.nome ASC
     `;
 
@@ -731,6 +804,11 @@ async function loadEscolaTurmasData(escolaId, tenantId) {
             total_anos_letivos: countDistinctAnosLetivos(turmas),
         },
         turmas,
+        anos_disponiveis: sortAnosDesc([
+            ...(dashboardData.anos_disponiveis || []),
+            ...(turmasCadastradasResult.rows || []).map((item) => item.ano_letivo),
+        ]),
+        filtro_ano_letivo: anoLetivoFiltro,
     };
 }
 
@@ -1044,9 +1122,10 @@ router.get("/:id/dashboard", async (req, res) => {
         }
 
         const tenantId = getTenantId(req);
+        const anoLetivoFiltro = parseOptionalInt(req.query?.ano_letivo);
         const [dashboardData, turmasData] = await Promise.all([
-            loadEscolaDashboardData(id, tenantId, { limitAlunos: 500 }),
-            loadEscolaTurmasData(id, tenantId),
+            loadEscolaDashboardData(id, tenantId, { limitAlunos: 500, anoLetivo: anoLetivoFiltro }),
+            loadEscolaTurmasData(id, tenantId, { anoLetivo: anoLetivoFiltro }),
         ]);
 
         if (!dashboardData || !turmasData) {
@@ -1117,6 +1196,13 @@ router.get("/:id/dashboard", async (req, res) => {
             turmas: turmasData.turmas,
             alunos,
             alunos_recentes: alunosRecentes,
+            anos_disponiveis: sortAnosDesc([
+                ...(dashboardData.anos_disponiveis || []),
+                ...(turmasData.anos_disponiveis || []),
+            ]),
+            filtros: {
+                ano_letivo: anoLetivoFiltro,
+            },
             indicadores: {
                 pendencias_secretaria: pendenciasSecretaria,
                 metricas_pedagogicas: metricasPedagogicas,
@@ -1138,7 +1224,7 @@ router.get("/:id/turmas", async (req, res) => {
         }
 
         const tenantId = getTenantId(req);
-        const data = await loadEscolaTurmasData(id, tenantId);
+        const data = await loadEscolaTurmasData(id, tenantId, { anoLetivo: req.query?.ano_letivo });
         if (!data) {
             return res.status(404).json({ error: "Escola não encontrada" });
         }
@@ -1147,6 +1233,10 @@ router.get("/:id/turmas", async (req, res) => {
             escola: data.escola,
             resumo: data.resumo,
             turmas: data.turmas,
+            anos_disponiveis: data.anos_disponiveis || [],
+            filtros: {
+                ano_letivo: parseOptionalInt(req.query?.ano_letivo),
+            },
         });
     } catch (err) {
         console.error("Erro ao carregar turmas da escola:", err);
@@ -1407,6 +1497,7 @@ router.post("/:id/matriculas", async (req, res) => {
         }
 
         await client.query("BEGIN");
+        await ensureMatriculasHistoricoTable();
 
         const escolaParams = [escolaId];
         let escolaTenantWhere = '';
@@ -1430,6 +1521,21 @@ router.post("/:id/matriculas", async (req, res) => {
             await client.query("ROLLBACK");
             return res.status(404).json({ error: "Escola não encontrada." });
         }
+
+        const vinculosExistentesParams = [alunoId, anoLetivo];
+        let vinculosExistentesSql = `
+            SELECT id, escola_id, ano_letivo, turma, atualizado_em
+            FROM alunos_escolas
+            WHERE aluno_id = $1
+              AND ano_letivo = $2
+        `;
+        if (tenantSupport.alunos_escolas && tenantId) {
+            vinculosExistentesParams.push(tenantId);
+            vinculosExistentesSql += ` AND tenant_id = $3`;
+        }
+        const vinculosExistentes = Number.isFinite(alunoId) && alunoId > 0
+            ? (await client.query(vinculosExistentesSql, vinculosExistentesParams)).rows
+            : [];
 
         let generatedIdPessoa = parseOptionalText(alunoPayload.id_pessoa);
 
@@ -1534,6 +1640,23 @@ router.post("/:id/matriculas", async (req, res) => {
         }
 
         if (tenantSupport.alunos_escolas) {
+            const removidosMesmoAno = vinculosExistentes.filter((row) => Number(row.escola_id) !== escolaId);
+            for (const vinculo of removidosMesmoAno) {
+                await registrarHistoricoMatricula(client, tenantId, {
+                    aluno_id: alunoId,
+                    escola_id: vinculo.escola_id,
+                    escola_destino_id: escolaId,
+                    ano_letivo: anoLetivo,
+                    turma: vinculo.turma,
+                    turma_destino: turma,
+                    tipo_evento: 'TRANSFERENCIA_SAIDA',
+                    status_aluno: parseOptionalText(alunoPayload.status) || 'ativo',
+                    detalhes: {
+                        origem: 'matricula_escola',
+                        atualizado_em_vinculo: vinculo.atualizado_em || null,
+                    },
+                });
+            }
             await client.query(
                 `
                 DELETE FROM alunos_escolas
@@ -1556,6 +1679,23 @@ router.post("/:id/matriculas", async (req, res) => {
                 [tenantId, alunoId, escolaId, anoLetivo, turma]
             );
         } else {
+            const removidosMesmoAno = vinculosExistentes.filter((row) => Number(row.escola_id) !== escolaId);
+            for (const vinculo of removidosMesmoAno) {
+                await registrarHistoricoMatricula(client, tenantId, {
+                    aluno_id: alunoId,
+                    escola_id: vinculo.escola_id,
+                    escola_destino_id: escolaId,
+                    ano_letivo: anoLetivo,
+                    turma: vinculo.turma,
+                    turma_destino: turma,
+                    tipo_evento: 'TRANSFERENCIA_SAIDA',
+                    status_aluno: parseOptionalText(alunoPayload.status) || 'ativo',
+                    detalhes: {
+                        origem: 'matricula_escola',
+                        atualizado_em_vinculo: vinculo.atualizado_em || null,
+                    },
+                });
+            }
             await client.query(
                 `
                 DELETE FROM alunos_escolas
@@ -1650,6 +1790,27 @@ router.post("/:id/matriculas", async (req, res) => {
             `,
             updateParams
         );
+
+        const vinculoMesmoAno = vinculosExistentes.find((row) => Number(row.escola_id) === escolaId) || null;
+        const houveTransferencia = vinculosExistentes.some((row) => Number(row.escola_id) !== escolaId);
+        await registrarHistoricoMatricula(client, tenantId, {
+            aluno_id: alunoId,
+            escola_id: vinculoMesmoAno ? escolaId : null,
+            escola_destino_id: escolaId,
+            ano_letivo: anoLetivo,
+            turma: vinculoMesmoAno?.turma || null,
+            turma_destino: turma,
+            tipo_evento: houveTransferencia
+                ? 'TRANSFERENCIA_ENTRADA'
+                : (vinculoMesmoAno ? 'ATUALIZACAO_MATRICULA' : 'MATRICULA'),
+            status_aluno: parseOptionalText(alunoPayload.status) || 'ativo',
+            detalhes: {
+                unidade_ensino: escola.nome,
+                payload_aluno: alunoPayload,
+                payload_complementar: complementarPayload,
+                payload_localizacao: localizacaoPayload,
+            },
+        });
 
         await saveAlunoComplementos(client, tenantId, alunoId, complementarPayload);
 

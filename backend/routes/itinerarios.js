@@ -4,6 +4,39 @@ import pool from '../db.js';
 
 const router = express.Router();
 
+let itinerariosSchemaCache = null;
+
+async function getItinerariosSchema() {
+    if (itinerariosSchemaCache) return itinerariosSchemaCache;
+    const { rows } = await pool.query(`
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND (
+            (table_name = 'itinerarios' AND column_name IN ('tipo'))
+            OR
+            (table_name = 'alunos_municipais' AND column_name IN ('tenant_id'))
+            OR
+            (table_name = 'alunos_escolas' AND column_name IN ('tenant_id'))
+          )
+    `);
+
+    const support = {
+        itinerarioTipo: false,
+        alunosMunicipaisTenant: false,
+        alunosEscolasTenant: false
+    };
+
+    for (const row of rows || []) {
+        if (row.table_name === 'itinerarios' && row.column_name === 'tipo') support.itinerarioTipo = true;
+        if (row.table_name === 'alunos_municipais' && row.column_name === 'tenant_id') support.alunosMunicipaisTenant = true;
+        if (row.table_name === 'alunos_escolas' && row.column_name === 'tenant_id') support.alunosEscolasTenant = true;
+    }
+
+    itinerariosSchemaCache = support;
+    return support;
+}
+
 function obterTenantId(req) {
     const candidates = [
         req?.tenant_id,
@@ -78,14 +111,16 @@ function assertFornecedorVinculado(req, res) {
 /**
  * Monta o SELECT padrão agregando escolas e zoneamentos
  */
-const BASE_SELECT = `
+function buildBaseSelect(schema) {
+    const tipoExpr = schema?.itinerarioTipo ? "COALESCE(i.tipo,'municipal') AS tipo," : "'municipal'::text AS tipo,";
+    return `
     SELECT
         i.id,
         i.nome,
         i.descricao,
         i.criado_em,
         i.atualizado_em,
-        COALESCE(i.tipo,'municipal') AS tipo,
+        ${tipoExpr}
         COALESCE(
             jsonb_agg(
                 DISTINCT jsonb_build_object(
@@ -116,6 +151,13 @@ const BASE_SELECT = `
     LEFT JOIN zoneamentos z
         ON z.id = iz.zoneamento_id
 `;
+}
+
+function buildItinerarioTipoSelectExpr(schema, alias = 'i') {
+    return schema?.itinerarioTipo
+        ? `COALESCE(${alias}.tipo, 'municipal')`
+        : `'municipal'::text`;
+}
 
 /**
  * GET /api/itinerarios
@@ -130,6 +172,8 @@ router.get('/', async (req, res) => {
 
         const fornecedorCtx = assertFornecedorVinculado(req, res);
         if (!fornecedorCtx.ok) return;
+        const schema = await getItinerariosSchema();
+        const BASE_SELECT = buildBaseSelect(schema);
 
         let where = 'i.tenant_id = $1';
         const params = [tenantId];
@@ -182,6 +226,7 @@ router.get('/zoneamentos', async (req, res) => {
             return res.status(400).json({ error: 'tenant_id não informado no contexto da requisição.' });
         }
 
+        const schema = await getItinerariosSchema();
         // aceita ?escolas=1,2,3 ou ?escola_ids=1,2,3 (compat)
         const raw = (req.query.escolas ?? req.query.escola_ids ?? '').toString();
         const escolaIds = raw
@@ -201,10 +246,10 @@ router.get('/zoneamentos', async (req, res) => {
                 z.tipo_geometria
             FROM zoneamentos z
             JOIN alunos_municipais a
-              ON a.tenant_id = z.tenant_id
-             AND a.localizacao IS NOT NULL
+              ON ${schema.alunosMunicipaisTenant ? 'a.tenant_id = z.tenant_id AND' : ''} a.localizacao IS NOT NULL
             JOIN alunos_escolas ae
               ON ae.aluno_id = a.id
+             ${schema.alunosEscolasTenant ? 'AND ae.tenant_id = z.tenant_id' : ''}
             WHERE z.tenant_id = $1
               AND ae.escola_id = ANY($2::int[])
               AND (
@@ -233,6 +278,8 @@ router.get('/:id', async (req, res) => {
 
         const fornecedorCtx = assertFornecedorVinculado(req, res);
         if (!fornecedorCtx.ok) return;
+        const schema = await getItinerariosSchema();
+        const BASE_SELECT = buildBaseSelect(schema);
 
         const id = parseInt(req.params.id, 10);
         if (Number.isNaN(id)) {
@@ -320,19 +367,25 @@ router.post('/', async (req, res) => {
     const client = await pool.connect();
 
     try {
+        const schema = await getItinerariosSchema();
+        const BASE_SELECT = buildBaseSelect(schema);
         await client.query('BEGIN');
 
+        const insertCols = schema.itinerarioTipo
+            ? '(nome, descricao, tipo, tenant_id)'
+            : '(nome, descricao, tenant_id)';
+        const insertValues = schema.itinerarioTipo
+            ? '($1, $2, $3, $4)'
+            : '($1, $2, $3)';
+        const insertParams = schema.itinerarioTipo
+            ? [nome || null, descricao || null, tipoNormalizado, tenantId]
+            : [nome || null, descricao || null, tenantId];
         const insertItSql = `
-            INSERT INTO itinerarios (nome, descricao, tipo, tenant_id)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO itinerarios ${insertCols}
+            VALUES ${insertValues}
             RETURNING id, nome, descricao, criado_em, atualizado_em
         `;
-        const itResult = await client.query(insertItSql, [
-            nome || null,
-            descricao || null,
-            tipoNormalizado,
-            tenantId
-        ]);
+        const itResult = await client.query(insertItSql, insertParams);
         const itinerario = itResult.rows[0];
 
         const insertEscolaSql = `
@@ -415,22 +468,25 @@ router.put('/:id', async (req, res) => {
     const client = await pool.connect();
 
     try {
+        const schema = await getItinerariosSchema();
+        const BASE_SELECT = buildBaseSelect(schema);
         await client.query('BEGIN');
 
+        const updateTipoClause = schema.itinerarioTipo ? `,
+                   tipo = COALESCE($3, tipo)` : '';
         const updItSql = `
             UPDATE itinerarios
                SET nome = COALESCE($1, nome),
                    descricao = COALESCE($2, descricao),
+                   ${schema.itinerarioTipo ? 'tipo = COALESCE($3, tipo),' : ''}
                    atualizado_em = NOW()
-             WHERE id = $3 AND tenant_id = $4
+             WHERE id = $${schema.itinerarioTipo ? '4' : '3'} AND tenant_id = $${schema.itinerarioTipo ? '5' : '4'}
             RETURNING id
         `;
-        const updRes = await client.query(updItSql, [
-            nome || null,
-            descricao || null,
-            id,
-            tenantId
-        ]);
+        const updParams = schema.itinerarioTipo
+            ? [nome || null, descricao || null, tipo ? tipoNormalizado : null, id, tenantId]
+            : [nome || null, descricao || null, id, tenantId];
+        const updRes = await client.query(updItSql, updParams);
 
         if (!updRes.rows.length) {
             await client.query('ROLLBACK');
@@ -652,9 +708,10 @@ async function obterProximoNomeRotaDoItinerario(client, itinerarioId, tenantId) 
 }
 
 async function carregarDadosManuaisDoItinerario(client, itinerarioId, tenantId) {
+    const schema = await getItinerariosSchema();
     const itRes = await client.query(
         `
-        SELECT i.id, COALESCE(i.tipo, 'municipal') AS tipo
+        SELECT i.id, ${buildItinerarioTipoSelectExpr(schema)} AS tipo
           FROM itinerarios i
          WHERE i.id = $1
            AND i.tenant_id = $2
@@ -1150,10 +1207,11 @@ router.post('/:id/gerar-rotas', async (req, res) => {
 
     try {
         await client.query('BEGIN');
+        const schema = await getItinerariosSchema();
 
         // 1) Garante que o itinerário existe
         const itRes = await client.query(
-            "SELECT id, COALESCE(tipo,'municipal') AS tipo FROM itinerarios WHERE id = $1 AND tenant_id = $2",
+            `SELECT id, ${buildItinerarioTipoSelectExpr(schema, 'itinerarios')} AS tipo FROM itinerarios WHERE id = $1 AND tenant_id = $2`,
             [itinerarioId, tenantId]
         );
         if (itRes.rowCount === 0) {

@@ -65,7 +65,13 @@
                                 <h2 class="h4 mb-1" id="school-title">Dashboard da escola</h2>
                                 <p class="text-muted mb-0" id="school-subtitle">Visao dedicada da unidade escolar.</p>
                             </div>
-                            <div class="text-right">
+                            <div class="text-right d-flex align-items-center">
+                                <div class="mr-2 text-left">
+                                    <label for="filtro-ano-letivo" class="small text-muted d-block mb-1">Ano letivo</label>
+                                    <select class="form-control form-control-sm" id="filtro-ano-letivo" style="min-width: 150px;">
+                                        <option value="">Todos os anos</option>
+                                    </select>
+                                </div>
                                 <a href="#" class="btn btn-outline-secondary btn-sm mr-2" id="link-turmas">Turmas</a>
                                 <a href="#" class="btn btn-primary btn-sm" id="link-alunos">Alunos</a>
                             </div>
@@ -216,7 +222,7 @@
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
-                                                <thead class="thead-light">
+                                                <thead>
                                                     <tr><th>Turma</th><th>Ano letivo</th><th>Alunos</th><th>Transporte</th></tr>
                                                 </thead>
                                                 <tbody id="school-turmas-body">
@@ -236,7 +242,7 @@
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
-                                                <thead class="thead-light">
+                                                <thead>
                                                     <tr><th>Aluno</th><th>Turma</th><th>Ano</th><th>Turno</th></tr>
                                                 </thead>
                                                 <tbody id="school-alunos-body">
@@ -316,7 +322,7 @@
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
                                             <table class="table table-hover mb-0">
-                                                <thead class="thead-light">
+                                                <thead>
                                                     <tr><th>Aluno</th><th>Turma</th><th>Responsável</th><th>Contato</th><th>Mapa</th><th>Status</th></tr>
                                                 </thead>
                                                 <tbody id="school-attention-body">
@@ -474,12 +480,19 @@
 
         $(document).ready(function () {
             var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
-            $('#link-turmas, #link-ver-turmas').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'turmas'));
-            $('#link-alunos, #link-ver-alunos').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'));
-            $('#quick-link-turmas').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'turmas'));
-            $('#quick-link-alunos').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'));
+            var urlParams = new URLSearchParams(window.location.search);
+            var anoLetivoFiltro = urlParams.get('ano_letivo') || '';
+            function montarUrlModuloComAno(modulo) {
+                var url = new URL(window.EscolaContexto.montarUrlModulo(escolaId, modulo), window.location.origin);
+                if (anoLetivoFiltro) url.searchParams.set('ano_letivo', anoLetivoFiltro);
+                return url.pathname + url.search;
+            }
+            $('#link-turmas, #link-ver-turmas').attr('href', montarUrlModuloComAno('turmas'));
+            $('#link-alunos, #link-ver-alunos').attr('href', montarUrlModuloComAno('alunos'));
+            $('#quick-link-turmas').attr('href', montarUrlModuloComAno('turmas'));
+            $('#quick-link-alunos').attr('href', montarUrlModuloComAno('alunos'));
 
-            window.EscolaContexto.carregarDashboard(escolaId)
+            window.EscolaContexto.carregarJson('/api/escolas/' + escolaId + '/dashboard' + (anoLetivoFiltro ? ('?ano_letivo=' + encodeURIComponent(anoLetivoFiltro)) : ''))
                 .then(function (data) {
                     var escola = data.escola || {};
                     var resumo = data.resumo || {};
@@ -487,6 +500,7 @@
                     var pendencias = indicadores.pendencias_secretaria || {};
                     var metricas = indicadores.metricas_pedagogicas || {};
                     var distribuicoes = indicadores.distribuicoes || {};
+                    var anosDisponiveis = Array.isArray(data.anos_disponiveis) ? data.anos_disponiveis : [];
                     document.title = 'SETRANE EXPRESS - ' + (escola.nome || 'Escola');
                     $('#school-title').text(escola.nome || 'Dashboard da escola');
                     $('#school-subtitle').text('INEP: ' + (escola.codigo_inep || 'Nao informado'));
@@ -508,6 +522,9 @@
                     $('#apoio-deficiencia').text(metricas.alunos_com_deficiencia || 0);
                     $('#apoio-transporte').text(resumo.total_alunos_apto_transporte || 0);
                     $('#apoio-zoneamentos').text((escola.zoneamentos || []).length || 0);
+                    $('#filtro-ano-letivo').html('<option value="">Todos os anos</option>' + anosDisponiveis.map(function (ano) {
+                        return '<option value="' + ano + '"' + (String(ano) === String(anoLetivoFiltro) ? ' selected' : '') + '>' + ano + '</option>';
+                    }).join(''));
                     renderZoneamentos(escola.zoneamentos || []);
                     renderTurmas(data.turmas || []);
                     renderAlunos(data.alunos_recentes || data.alunos || []);
@@ -537,6 +554,14 @@
                     $('#school-title').text('Erro ao carregar escola');
                     $('#school-subtitle').text('Nao foi possivel montar o modulo desta unidade.');
                 });
+
+            $('#filtro-ano-letivo').on('change', function () {
+                var url = new URL(window.location.href);
+                var valor = $(this).val();
+                if (valor) url.searchParams.set('ano_letivo', valor);
+                else url.searchParams.delete('ano_letivo');
+                window.location.href = url.pathname + url.search;
+            });
         });
     </script>
 </body>

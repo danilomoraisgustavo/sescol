@@ -473,6 +473,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'login-cadastro.html'));
 });
 
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'login-cadastro.html'));
+});
+
+app.get('/recuperacao-senha', (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'redefinir-senha.html'));
+});
+
 // Login administrativo
 app.get('/admin-login', (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'admin-login.html'));
@@ -525,6 +533,30 @@ app.get('/alunos', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: 
 
 app.get('/alunos-mapa', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'alunos-mapa.html'));
+});
+
+app.get('/selecao-unidade', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    return res.redirect('/escolas');
+});
+
+app.get('/seguranca', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    return res.redirect('/sistema/configuracoes?aba=usuarios');
+});
+
+app.get('/seguranca/usuarios', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    return res.redirect('/sistema/configuracoes?aba=usuarios');
+});
+
+app.get('/seguranca/perfis', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    return res.redirect('/sistema/configuracoes?aba=perfis');
+});
+
+app.get('/seguranca/logs-acesso', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    return res.redirect('/sistema/configuracoes?aba=logs');
+});
+
+app.get('/seguranca/configuracoes', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    return res.redirect('/sistema/configuracoes?aba=seguranca');
 });
 
 // Operação: motoristas
@@ -581,7 +613,7 @@ app.get('/rotas-exclusivas', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO', 'FOR
 });
 
 app.get('/rotas-estaduais', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO', 'FORNECEDOR_ESCOLAR'], { loginPath: '/' }), (req, res) => {
-    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'rotas-estaduais.html'));
+    return res.redirect('/rotas-municipais');
 });
 
 // NOVA PÁGINA: Configurações do sistema / branding

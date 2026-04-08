@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="../../css/feather.css">
     <link rel="stylesheet" href="../../css/select2.css">
     <link rel="stylesheet" href="../../css/daterangepicker.css">
+    <link rel="stylesheet" href="../../css/security-module.css">
     <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
     <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
 
@@ -102,6 +103,55 @@
             border: 1px solid rgba(255, 255, 255, .2);
             color: #adb5bd;
             margin-left: .25rem;
+        }
+
+        .config-page-shell {
+            max-width: 1560px;
+            margin: 0 auto;
+        }
+
+        .config-hero {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            padding: 1.2rem 1.25rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, rgba(46, 112, 255, 0.10), rgba(50, 182, 122, 0.06));
+        }
+
+        .config-tab-pane {
+            padding-top: .25rem;
+        }
+
+        .config-tab-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: .5rem;
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .config-section-card {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: .9rem;
+            padding: 1rem 1rem .25rem;
+            margin-bottom: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .config-stretch-tabs .nav-link {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 991.98px) {
+            .config-tab-actions {
+                justify-content: stretch;
+            }
+
+            .config-tab-actions .btn {
+                flex: 1 1 100%;
+            }
         }
     </style>
 </head>
@@ -280,29 +330,29 @@
         <main role="main" class="main-content">
             <div class="container-fluid">
                 <div class="row justify-content-center">
-                    <div class="col-12 col-lg-10 col-xl-9">
-                        <div class="d-flex align-items-center mb-3">
-                            <div>
+                    <div class="col-12">
+                        <div class="config-page-shell">
+                        <div class="config-hero shadow-sm">
+                            <div class="d-flex align-items-start justify-content-between flex-wrap">
+                                <div class="pr-3">
                                 <h2 class="h4 mb-1">Configurações do sistema</h2>
                                 <p class="text-muted mb-0">
-                                    Defina a identidade visual básica, parâmetros de documentos e carteirinhas do
-                                    SETRANE EXPRESS.
+                                    Organize identidade visual, documentos, carteirinhas, autenticação, perfis,
+                                    usuários, auditoria e políticas de segurança do SETRANE EXPRESS.
                                 </p>
                             </div>
-                            <div class="ml-auto">
+                            <div class="mt-3 mt-lg-0">
                                 <button class="btn btn-sm btn-outline-secondary mr-1" type="button"
                                     id="btn-recarregar-config">
                                     <span class="fe fe-rotate-ccw"></span> Recarregar
                                 </button>
-                                <button class="btn btn-primary" type="button" id="btn-salvar-config">
-                                    <span class="fe fe-save"></span> Salvar alterações
-                                </button>
                             </div>
+                        </div>
                         </div>
 
                         <div class="card shadow-sm card-config">
                             <div class="card-header bg-transparent border-bottom-0 pb-0">
-                                <ul class="nav nav-tabs nav-tabs-config" id="tabs-configuracoes" role="tablist">
+                                <ul class="nav nav-tabs nav-tabs-config config-stretch-tabs" id="tabs-configuracoes" role="tablist">
                                     <li class="nav-item">
                                         <a class="nav-link active" id="tab-identidade-tab" data-toggle="tab"
                                             href="#tab-identidade" role="tab" aria-controls="tab-identidade"
@@ -324,14 +374,43 @@
                                             Carteirinhas
                                         </a>
                                     </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-usuarios-tab" data-toggle="tab"
+                                            href="#tab-usuarios" role="tab" aria-controls="tab-usuarios"
+                                            aria-selected="false">
+                                            Gestão de usuários
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-perfis-tab" data-toggle="tab"
+                                            href="#tab-perfis" role="tab" aria-controls="tab-perfis"
+                                            aria-selected="false">
+                                            Perfis e permissões
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-logs-tab" data-toggle="tab"
+                                            href="#tab-logs" role="tab" aria-controls="tab-logs"
+                                            aria-selected="false">
+                                            Logs de acesso
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-seguranca-tab" data-toggle="tab"
+                                            href="#tab-seguranca" role="tab" aria-controls="tab-seguranca"
+                                            aria-selected="false">
+                                            Segurança
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
 
                             <div class="card-body tab-content tab-content-card">
                                 <!-- TAB 1: IDENTIDADE VISUAL -->
-                                <div class="tab-pane fade show active" id="tab-identidade" role="tabpanel"
+                                <div class="tab-pane fade show active config-tab-pane" id="tab-identidade" role="tabpanel"
                                     aria-labelledby="tab-identidade-tab">
                                     <form id="form-config-identidade">
+                                        <div class="config-section-card">
                                         <!-- INFORMAÇÕES GERAIS -->
                                         <div class="config-section-title">Informações gerais</div>
 
@@ -493,14 +572,22 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        </div>
                                     </form>
+                                    <div class="config-tab-actions">
+                                        <button class="btn btn-outline-secondary" type="button" id="btn-recarregar-identidade">Recarregar identidade</button>
+                                        <button class="btn btn-primary" type="button" id="btn-salvar-identidade">
+                                            <span class="fe fe-save"></span> Salvar identidade visual
+                                        </button>
+                                    </div>
                                 </div>
                                 <!-- /TAB IDENTIDADE -->
 
                                 <!-- TAB 2: DOCUMENTOS -->
-                                <div class="tab-pane fade" id="tab-documentos" role="tabpanel"
+                                <div class="tab-pane fade config-tab-pane" id="tab-documentos" role="tabpanel"
                                     aria-labelledby="tab-documentos-tab">
                                     <form id="form-config-documentos">
+                                        <div class="config-section-card">
                                         <!-- SEÇÃO OFÍCIOS -->
                                         <div class="config-section-title">Ofícios – Cabeçalho</div>
                                         <p class="config-help mb-2">
@@ -808,14 +895,22 @@
                                             </div>
                                         </div>
 
+                                        </div>
                                     </form>
+                                    <div class="config-tab-actions">
+                                        <button class="btn btn-outline-secondary" type="button" id="btn-recarregar-documentos">Recarregar documentos</button>
+                                        <button class="btn btn-primary" type="button" id="btn-salvar-documentos">
+                                            <span class="fe fe-save"></span> Salvar documentos
+                                        </button>
+                                    </div>
                                 </div>
                                 <!-- /TAB DOCUMENTOS -->
 
                                 <!-- TAB 3: CARTEIRINHAS -->
-                                <div class="tab-pane fade" id="tab-carteirinhas" role="tabpanel"
+                                <div class="tab-pane fade config-tab-pane" id="tab-carteirinhas" role="tabpanel"
                                     aria-labelledby="tab-carteirinhas-tab">
                                     <form id="form-config-carteirinhas">
+                                        <div class="config-section-card">
                                         <div class="config-section-title d-flex align-items-center">
                                             Carteirinhas – Identidade visual
                                             <span class="config-pill">Carteirinhas</span>
@@ -930,22 +1025,110 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        </div>
                                     </form>
+                                    <div class="config-tab-actions">
+                                        <button class="btn btn-outline-secondary" type="button" id="btn-recarregar-carteirinhas">Recarregar carteirinhas</button>
+                                        <button class="btn btn-primary" type="button" id="btn-salvar-carteirinhas">
+                                            <span class="fe fe-save"></span> Salvar carteirinhas
+                                        </button>
+                                    </div>
                                 </div>
                                 <!-- /TAB CARTEIRINHAS -->
+
+                                <div class="tab-pane fade config-tab-pane" id="tab-usuarios" role="tabpanel"
+                                    aria-labelledby="tab-usuarios-tab">
+                                    <div class="security-hero shadow-sm mb-4">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-start">
+                                            <div class="pr-4">
+                                                <p class="text-muted text-uppercase small mb-2">Autenticação, perfis e segurança</p>
+                                                <h3 class="h5 mb-2">Gestão de usuários</h3>
+                                                <p class="security-subtitle mb-0">
+                                                    Controle acessos por papel, status, escopo de secretaria, escola e usuário.
+                                                </p>
+                                            </div>
+                                            <div class="d-flex flex-wrap mt-3 mt-lg-0">
+                                                <span class="security-chip security-chip-soft">Perfis por papel</span>
+                                                <span class="security-chip security-chip-soft ml-2">Escopo por unidade</span>
+                                                <span class="security-chip security-chip-soft ml-2">Bloqueio e auditoria</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="securityKpisUsers" class="row"></div>
+                                    <div id="securityUsersContent"></div>
+                                </div>
+
+                                <div class="tab-pane fade config-tab-pane" id="tab-perfis" role="tabpanel"
+                                    aria-labelledby="tab-perfis-tab">
+                                    <div class="security-hero shadow-sm mb-4">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-start">
+                                            <div class="pr-4">
+                                                <p class="text-muted text-uppercase small mb-2">Autenticação, perfis e segurança</p>
+                                                <h3 class="h5 mb-2">Perfis e permissões</h3>
+                                                <p class="security-subtitle mb-0">
+                                                    Estruture RBAC com segregação por secretaria, escola, turma e usuário.
+                                                </p>
+                                            </div>
+                                            <div class="d-flex flex-wrap mt-3 mt-lg-0">
+                                                <span class="security-chip security-chip-soft">RBAC</span>
+                                                <span class="security-chip security-chip-soft ml-2">Permissões granulares</span>
+                                                <span class="security-chip security-chip-soft ml-2">Governança</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="securityKpisProfiles" class="row"></div>
+                                    <div id="securityProfilesContent"></div>
+                                </div>
+
+                                <div class="tab-pane fade config-tab-pane" id="tab-logs" role="tabpanel"
+                                    aria-labelledby="tab-logs-tab">
+                                    <div class="security-hero shadow-sm mb-4">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-start">
+                                            <div class="pr-4">
+                                                <p class="text-muted text-uppercase small mb-2">Autenticação, perfis e segurança</p>
+                                                <h3 class="h5 mb-2">Logs de acesso e auditoria</h3>
+                                                <p class="security-subtitle mb-0">
+                                                    Acompanhe autenticações, falhas, bloqueios, redefinições de senha e ações administrativas.
+                                                </p>
+                                            </div>
+                                            <div class="d-flex flex-wrap mt-3 mt-lg-0">
+                                                <span class="security-chip security-chip-soft">Trilha de auditoria</span>
+                                                <span class="security-chip security-chip-soft ml-2">Conformidade</span>
+                                                <span class="security-chip security-chip-soft ml-2">Operação crítica</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="securityKpisLogs" class="row"></div>
+                                    <div id="securityLogsContent"></div>
+                                </div>
+
+                                <div class="tab-pane fade config-tab-pane" id="tab-seguranca" role="tabpanel"
+                                    aria-labelledby="tab-seguranca-tab">
+                                    <div class="security-hero shadow-sm mb-4">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-start">
+                                            <div class="pr-4">
+                                                <p class="text-muted text-uppercase small mb-2">Autenticação, perfis e segurança</p>
+                                                <h3 class="h5 mb-2">Configurações de segurança</h3>
+                                                <p class="security-subtitle mb-0">
+                                                    Defina políticas de senha, sessão, reset, bloqueio por tentativas e retenção de logs.
+                                                </p>
+                                            </div>
+                                            <div class="d-flex flex-wrap mt-3 mt-lg-0">
+                                                <span class="security-chip security-chip-soft">Senha</span>
+                                                <span class="security-chip security-chip-soft ml-2">Sessão</span>
+                                                <span class="security-chip security-chip-soft ml-2">Reset</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="securityKpisSettings" class="row"></div>
+                                    <div id="securitySettingsContent"></div>
+                                </div>
                             </div> <!-- /card-body -->
                         </div> <!-- /card -->
-
-                        <div class="text-right mt-3">
-                            <button class="btn btn-outline-secondary mr-1" type="button" id="btn-descartar-config">
-                                Descartar alterações
-                            </button>
-                            <button class="btn btn-primary" type="button" id="btn-salvar-config-bottom">
-                                <span class="fe fe-save"></span> Salvar configurações
-                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
             </div>
 
             <!-- MODAIS GLOBAIS -->
@@ -1005,6 +1188,7 @@
     <script src="../../js/select2.min.js"></script>
     <script src="../../js/apps.js"></script>
     <script src="../../js/sidebar-permissoes.js"></script>
+    <script src="../../js/security-module.js"></script>
 
     <script>
         // Helpers globais para modais
@@ -1408,7 +1592,7 @@
                 });
         }
 
-        function salvarConfiguracoes() {
+        function salvarConfiguracoes(mensagemSucesso) {
             var cfg = coletarConfigDoFormulario();
             var formData = new FormData();
             formData.append('config', JSON.stringify(cfg));
@@ -1450,7 +1634,7 @@
                 .then(function (data) {
                     preencherFormComConfig(data || cfg);
                     mostrarMensagemSistema('Configurações salvas',
-                        'As configurações do sistema foram salvas com sucesso.');
+                        mensagemSucesso || 'As configurações do sistema foram salvas com sucesso.');
                 })
                 .catch(function (err) {
                     console.error(err);
@@ -1470,19 +1654,20 @@
                 carregarConfiguracoes();
             });
 
-            $('#btn-salvar-config, #btn-salvar-config-bottom').on('click', function () {
-                salvarConfiguracoes();
+            $('#btn-recarregar-identidade, #btn-recarregar-documentos, #btn-recarregar-carteirinhas').on('click', function () {
+                carregarConfiguracoes();
             });
 
-            $('#btn-descartar-config').on('click', function () {
-                confirmarAcaoSistema(
-                    'Descartar alterações',
-                    'As alterações não salvas serão perdidas. Deseja continuar?',
-                    'Descartar'
-                ).then(function (ok) {
-                    if (!ok) return;
-                    carregarConfiguracoes();
-                });
+            $('#btn-salvar-identidade').on('click', function () {
+                salvarConfiguracoes('A área de identidade visual foi salva com sucesso.');
+            });
+
+            $('#btn-salvar-documentos').on('click', function () {
+                salvarConfiguracoes('As configurações de documentos foram salvas com sucesso.');
+            });
+
+            $('#btn-salvar-carteirinhas').on('click', function () {
+                salvarConfiguracoes('As configurações de carteirinhas foram salvas com sucesso.');
             });
 
             // Eventos da aba documentos – ofícios (cabeçalho)
@@ -1507,6 +1692,24 @@
                 function () {
                     aplicarRegrasCarteirinha();
                 });
+
+            if (window.SETRANE_SECURITY && typeof window.SETRANE_SECURITY.renderConfigHub === 'function') {
+                window.SETRANE_SECURITY.renderConfigHub();
+            }
+
+            var abaDesejada = new URLSearchParams(window.location.search).get('aba');
+            var mapaAbas = {
+                identidade: '#tab-identidade-tab',
+                documentos: '#tab-documentos-tab',
+                carteirinhas: '#tab-carteirinhas-tab',
+                usuarios: '#tab-usuarios-tab',
+                perfis: '#tab-perfis-tab',
+                logs: '#tab-logs-tab',
+                seguranca: '#tab-seguranca-tab'
+            };
+            if (abaDesejada && mapaAbas[abaDesejada] && $(mapaAbas[abaDesejada]).length) {
+                $(mapaAbas[abaDesejada]).tab('show');
+            }
 
             // Carrega config ao abrir
             carregarConfiguracoes();
