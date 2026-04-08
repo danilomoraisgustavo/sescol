@@ -1,24 +1,84 @@
 /**
  * sidebar-permissoes.js
- * Ajusta o menu lateral (aside) no frontend com base no cargo do usuário.
- * Requer endpoint GET /api/me (já incluído no server).
+ * Reorganiza o menu lateral em módulos fixos, sem submenus recolhíveis,
+ * e aplica o recorte visual por cargo do usuário.
  *
- * Comportamento (UX):
- * - FORNECEDOR / FORNECEDOR_ESCOLAR:
- *   - Mantém Escolar > Operação (Motoristas, Monitores, Veículos, Fornecedores)
- *   - Mantém Escolar > Cadastros > Rotas escolares (Municipais/Exclusivas/Estaduais)
- *   - Oculta Zoneamentos, Escolas, Alunos e Pontos de parada
- * - Outros cargos: mantém o menu padrão
- *
- * Observação: isso é apenas UX. Segurança real está no backend.
+ * Observação: isso é UX. Segurança continua sendo responsabilidade do backend.
  */
 
 (function () {
-    function q(sel, root) { return (root || document).querySelector(sel); }
-    function qa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
+    const MODULES = [
+        {
+            id: 'visao-geral',
+            title: 'Visão Geral',
+            items: [
+                { href: '/dashboard', label: 'Painel', icon: 'fe-home' },
+            ],
+        },
+        {
+            id: 'base-escolar',
+            title: 'Base Escolar',
+            items: [
+                { href: '/zoneamentos', label: 'Zoneamentos', icon: 'fe-layers' },
+                { href: '/escolas', label: 'Escolas', icon: 'fe-map-pin' },
+                { href: '/alunos', label: 'Alunos', icon: 'fe-users' },
+            ],
+        },
+        {
+            id: 'rotas',
+            title: 'Rotas',
+            items: [
+                { href: '/pontos-parada', label: 'Pontos de parada', icon: 'fe-navigation' },
+                { href: '/rotas-municipais', label: 'Rotas municipais', icon: 'fe-git-branch' },
+                { href: '/rotas-exclusivas', label: 'Rotas exclusivas', icon: 'fe-shuffle' },
+                { href: '/rotas-estaduais', label: 'Rotas estaduais', icon: 'fe-compass' },
+            ],
+        },
+        {
+            id: 'operacao',
+            title: 'Operação',
+            items: [
+                { href: '/motoristas', label: 'Motoristas', icon: 'fe-user-check' },
+                { href: '/monitores', label: 'Monitores', icon: 'fe-shield' },
+                { href: '/veiculos', label: 'Veículos', icon: 'fe-truck' },
+                { href: '/fornecedores', label: 'Fornecedores', icon: 'fe-briefcase' },
+            ],
+        },
+        {
+            id: 'interno',
+            title: 'Interno',
+            items: [
+                { href: '/interno/motoristas', label: 'Motoristas internos', icon: 'fe-user' },
+                { href: '/interno/veiculos', label: 'Veículos internos', icon: 'fe-package' },
+            ],
+        },
+        {
+            id: 'sistema',
+            title: 'Sistema',
+            items: [
+                { href: '/sistema/configuracoes', label: 'Configurações', icon: 'fe-settings' },
+                { href: '/auth-logout.html', label: 'Sair', icon: 'fe-log-out' },
+            ],
+        },
+    ];
 
-    function hideEl(el) { if (el) el.style.display = 'none'; }
-    function showEl(el) { if (el) el.style.display = ''; }
+    const FORNECEDOR_ALLOWED = new Set([
+        '/dashboard',
+        '/motoristas',
+        '/monitores',
+        '/veiculos',
+        '/fornecedores',
+        '/rotas-municipais',
+        '/rotas-exclusivas',
+        '/rotas-estaduais',
+        '/auth-logout.html',
+    ]);
+
+    function q(sel, root) { return (root || document).querySelector(sel); }
+    function normalizePath(path) {
+        if (!path) return '/';
+        return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+    }
 
     async function getMe() {
         const r = await fetch('/api/me', { credentials: 'include' });
@@ -26,106 +86,77 @@
         return r.json();
     }
 
-    function keepOnlyFornecedorMenu() {
-        // Itens permitidos por href (links finais, não toggles '#...')
-        const allowHrefs = new Set([
-            '/dashboard',
-            '/motoristas',
-            '/monitores',
-            '/veiculos',
-            '/fornecedores',
-            '/rotas-municipais',
-            '/rotas-exclusivas',
-            '/rotas-estaduais',
-            '/auth-logout.html'
-        ]);
+    function isActiveLink(href, currentPath) {
+        const normalizedHref = normalizePath(href);
+        const normalizedCurrent = normalizePath(currentPath);
+        return normalizedHref === normalizedCurrent;
+    }
 
-        // 1) Oculta links finais não permitidos
-        qa('aside#leftSidebar a.nav-link').forEach(a => {
-            const href = (a.getAttribute('href') || '').trim();
-            if (!href) return;
-
-            // dropdown toggles: mantém por enquanto (vamos limpar filhos depois)
-            if (href.startsWith('#')) return;
-
-            if (!allowHrefs.has(href)) {
-                hideEl(a.closest('li.nav-item'));
-            }
-        });
-
-        // 2) Cadastros: remove tudo exceto Rotas escolares (3 páginas)
-        const cad = q('#escolar-cadastros');
-        if (cad) {
-            qa('#escolar-cadastros a.nav-link').forEach(a => {
-                const href = (a.getAttribute('href') || '').trim();
-                if (href.startsWith('#')) return; // toggle do dropdown "Rotas escolares"
-                if (!['/rotas-municipais', '/rotas-exclusivas', '/rotas-estaduais'].includes(href)) {
-                    hideEl(a.closest('li.nav-item'));
-                } else {
-                    showEl(a.closest('li.nav-item'));
-                }
-            });
-
-            // Se o dropdown "Rotas escolares" existir, garante que fique visível
-            const dropdownRotas = q('#escolar-rotas-escolares');
-            if (dropdownRotas) {
-                showEl(dropdownRotas.closest('li.nav-item.dropdown') || dropdownRotas.closest('li.nav-item'));
-            }
-
-            // Se o Cadastros ficou vazio, esconde o dropdown inteiro (não deve acontecer aqui)
-            const anyVisible = qa('#escolar-cadastros li.nav-item').some(li => li.style.display !== 'none');
-            if (!anyVisible) hideEl(cad.closest('li.nav-item.dropdown'));
+    function filterModulesByCargo(cargo) {
+        const normalizedCargo = String(cargo || '').toUpperCase();
+        if (normalizedCargo !== 'FORNECEDOR_ESCOLAR' && normalizedCargo !== 'FORNECEDOR') {
+            return MODULES;
         }
 
-        // 3) Operação: remove itens não permitidos
-        const op = q('#escolar-operacao');
-        if (op) {
-            qa('#escolar-operacao a.nav-link').forEach(a => {
-                const href = (a.getAttribute('href') || '').trim();
-                if (!href || href.startsWith('#')) return;
-                if (!['/motoristas', '/monitores', '/veiculos', '/fornecedores'].includes(href)) {
-                    hideEl(a.closest('li.nav-item'));
-                } else {
-                    showEl(a.closest('li.nav-item'));
-                }
-            });
-        }
+        return MODULES
+            .map((module) => ({
+                ...module,
+                items: module.items.filter((item) => FORNECEDOR_ALLOWED.has(item.href)),
+            }))
+            .filter((module) => module.items.length > 0);
+    }
 
-        // 4) Esconde seção Sistema (configurações) para fornecedor
-        qa('p.nav-heading').forEach(p => {
-            if ((p.textContent || '').trim().toLowerCase() === 'sistema') hideEl(p);
-        });
-        qa('a.nav-link[href="/sistema/configuracoes"]').forEach(a => hideEl(a.closest('li.nav-item')));
+    function renderModule(module, currentPath) {
+        const itemsHtml = module.items.map((item) => {
+            const activeClass = isActiveLink(item.href, currentPath) ? ' active' : '';
+            return `
+                <li class="nav-item${activeClass}">
+                    <a class="nav-link" href="${item.href}">
+                        <i class="fe ${item.icon} fe-16"></i>
+                        <span class="ml-3 item-text">${item.label}</span>
+                    </a>
+                </li>
+            `;
+        }).join('');
 
-        // 5) Expande seções úteis
-        const toggleOp = q('a[href="#escolar-operacao"]');
-        if (toggleOp) toggleOp.setAttribute('aria-expanded', 'true');
-        const opList = q('#escolar-operacao');
-        if (opList) opList.classList.add('show');
+        return `
+            <p class="text-muted nav-heading mt-4 mb-1" data-module="${module.id}"><span>${module.title}</span></p>
+            <ul class="navbar-nav flex-fill w-100 mb-2">
+                ${itemsHtml}
+            </ul>
+        `;
+    }
 
-        const toggleCad = q('a[href="#escolar-cadastros"]');
-        if (toggleCad) toggleCad.setAttribute('aria-expanded', 'true');
-        const cadList = q('#escolar-cadastros');
-        if (cadList) cadList.classList.add('show');
+    function renderSidebar(cargo) {
+        const sidebar = q('aside#leftSidebar');
+        const nav = q('.vertnav.navbar', sidebar);
+        if (!sidebar || !nav) return;
 
-        const toggleRotas = q('a[href="#escolar-rotas-escolares"]');
-        if (toggleRotas) toggleRotas.setAttribute('aria-expanded', 'true');
-        const rotasList = q('#escolar-rotas-escolares');
-        if (rotasList) rotasList.classList.add('show');
+        const brand = q('.w-100.mb-4.d-flex', nav);
+        const brandHtml = brand ? brand.outerHTML : `
+            <div class="w-100 mb-4 d-flex">
+                <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                    <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                </a>
+            </div>
+        `;
+
+        const modules = filterModulesByCargo(cargo);
+        const currentPath = window.location.pathname || '/';
+
+        nav.innerHTML = `
+            ${brandHtml}
+            ${modules.map((module) => renderModule(module, currentPath)).join('')}
+        `;
     }
 
     document.addEventListener('DOMContentLoaded', async function () {
         try {
             const me = await getMe();
             if (me) window.__ME = me;
-            if (!me) return;
-
-            const cargo = String(me.cargo || '').toUpperCase();
-            if (cargo === 'FORNECEDOR_ESCOLAR' || cargo === 'FORNECEDOR') {
-                keepOnlyFornecedorMenu();
-            }
+            renderSidebar(me?.cargo || '');
         } catch (e) {
-            // silencioso
+            renderSidebar('');
         }
     });
 })();

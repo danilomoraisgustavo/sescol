@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Modulo da escola">
+    <link rel="icon" href="../../../assets/favicon.ico">
+    <title>SETRANE EXPRESS - Escola</title>
+    <link rel="stylesheet" href="../../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../../css/feather.css">
+    <link rel="stylesheet" href="../../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../../css/app-dark.css" id="darkTheme">
+    <style>
+        .school-kpi-value { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+        .school-panel { border: 1px solid rgba(255,255,255,.08); }
+    </style>
+</head>
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar"><i class="fe fe-menu navbar-toggler-icon"></i></button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search" placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item"><a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark"><i class="fe fe-sun fe-16"></i></a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" data-toggle="dropdown">
+                        <span class="avatar avatar-sm mt-2"><img src="../../../assets/icons/user.png" alt="Usuario" class="avatar-img rounded-circle"></span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right">
+                        <a class="dropdown-item" href="/sistema/configuracoes">Configuracoes</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="/auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle"><i class="fe fe-x"></i></a>
+            <nav class="vertnav navbar navbar-light"></nav>
+        </aside>
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <h2 class="h4 mb-1" id="school-title">Dashboard da escola</h2>
+                                <p class="text-muted mb-0" id="school-subtitle">Visao dedicada da unidade escolar.</p>
+                            </div>
+                            <div class="text-right">
+                                <a href="#" class="btn btn-outline-secondary btn-sm mr-2" id="link-turmas">Turmas</a>
+                                <a href="#" class="btn btn-primary btn-sm" id="link-alunos">Alunos</a>
+                            </div>
+                        </div>
+
+                        <div class="card shadow school-panel mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-lg-7">
+                                        <div class="small text-muted text-uppercase mb-2">Unidade escolar</div>
+                                        <h3 class="mb-2" id="hero-school-name">Carregando...</h3>
+                                        <p class="mb-0 text-muted" id="hero-school-address">Aguarde enquanto buscamos os dados da escola.</p>
+                                        <div id="hero-zoneamentos" class="mt-3"></div>
+                                    </div>
+                                    <div class="col-lg-5">
+                                        <div class="row">
+                                            <div class="col-6 mb-3"><div class="border rounded p-3 h-100"><div class="text-muted small">Matriculas</div><div class="school-kpi-value" id="kpi-matriculas">0</div></div></div>
+                                            <div class="col-6 mb-3"><div class="border rounded p-3 h-100"><div class="text-muted small">Turmas</div><div class="school-kpi-value" id="kpi-turmas">0</div></div></div>
+                                            <div class="col-6"><div class="border rounded p-3 h-100"><div class="text-muted small">Anos letivos</div><div class="school-kpi-value" id="kpi-anos-letivos">0</div></div></div>
+                                            <div class="col-6"><div class="border rounded p-3 h-100"><div class="text-muted small">Aptos ao transporte</div><div class="school-kpi-value" id="kpi-apto-transporte">0</div></div></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Turmas da escola</strong>
+                                        <a href="#" id="link-ver-turmas" class="small">abrir modulo</a>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0">
+                                                <thead class="thead-light">
+                                                    <tr><th>Turma</th><th>Ano letivo</th><th>Alunos</th><th>Transporte</th></tr>
+                                                </thead>
+                                                <tbody id="school-turmas-body">
+                                                    <tr><td colspan="4" class="text-center text-muted py-4">Carregando turmas...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Alunos recentes</strong>
+                                        <a href="#" id="link-ver-alunos" class="small">abrir modulo</a>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0">
+                                                <thead class="thead-light">
+                                                    <tr><th>Aluno</th><th>Turma</th><th>Ano</th><th>Turno</th></tr>
+                                                </thead>
+                                                <tbody id="school-alunos-body">
+                                                    <tr><td colspan="4" class="text-center text-muted py-4">Carregando alunos...</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../../js/jquery.min.js"></script>
+    <script src="../../../js/popper.min.js"></script>
+    <script src="../../../js/bootstrap.min.js"></script>
+    <script src="../../../js/simplebar.min.js"></script>
+    <script src="../../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../../js/tinycolor-min.js"></script>
+    <script src="../../../js/config.js"></script>
+    <script src="../../../js/apps.js"></script>
+    <script src="../../../js/escola-contexto.js"></script>
+    <script src="../../../js/sidebar-escola.js"></script>
+    <script>
+        function renderZoneamentos(zoneamentos) {
+            var host = document.getElementById('hero-zoneamentos');
+            if (!host) return;
+            if (!zoneamentos || !zoneamentos.length) {
+                host.innerHTML = '<span class="text-muted">Sem zoneamentos vinculados.</span>';
+                return;
+            }
+            host.innerHTML = zoneamentos.map(function (z) {
+                var badgeClass = z.tipo_zona === 'rural' ? 'badge badge-warning mr-1 mb-1' : 'badge badge-success mr-1 mb-1';
+                return '<span class="' + badgeClass + '">' + (z.nome || 'Zoneamento') + '</span>';
+            }).join('');
+        }
+
+        function renderTurmas(turmas) {
+            var tbody = document.getElementById('school-turmas-body');
+            if (!tbody) return;
+            if (!turmas || !turmas.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Nenhuma turma vinculada a esta escola.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = turmas.slice(0, 8).map(function (turma) {
+                return '<tr><td><strong>' + (turma.turma || 'Sem turma') + '</strong></td><td>' + (turma.ano_letivo || ' - ') + '</td><td>' + (turma.total_alunos || 0) + '</td><td>' + (turma.total_apto_transporte || 0) + '</td></tr>';
+            }).join('');
+        }
+
+        function renderAlunos(alunos) {
+            var tbody = document.getElementById('school-alunos-body');
+            if (!tbody) return;
+            if (!alunos || !alunos.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Nenhuma matricula localizada para esta escola.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = alunos.slice(0, 8).map(function (aluno) {
+                return '<tr><td><strong>' + (aluno.nome || ('Aluno #' + aluno.id)) + '</strong></td><td>' + (aluno.turma_escola || aluno.turma || ' - ') + '</td><td>' + (aluno.ano_letivo || ' - ') + '</td><td>' + (aluno.turno || ' - ') + '</td></tr>';
+            }).join('');
+        }
+
+        $(document).ready(function () {
+            var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
+            $('#link-turmas, #link-ver-turmas').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'turmas'));
+            $('#link-alunos, #link-ver-alunos').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'));
+
+            window.EscolaContexto.carregarDashboard(escolaId)
+                .then(function (data) {
+                    var escola = data.escola || {};
+                    var resumo = data.resumo || {};
+                    document.title = 'SETRANE EXPRESS - ' + (escola.nome || 'Escola');
+                    $('#school-title').text(escola.nome || 'Dashboard da escola');
+                    $('#school-subtitle').text('INEP: ' + (escola.codigo_inep || 'Nao informado'));
+                    $('#hero-school-name').text(escola.nome || 'Escola');
+                    $('#hero-school-address').text(window.EscolaContexto.formatarEndereco(escola) || 'Endereco nao informado');
+                    $('#kpi-matriculas').text(resumo.total_matriculas || 0);
+                    $('#kpi-turmas').text(resumo.total_turmas || 0);
+                    $('#kpi-anos-letivos').text(resumo.total_anos_letivos || 0);
+                    $('#kpi-apto-transporte').text(resumo.total_alunos_apto_transporte || 0);
+                    renderZoneamentos(escola.zoneamentos || []);
+                    renderTurmas(data.turmas || []);
+                    renderAlunos(data.alunos || []);
+                })
+                .catch(function () {
+                    $('#school-title').text('Erro ao carregar escola');
+                    $('#school-subtitle').text('Nao foi possivel montar o modulo desta unidade.');
+                });
+        });
+    </script>
+</body>
+</html>

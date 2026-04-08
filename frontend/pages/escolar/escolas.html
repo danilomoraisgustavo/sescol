@@ -81,6 +81,18 @@
             /* azul um pouco mais escuro no hover */
             text-decoration: none;
         }
+
+        .school-tabs .nav-link {
+            font-weight: 600;
+        }
+
+        .school-section-title {
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: #98a6ad;
+        }
     </style>
 </head>
 
@@ -280,15 +292,23 @@
                                                 Cada ponto representa a localização oficial de uma escola.
                                             </small>
                                         </div>
-                                        <div class="ml-auto">
+                                        <div class="ml-auto d-flex align-items-center">
+                                            <button type="button" class="btn btn-sm btn-outline-primary mr-2"
+                                                id="btn-toggle-mapa-escolas" data-toggle="collapse"
+                                                data-target="#painel-mapa-escolas" aria-expanded="false"
+                                                aria-controls="painel-mapa-escolas">
+                                                <span class="fe fe-map fe-12 mr-1"></span> Mostrar mapa
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-outline-secondary"
                                                 id="btn-atualizar-mapa-escolas">
                                                 <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar mapa
                                             </button>
                                         </div>
                                     </div>
-                                    <div class="card-body">
-                                        <div id="map-escolas"></div>
+                                    <div class="collapse" id="painel-mapa-escolas">
+                                        <div class="card-body">
+                                            <div id="map-escolas"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -403,225 +423,282 @@
                                 <input type="hidden" id="escola-id" name="id">
                                 <input type="hidden" id="escola-lat" name="lat">
                                 <input type="hidden" id="escola-lng" name="lng">
+                                <ul class="nav nav-tabs school-tabs" id="escolaTabs" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active" id="tab-escola-identificacao" data-toggle="tab"
+                                            href="#aba-escola-identificacao" role="tab"
+                                            aria-controls="aba-escola-identificacao" aria-selected="true">Identificação</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-escola-localizacao" data-toggle="tab"
+                                            href="#aba-escola-localizacao" role="tab"
+                                            aria-controls="aba-escola-localizacao" aria-selected="false">Localização</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-escola-oferta" data-toggle="tab"
+                                            href="#aba-escola-oferta" role="tab"
+                                            aria-controls="aba-escola-oferta" aria-selected="false">Oferta educacional</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" id="tab-escola-zoneamentos" data-toggle="tab"
+                                            href="#aba-escola-zoneamentos" role="tab"
+                                            aria-controls="aba-escola-zoneamentos" aria-selected="false">Zoneamentos</a>
+                                    </li>
+                                </ul>
 
-                                <!-- INFO BÁSICA -->
-                                <div class="form-row">
-                                    <div class="form-group col-md-8">
-                                        <label for="escola-nome">Nome da Escola</label>
-                                        <input type="text" class="form-control" id="escola-nome" name="nome"
-                                            placeholder="Ex.: EMEF João da Silva" required>
-                                        <div class="invalid-feedback">Informe o nome da escola.</div>
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="escola-inep">Código INEP</label>
-                                        <input type="text" class="form-control" id="escola-inep" name="codigo_inep"
-                                            placeholder="Ex.: 12345678" required>
-                                        <div class="invalid-feedback">Informe o código INEP da escola.</div>
+                                <div class="tab-content border border-top-0 p-3" id="escolaTabsConteudo">
+                                    <div class="tab-pane fade show active" id="aba-escola-identificacao" role="tabpanel"
+                                        aria-labelledby="tab-escola-identificacao">
+                                        <p class="school-section-title mb-3">Identificação institucional</p>
+                                        <div class="form-row">
+                                            <div class="form-group col-md-8">
+                                                <label for="escola-nome">Nome da escola</label>
+                                                <input type="text" class="form-control" id="escola-nome" name="nome"
+                                                    placeholder="Ex.: EMEF João da Silva" required>
+                                                <div class="invalid-feedback">Informe o nome da escola.</div>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="escola-inep">Código INEP</label>
+                                                <input type="text" class="form-control" id="escola-inep" name="codigo_inep"
+                                                    placeholder="Ex.: 12345678" required>
+                                                <div class="invalid-feedback">Informe o código INEP da escola.</div>
+                                                <small class="form-text text-muted mt-1">
+                                                    Não sabe o código INEP?
+                                                    <a href="https://anonymousdata.inep.gov.br/analytics/saw.dll?Dashboard&PortalPath=%2Fshared%2FCenso%20da%20Educa%C3%A7%C3%A3o%20B%C3%A1sica%2F_portal%2FCat%C3%A1logo%20de%20Escolas&Page=Lista%20das%20Escolas&P1=dashboard&Action=Navigate&ViewState=1o8flktgo4bckim0ib6eum96kq&P16=NavRuleDefault&NavFromViewID=d%3Adashboard~p%3Asf156n9k0qs70741"
+                                                        target="_blank" rel="noopener" class="link-inep">
+                                                        Consultar no catálogo do INEP.
+                                                    </a>
+                                                </small>
+                                            </div>
+                                        </div>
 
-                                        <!-- NOVO: Ajuda para consultar o INEP -->
-                                        <small class="form-text text-muted mt-1">
-                                            Não sabe o código INEP da escola?
-                                            <a href="https://anonymousdata.inep.gov.br/analytics/saw.dll?Dashboard&PortalPath=%2Fshared%2FCenso%20da%20Educa%C3%A7%C3%A3o%20B%C3%A1sica%2F_portal%2FCat%C3%A1logo%20de%20Escolas&Page=Lista%20das%20Escolas&P1=dashboard&Action=Navigate&ViewState=1o8flktgo4bckim0ib6eum96kq&P16=NavRuleDefault&NavFromViewID=d%3Adashboard~p%3Asf156n9k0qs70741"
-                                                target="_blank" rel="noopener" class="link-inep">
-                                                Clique aqui para consultar.
-                                            </a>
-                                        </small>
+                                        <div class="alert alert-light border mb-0">
+                                            <strong>Boas práticas de cadastro:</strong> use a denominação oficial da escola,
+                                            valide o INEP e mantenha o ponto geográfico no portão principal ou acesso
+                                            operacional do transporte.
+                                        </div>
                                     </div>
-                                </div>
 
-                                <!-- LOCALIZAÇÃO E ENDEREÇO -->
-                                <div class="card border mb-3">
-                                    <div class="card-header py-2">
-                                        <span class="small font-weight-bold text-uppercase">
-                                            Localização da escola no mapa
-                                        </span>
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <div id="mapa-escola-localizacao"></div>
-                                    </div>
-                                    <div class="card-footer small text-muted">
-                                        Clique no mapa para marcar o ponto oficial da escola. É possível arrastar o
-                                        marcador para ajustar.
-                                    </div>
-                                </div>
+                                    <div class="tab-pane fade" id="aba-escola-localizacao" role="tabpanel"
+                                        aria-labelledby="tab-escola-localizacao">
+                                        <p class="school-section-title mb-3">Endereço e georreferenciamento</p>
 
-                                <div class="form-row">
-                                    <div class="form-group col-md-6">
-                                        <label for="escola-logradouro">Logradouro</label>
-                                        <input type="text" class="form-control" id="escola-logradouro" name="logradouro"
-                                            placeholder="Rua, avenida, travessa..." required>
-                                        <div class="invalid-feedback">Informe o logradouro.</div>
-                                    </div>
-                                    <div class="form-group col-md-2">
-                                        <label for="escola-numero">Número</label>
-                                        <input type="text" class="form-control" id="escola-numero" name="numero"
-                                            placeholder="Número" required>
-                                        <div class="invalid-feedback">Informe o número.</div>
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="escola-complemento">Complemento</label>
-                                        <input type="text" class="form-control" id="escola-complemento"
-                                            name="complemento" placeholder="Bloco, quadra, sala...">
-                                    </div>
-                                </div>
+                                        <div class="card border mb-3">
+                                            <div class="card-header py-2">
+                                                <span class="small font-weight-bold text-uppercase">
+                                                    Localização da escola no mapa
+                                                </span>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div id="mapa-escola-localizacao"></div>
+                                            </div>
+                                            <div class="card-footer small text-muted">
+                                                Clique no mapa para marcar o ponto oficial da escola. O marcador pode ser
+                                                arrastado para ajuste fino e o endereço será preenchido automaticamente
+                                                quando possível.
+                                            </div>
+                                        </div>
 
-                                <div class="form-row">
-                                    <div class="form-group col-md-4">
-                                        <label for="escola-referencia">Ponto de Referência</label>
-                                        <input type="text" class="form-control" id="escola-referencia" name="referencia"
-                                            placeholder="Ex.: Próximo à praça central">
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="escola-bairro">Bairro</label>
-                                        <input type="text" class="form-control" id="escola-bairro" name="bairro"
-                                            placeholder="Bairro" required>
-                                        <div class="invalid-feedback">Informe o bairro.</div>
-                                    </div>
-                                    <div class="form-group col-md-4">
-                                        <label for="escola-cep">CEP</label>
-                                        <input type="text" class="form-control input-zip" id="escola-cep" name="cep"
-                                            placeholder="____-___" required>
-                                        <div class="invalid-feedback">Informe o CEP.</div>
-                                    </div>
-                                </div>
-
-                                <!-- TIPOS DE ENSINO -->
-                                <div class="card border mb-3">
-                                    <div class="card-header py-2">
-                                        <span class="small font-weight-bold text-uppercase">
-                                            Informações de ensino
-                                        </span>
-                                    </div>
-                                    <div class="card-body">
+                                        <div class="form-row">
+                                            <div class="form-group col-md-6">
+                                                <label for="escola-logradouro">Logradouro</label>
+                                                <input type="text" class="form-control" id="escola-logradouro" name="logradouro"
+                                                    placeholder="Rua, avenida, travessa..." required>
+                                                <div class="invalid-feedback">Informe o logradouro.</div>
+                                            </div>
+                                            <div class="form-group col-md-2">
+                                                <label for="escola-numero">Número</label>
+                                                <input type="text" class="form-control" id="escola-numero" name="numero"
+                                                    placeholder="Número" required>
+                                                <div class="invalid-feedback">Informe o número.</div>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="escola-complemento">Complemento</label>
+                                                <input type="text" class="form-control" id="escola-complemento"
+                                                    name="complemento" placeholder="Bloco, quadra, sala, anexo...">
+                                            </div>
+                                        </div>
 
                                         <div class="form-row">
                                             <div class="form-group col-md-4">
-                                                <label class="d-block mb-1">Regime (oferta de ensino)</label>
+                                                <label for="escola-referencia">Ponto de referência</label>
+                                                <input type="text" class="form-control" id="escola-referencia" name="referencia"
+                                                    placeholder="Ex.: ao lado do ginásio, praça, UBS...">
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="escola-bairro">Bairro / localidade</label>
+                                                <input type="text" class="form-control" id="escola-bairro" name="bairro"
+                                                    placeholder="Bairro, vila ou comunidade" required>
+                                                <div class="invalid-feedback">Informe o bairro.</div>
+                                            </div>
+                                            <div class="form-group col-md-4">
+                                                <label for="escola-cep">CEP</label>
+                                                <input type="text" class="form-control input-zip" id="escola-cep" name="cep"
+                                                    placeholder="_____-___" required>
+                                                <div class="invalid-feedback">Informe o CEP.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane fade" id="aba-escola-oferta" role="tabpanel"
+                                        aria-labelledby="tab-escola-oferta">
+                                        <p class="school-section-title mb-3">Oferta educacional e funcionamento</p>
+
+                                        <div class="form-row">
+                                            <div class="form-group col-md-4">
+                                                <label class="d-block mb-1">Modalidades / regimes</label>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-regime"
+                                                    <input type="checkbox" class="custom-control-input check-ensino-regime"
                                                         id="regime-regular" value="regular" name="ensino_regime[]">
-                                                    <label class="custom-control-label"
-                                                        for="regime-regular">Regular</label>
+                                                    <label class="custom-control-label" for="regime-regular">Regular</label>
                                                 </div>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-regime" id="regime-eja"
-                                                        value="eja" name="ensino_regime[]">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-regime"
+                                                        id="regime-integral" value="integral" name="ensino_regime[]">
+                                                    <label class="custom-control-label" for="regime-integral">Tempo integral</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-regime"
+                                                        id="regime-eja" value="eja" name="ensino_regime[]">
                                                     <label class="custom-control-label" for="regime-eja">EJA</label>
                                                 </div>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-regime"
-                                                        id="regime-prof" value="profissionalizante"
-                                                        name="ensino_regime[]">
-                                                    <label class="custom-control-label"
-                                                        for="regime-prof">Profissionalizante</label>
-                                                </div>
-                                                <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-regime"
+                                                    <input type="checkbox" class="custom-control-input check-ensino-regime"
                                                         id="regime-especial" value="especial" name="ensino_regime[]">
-                                                    <label class="custom-control-label"
-                                                        for="regime-especial">Especial</label>
+                                                    <label class="custom-control-label" for="regime-especial">Educação especial</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-regime"
+                                                        id="regime-prof" value="profissionalizante" name="ensino_regime[]">
+                                                    <label class="custom-control-label" for="regime-prof">Profissionalizante</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-regime"
+                                                        id="regime-indigena" value="indigena" name="ensino_regime[]">
+                                                    <label class="custom-control-label" for="regime-indigena">Educação indígena</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-regime"
+                                                        id="regime-quilombola" value="quilombola" name="ensino_regime[]">
+                                                    <label class="custom-control-label" for="regime-quilombola">Educação quilombola</label>
                                                 </div>
                                             </div>
 
                                             <div class="form-group col-md-4">
-                                                <label class="d-block mb-1">Nível (oferta de ensino)</label>
+                                                <label class="d-block mb-1">Etapas / níveis ofertados</label>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-nivel"
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
                                                         id="nivel-infantil" value="infantil" name="ensino_nivel[]">
-                                                    <label class="custom-control-label"
-                                                        for="nivel-infantil">Infantil</label>
+                                                    <label class="custom-control-label" for="nivel-infantil">Educação infantil</label>
                                                 </div>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-nivel"
-                                                        id="nivel-fundamental" value="fundamental"
-                                                        name="ensino_nivel[]">
-                                                    <label class="custom-control-label"
-                                                        for="nivel-fundamental">Fundamental</label>
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-creche" value="creche" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-creche">Creche</label>
                                                 </div>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-nivel" id="nivel-medio"
-                                                        value="medio" name="ensino_nivel[]">
-                                                    <label class="custom-control-label" for="nivel-medio">Médio</label>
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-pre-escola" value="pre_escola" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-pre-escola">Pré-escola</label>
                                                 </div>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-nivel"
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-fundamental" value="fundamental" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-fundamental">Ensino fundamental</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-fundamental-iniciais" value="fundamental_anos_iniciais" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-fundamental-iniciais">Fundamental anos iniciais</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-fundamental-finais" value="fundamental_anos_finais" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-fundamental-finais">Fundamental anos finais</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-medio" value="medio" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-medio">Ensino médio</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
+                                                        id="nivel-tecnico" value="tecnico" name="ensino_nivel[]">
+                                                    <label class="custom-control-label" for="nivel-tecnico">Técnico</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-nivel"
                                                         id="nivel-superior" value="superior" name="ensino_nivel[]">
-                                                    <label class="custom-control-label"
-                                                        for="nivel-superior">Superior</label>
+                                                    <label class="custom-control-label" for="nivel-superior">Superior</label>
                                                 </div>
                                             </div>
 
                                             <div class="form-group col-md-4">
-                                                <label class="d-block mb-1">Horário de funcionamento</label>
+                                                <label class="d-block mb-1">Turnos de funcionamento</label>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-horario"
+                                                    <input type="checkbox" class="custom-control-input check-ensino-horario"
                                                         id="horario-manha" value="manha" name="ensino_horario[]">
-                                                    <label class="custom-control-label"
-                                                        for="horario-manha">Manhã</label>
+                                                    <label class="custom-control-label" for="horario-manha">Manhã</label>
                                                 </div>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-horario"
+                                                    <input type="checkbox" class="custom-control-input check-ensino-horario"
+                                                        id="horario-intermediario" value="intermediario" name="ensino_horario[]">
+                                                    <label class="custom-control-label" for="horario-intermediario">Intermediário</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-horario"
                                                         id="horario-tarde" value="tarde" name="ensino_horario[]">
-                                                    <label class="custom-control-label"
-                                                        for="horario-tarde">Tarde</label>
+                                                    <label class="custom-control-label" for="horario-tarde">Tarde</label>
                                                 </div>
                                                 <div class="custom-control custom-checkbox">
-                                                    <input type="checkbox"
-                                                        class="custom-control-input check-ensino-horario"
+                                                    <input type="checkbox" class="custom-control-input check-ensino-horario"
                                                         id="horario-noite" value="noite" name="ensino_horario[]">
-                                                    <label class="custom-control-label"
-                                                        for="horario-noite">Noite</label>
+                                                    <label class="custom-control-label" for="horario-noite">Noite</label>
+                                                </div>
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input check-ensino-horario"
+                                                        id="horario-integral" value="integral" name="ensino_horario[]">
+                                                    <label class="custom-control-label" for="horario-integral">Integral</label>
                                                 </div>
                                             </div>
                                         </div>
 
-                                    </div>
-                                </div>
-
-                                <!-- LISTA DE ZONEAMENTOS (DUAL SELECT) -->
-                                <div class="card-body">
-                                    <div class="dual-list-container">
-                                        <div class="flex-fill">
-                                            <label for="zoneamentos-disponiveis">Zoneamentos disponíveis</label>
-
-                                            <!-- NOVO: campo de pesquisa -->
-                                            <input type="text" class="form-control form-control-sm mb-2"
-                                                id="filtro-zoneamentos-disponiveis"
-                                                placeholder="Pesquisar por nome ou tipo (urbana/rural)...">
-
-                                            <select multiple class="form-control" id="zoneamentos-disponiveis"></select>
-                                        </div>
-
-                                        <div class="dual-list-buttons">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm"
-                                                id="btn-adicionar-zoneamento">&gt;&gt;</button>
-                                            <button type="button" class="btn btn-outline-secondary btn-sm"
-                                                id="btn-remover-zoneamento">&lt;&lt;</button>
-                                        </div>
-
-                                        <div class="flex-fill">
-                                            <label for="zoneamentos-selecionados">Zoneamentos vinculados à
-                                                escola</label>
-                                            <select multiple class="form-control"
-                                                id="zoneamentos-selecionados"></select>
+                                        <div class="alert alert-light border mb-0">
+                                            Organize aqui a oferta da unidade com mais detalhe que o mínimo operacional,
+                                            facilitando análises de atendimento, turnos e elegibilidade do transporte.
                                         </div>
                                     </div>
-                                    <small class="form-text text-muted mt-2">
-                                        Use os botões para mover os zoneamentos entre as listas.
-                                    </small>
+
+                                    <div class="tab-pane fade" id="aba-escola-zoneamentos" role="tabpanel"
+                                        aria-labelledby="tab-escola-zoneamentos">
+                                        <p class="school-section-title mb-3">Vinculação territorial</p>
+                                        <div class="dual-list-container">
+                                            <div class="flex-fill">
+                                                <label for="zoneamentos-disponiveis">Zoneamentos disponíveis</label>
+                                                <input type="text" class="form-control form-control-sm mb-2"
+                                                    id="filtro-zoneamentos-disponiveis"
+                                                    placeholder="Pesquisar por nome ou tipo (urbana/rural)...">
+                                                <select multiple class="form-control" id="zoneamentos-disponiveis"></select>
+                                            </div>
+
+                                            <div class="dual-list-buttons">
+                                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    id="btn-adicionar-zoneamento">&gt;&gt;</button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    id="btn-remover-zoneamento">&lt;&lt;</button>
+                                            </div>
+
+                                            <div class="flex-fill">
+                                                <label for="zoneamentos-selecionados">Zoneamentos vinculados à escola</label>
+                                                <select multiple class="form-control" id="zoneamentos-selecionados"></select>
+                                            </div>
+                                        </div>
+                                        <small class="form-text text-muted mt-2">
+                                            Use os botões para mover os zoneamentos entre as listas e refletir a área de
+                                            atendimento ou influência da unidade.
+                                        </small>
+                                    </div>
                                 </div>
-
-
                             </div>
 
                             <div class="modal-footer">
@@ -893,15 +970,44 @@
         }
 
         function initMapEscolas() {
+            if (mapEscolas) return mapEscolas;
             mapEscolas = criarMapaBase('map-escolas');
+            return mapEscolas;
         }
 
         function initMapEscolaLocalizacao() {
+            if (mapEscolaLocalizacao) return mapEscolaLocalizacao;
             mapEscolaLocalizacao = criarMapaBase('mapa-escola-localizacao');
 
             mapEscolaLocalizacao.on('click', function (e) {
                 definirMarkerEscola(e.latlng.lat, e.latlng.lng, true);
             });
+
+            return mapEscolaLocalizacao;
+        }
+
+        function sincronizarMapaEscolaLocalizacao() {
+            initMapEscolaLocalizacao();
+
+            setTimeout(function () {
+                if (!mapEscolaLocalizacao) return;
+
+                mapEscolaLocalizacao.invalidateSize();
+
+                var lat = parseFloat($('#escola-lat').val());
+                var lng = parseFloat($('#escola-lng').val());
+
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    definirMarkerEscola(lat, lng, false);
+                    mapEscolaLocalizacao.setView([lat, lng], 16);
+                } else {
+                    if (markerEscolaEdicao && mapEscolaLocalizacao.hasLayer(markerEscolaEdicao)) {
+                        mapEscolaLocalizacao.removeLayer(markerEscolaEdicao);
+                    }
+                    markerEscolaEdicao = null;
+                    mapEscolaLocalizacao.setView(defaultCenter, defaultZoom);
+                }
+            }, 180);
         }
 
         // Preenche os campos de endereço do formulário com o resultado da geocodificação
@@ -1183,6 +1289,12 @@
             return partes.join(' | ');
         }
 
+        function abrirDashboardDaEscola(escolaId) {
+            var id = Number(escolaId);
+            if (!Number.isFinite(id) || id <= 0) return;
+            window.location.href = '/escolar/escola/' + id + '/dashboard';
+        }
+
         function renderizarTabelaEscolas() {
             var tbody = document.getElementById('tbody-escolas');
             if (!tbody) return;
@@ -1202,6 +1314,7 @@
 
                 var tr = document.createElement('tr');
                 tr.setAttribute('data-id', e.id);
+                tr.setAttribute('data-escola-id', e.id);
 
                 // checkbox
                 var tdCheck = document.createElement('td');
@@ -1226,7 +1339,9 @@
 
                 // nome
                 var tdNome = document.createElement('td');
-                tdNome.textContent = e.nome || '';
+                tdNome.className = 'cursor-pointer action-abrir-escola';
+                tdNome.setAttribute('data-escola-id', e.id);
+                tdNome.innerHTML = '<strong>' + (e.nome || '') + '</strong>';
                 tr.appendChild(tdNome);
 
                 // INEP
@@ -1295,6 +1410,7 @@
 
         function abrirModalNovaEscola() {
             $('#modalNovaEscolaLabel').text('Nova escola');
+            $('#tab-escola-identificacao').tab('show');
             $('#escola-id').val('');
             $('#escola-nome').val('');
             $('#escola-inep').val('');
@@ -1330,6 +1446,7 @@
             if (!e) return;
 
             $('#modalNovaEscolaLabel').text('Editar escola');
+            $('#tab-escola-identificacao').tab('show');
             $('#escola-id').val(e.id);
             $('#escola-nome').val(e.nome || '');
             $('#escola-inep').val(e.codigo_inep || '');
@@ -1370,7 +1487,11 @@
                 lng = e.lng;
             }
             if (lat != null && lng != null) {
-                definirMarkerEscola(lat, lng, false);
+                $('#escola-lat').val(lat);
+                $('#escola-lng').val(lng);
+                if (mapEscolaLocalizacao) {
+                    definirMarkerEscola(lat, lng, false);
+                }
             } else {
                 limparMarkerEscola();
             }
@@ -1398,11 +1519,8 @@
             });
 
             setTimeout(function () {
-                if (mapEscolaLocalizacao) {
-                    mapEscolaLocalizacao.invalidateSize();
-                    if (lat != null && lng != null) {
-                        mapEscolaLocalizacao.setView([lat, lng], 16);
-                    }
+                if ($('#tab-escola-localizacao').hasClass('active')) {
+                    sincronizarMapaEscolaLocalizacao();
                 }
             }, 200);
         }
@@ -1410,6 +1528,7 @@
         function centralizarEscolaNoMapa(id) {
             var marker = escolaMarkers[id];
             if (!marker || !mapEscolas) return;
+            $('#painel-mapa-escolas').collapse('show');
 
             // encontra a escola para conhecer os zoneamentos vinculados
             var escola = escolas.find(function (e) { return String(e.id) === String(id); });
@@ -1434,13 +1553,17 @@
                 });
             }
 
-            if (bounds && bounds.isValid && bounds.isValid()) {
-                mapEscolas.fitBounds(bounds.pad(0.2));
-            } else {
-                mapEscolas.setView(marker.getLatLng(), 16);
-            }
+            setTimeout(function () {
+                mapEscolas.invalidateSize();
 
-            marker.openPopup();
+                if (bounds && bounds.isValid && bounds.isValid()) {
+                    mapEscolas.fitBounds(bounds.pad(0.2));
+                } else {
+                    mapEscolas.setView(marker.getLatLng(), 16);
+                }
+
+                marker.openPopup();
+            }, 220);
         }
 
         function salvarEscola(event) {
@@ -1646,13 +1769,25 @@
         }
 
         $(document).ready(function () {
-            initMapEscolas();
-            initMapEscolaLocalizacao();
             carregarEscolas();
             carregarZoneamentosParaSeletores();
 
             $('#btn-atualizar-mapa-escolas').on('click', function () {
+                $('#painel-mapa-escolas').collapse('show');
                 carregarEscolas();
+            });
+
+            $('#painel-mapa-escolas').on('shown.bs.collapse', function () {
+                $('#btn-toggle-mapa-escolas').html('<span class="fe fe-eye-off fe-12 mr-1"></span> Ocultar mapa');
+                initMapEscolas();
+                setTimeout(function () {
+                    mapEscolas.invalidateSize();
+                    atualizarMapaEscolas();
+                }, 180);
+            });
+
+            $('#painel-mapa-escolas').on('hidden.bs.collapse', function () {
+                $('#btn-toggle-mapa-escolas').html('<span class="fe fe-map fe-12 mr-1"></span> Mostrar mapa');
             });
 
             $('#search-escolas').on('input', function () {
@@ -1672,40 +1807,42 @@
             });
 
             $('#modal-nova-escola').on('shown.bs.modal', function () {
-                if (mapEscolaLocalizacao) {
-                    setTimeout(function () {
-                        mapEscolaLocalizacao.invalidateSize();
-                        if ($('#escola-lat').val() && $('#escola-lng').val()) {
-                            var lat = parseFloat($('#escola-lat').val());
-                            var lng = parseFloat($('#escola-lng').val());
-                            if (!isNaN(lat) && !isNaN(lng)) {
-                                mapEscolaLocalizacao.setView([lat, lng], 16);
-                            }
-                        } else {
-                            mapEscolaLocalizacao.setView(defaultCenter, defaultZoom);
-                        }
-                    }, 150);
+                if ($('#tab-escola-localizacao').hasClass('active')) {
+                    sincronizarMapaEscolaLocalizacao();
                 }
+            });
+
+            $('a[data-toggle="tab"][href="#aba-escola-localizacao"]').on('shown.bs.tab', function () {
+                sincronizarMapaEscolaLocalizacao();
             });
 
             $('#form-escola').on('submit', salvarEscola);
 
             $('#tbody-escolas').on('click', '.action-editar-escola', function (e) {
                 e.preventDefault();
+                e.stopPropagation();
                 var id = $(this).data('id');
                 abrirModalEditarEscola(id);
             });
 
             $('#tbody-escolas').on('click', '.action-ver-mapa-escola', function (e) {
                 e.preventDefault();
+                e.stopPropagation();
                 var id = $(this).data('id');
                 centralizarEscolaNoMapa(id);
             });
 
             $('#tbody-escolas').on('click', '.action-excluir-escola', function (e) {
                 e.preventDefault();
+                e.stopPropagation();
                 var id = $(this).data('id');
                 excluirEscola(id);
+            });
+
+            $('#tbody-escolas').on('click', '.action-abrir-escola', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                abrirDashboardDaEscola($(this).data('escola-id'));
             });
 
             $('#btn-excluir-escolas-selecionadas').on('click', function (e) {

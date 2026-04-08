@@ -6,9 +6,59 @@ import authMiddleware from '../middleware/auth.js';
 import tenantMiddleware from '../middleware/tenant.js';
 
 const router = express.Router();
+let tenantColumnCache = null;
+let tenantColumnCacheAt = 0;
+const TENANT_CACHE_TTL_MS = 5 * 60 * 1000;
 
 // Protege todas as rotas abaixo: token obrigatório e tenant resolvido via JWT
 router.use(authMiddleware, tenantMiddleware);
+
+async function getTenantColumnSupport() {
+  const now = Date.now();
+  if (tenantColumnCache && (now - tenantColumnCacheAt) < TENANT_CACHE_TTL_MS) {
+    return tenantColumnCache;
+  }
+
+  const tables = [
+    'alunos_municipais',
+    'alunos_escolas',
+    'escolas',
+    'pontos_parada',
+    'zoneamentos',
+    'motoristas',
+    'monitores',
+    'veiculos',
+    'fornecedores',
+    'itinerarios',
+    'rotas_escolares',
+    'rotas_percursos',
+    'rotas_escolares_alunos',
+    'rotas_escolares_pontos',
+    'escola_zoneamento',
+    'alunos_pontos',
+  ];
+
+  const { rows } = await pool.query(
+    `
+      SELECT table_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = ANY($1::text[])
+        AND column_name = 'tenant_id'
+    `,
+    [tables]
+  );
+
+  const support = new Set((rows || []).map((row) => row.table_name));
+  tenantColumnCache = Object.fromEntries(tables.map((table) => [table, support.has(table)]));
+  tenantColumnCacheAt = now;
+  return tenantColumnCache;
+}
+
+function mergeWhere(...clauses) {
+  const clean = clauses.map((c) => String(c || '').trim()).filter(Boolean);
+  return clean.length ? `WHERE ${clean.join(' AND ')}` : '';
+}
 
 
 /**
@@ -33,8 +83,6 @@ router.get('/dashboard-escolar', async (req, res) => {
   const values = [tenantId];
   const valuesTenantOnly = [tenantId];
 
-  filtrosAlunos.push(`a.tenant_id = $1`);
-
   if (inicio) {
     values.push(`${inicio} 00:00:00`);
     filtrosAlunos.push(`a.criado_em >= $${values.length}`);
@@ -52,6 +100,38 @@ router.get('/dashboard-escolar', async (req, res) => {
 
   try {
     client = await pool.connect();
+    const tenantSupport = await getTenantColumnSupport();
+
+    const alunosBaseFilter = tenantSupport.alunos_municipais ? 'a.tenant_id = $1' : '';
+    if (alunosBaseFilter) {
+      filtrosAlunos.unshift(alunosBaseFilter);
+    }
+    const whereAlunos = mergeWhere(...filtrosAlunos);
+    const whereAlunosComTransporteApto = mergeWhere(whereAlunos.replace(/^WHERE\s+/i, ''), 'a.transporte_apto = TRUE');
+    const escolasTenantFilter = tenantSupport.escolas ? 'e.tenant_id = $1' : '';
+    const pontosTenantFilter = tenantSupport.pontos_parada ? 'p.tenant_id = $1' : '';
+    const zoneamentosTenantFilter = tenantSupport.zoneamentos ? 'z0.tenant_id = $1' : '';
+    const zoneamentosUrbanaTenantFilter = tenantSupport.zoneamentos ? 'z.tenant_id = $1' : '';
+    const zoneamentosRuralTenantFilter = tenantSupport.zoneamentos ? 'z.tenant_id = $1' : '';
+    const motoristasTenantFilter = tenantSupport.motoristas ? 'm.tenant_id = $1' : '';
+    const monitoresTenantFilter = tenantSupport.monitores ? 'mo.tenant_id = $1' : '';
+    const veiculosTenantFilter = tenantSupport.veiculos ? 'v.tenant_id = $1' : '';
+    const fornecedoresTenantFilter = tenantSupport.fornecedores ? 'f.tenant_id = $1' : '';
+    const itinerariosTenantFilter = tenantSupport.itinerarios ? 'i.tenant_id = $1' : '';
+    const rotasTenantFilter = tenantSupport.rotas_escolares ? 'r.tenant_id = $1' : '';
+    const alunosEscolasJoinTenant = tenantSupport.alunos_escolas ? ' AND ae.tenant_id = $1' : '';
+    const escolasJoinTenant = tenantSupport.escolas ? ' AND e.tenant_id = $1' : '';
+    const rotasAlunosJoinTenant = tenantSupport.rotas_escolares_alunos ? ' AND ra.tenant_id = $1' : '';
+    const alunosEscolasWhereTenant = tenantSupport.alunos_escolas ? 'ae.tenant_id = $1' : '';
+    const veiculosWhereAtivos = mergeWhere(veiculosTenantFilter, "v.status = 'ativo'");
+    const rotasWhereTenant = mergeWhere(rotasTenantFilter);
+    const rotasPercursosJoinTenant = tenantSupport.rotas_percursos ? ' AND rp.tenant_id = $1' : '';
+    const rotasPontosTenantFilter = tenantSupport.rotas_escolares_pontos ? 'rep.tenant_id = $1' : '';
+    const pontosZonaTenantFilter = tenantSupport.pontos_parada ? 'pt.tenant_id = $1' : '';
+    const escolasDemandaJoinAlunos = tenantSupport.alunos_municipais ? ' AND a.tenant_id = $1' : '';
+    const alunosPontosJoinTenant = tenantSupport.alunos_pontos ? ' AND ap.tenant_id = $1' : '';
+    const pontosParadaJoinTenant = tenantSupport.pontos_parada ? ' AND p.tenant_id = $1' : '';
+    const escolaZoneamentoJoinTenant = tenantSupport.escola_zoneamento ? ' AND ez.tenant_id = $1' : '';
 
     const [
       resumoResult,
@@ -68,6 +148,7 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id)
           SELECT
             COUNT(*)::int                                            AS total_alunos,
             COUNT(*) FILTER (WHERE a.transporte_apto)::int           AS total_alunos_apto,
@@ -81,37 +162,38 @@ router.get('/dashboard-escolar', async (req, res) => {
             )::int                                                  AS total_alunos_apto_rural,
 
             -- Escolas / pontos
-            (SELECT COUNT(*) FROM escolas e WHERE e.tenant_id = $1)::int AS total_escolas,
+            (SELECT COUNT(*) FROM escolas e ${mergeWhere(escolasTenantFilter)})::int AS total_escolas,
             (SELECT COUNT(*) FROM pontos_parada p
-                WHERE p.tenant_id = $1 AND p.status = 'ativo')::int  AS total_pontos_ativos,
+                ${mergeWhere(pontosTenantFilter, "p.status = 'ativo'")})::int  AS total_pontos_ativos,
 
             -- Zoneamentos
-            (SELECT COUNT(*) FROM zoneamentos z0 WHERE z0.tenant_id = $1)::int AS total_zoneamentos,
+            (SELECT COUNT(*) FROM zoneamentos z0 ${mergeWhere(zoneamentosTenantFilter)})::int AS total_zoneamentos,
             (SELECT COUNT(*) FROM zoneamentos z
-                WHERE z.tenant_id = $1 AND z.tipo_zona = 'urbana')::int AS total_zoneamentos_urbana,
+                ${mergeWhere(zoneamentosUrbanaTenantFilter, "z.tipo_zona = 'urbana'")})::int AS total_zoneamentos_urbana,
             (SELECT COUNT(*) FROM zoneamentos z
-                WHERE z.tenant_id = $1 AND z.tipo_zona = 'rural')::int  AS total_zoneamentos_rural,
+                ${mergeWhere(zoneamentosRuralTenantFilter, "z.tipo_zona = 'rural'")})::int  AS total_zoneamentos_rural,
 
             -- Operação (recursos humanos / frota)
             (SELECT COUNT(*) FROM motoristas m
-                WHERE m.tenant_id = $1 AND m.status = 'ativo')::int  AS total_motoristas_ativos,
+                ${mergeWhere(motoristasTenantFilter, "m.status = 'ativo'")})::int  AS total_motoristas_ativos,
             (SELECT COUNT(*) FROM monitores mo
-                WHERE mo.tenant_id = $1 AND mo.status = 'ativo')::int AS total_monitores_ativos,
+                ${mergeWhere(monitoresTenantFilter, "mo.status = 'ativo'")})::int AS total_monitores_ativos,
             (SELECT COUNT(*) FROM veiculos v
-                WHERE v.tenant_id = $1 AND v.status = 'ativo')::int  AS total_veiculos_ativos,
+                ${mergeWhere(veiculosTenantFilter, "v.status = 'ativo'")})::int  AS total_veiculos_ativos,
             (SELECT COALESCE(SUM(v.capacidade_lotacao),0)
                 FROM veiculos v
-                WHERE v.tenant_id = $1 AND v.status = 'ativo')::int  AS capacidade_frota_total,
+                ${mergeWhere(veiculosTenantFilter, "v.status = 'ativo'")})::int  AS capacidade_frota_total,
 
             (SELECT COUNT(*) FROM fornecedores f
-                WHERE f.tenant_id = $1 AND f.status = 'ativo')::int  AS total_fornecedores_ativos,
+                ${mergeWhere(fornecedoresTenantFilter, "f.status = 'ativo'")})::int  AS total_fornecedores_ativos,
             (SELECT COUNT(*) FROM fornecedores f
-                WHERE f.tenant_id = $1 AND f.garagem_localizacao IS NOT NULL)::int AS total_garagens_georreferenciadas,
+                ${mergeWhere(fornecedoresTenantFilter, 'f.garagem_localizacao IS NOT NULL')})::int AS total_garagens_georreferenciadas,
 
             -- Itinerários / rotas (total simples)
-            (SELECT COUNT(*) FROM itinerarios i WHERE i.tenant_id = $1)::int AS total_itinerarios,
-            (SELECT COUNT(*) FROM rotas_escolares r WHERE r.tenant_id = $1)::int AS total_rotas
+            (SELECT COUNT(*) FROM itinerarios i ${mergeWhere(itinerariosTenantFilter)})::int AS total_itinerarios,
+            (SELECT COUNT(*) FROM rotas_escolares r ${mergeWhere(rotasTenantFilter)})::int AS total_rotas
           FROM alunos_municipais a
+          CROSS JOIN _tenant _t
           ${whereAlunos};
         `,
         values,
@@ -122,6 +204,7 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id)
           SELECT
             CASE
               WHEN lower(coalesce(a.zona, '')) IN ('urbana','rural')
@@ -134,11 +217,12 @@ router.get('/dashboard-escolar', async (req, res) => {
             END AS situacao_rota,
             COUNT(DISTINCT a.id)::int AS total
           FROM alunos_municipais a
-          JOIN alunos_escolas ae ON ae.aluno_id = a.id AND ae.tenant_id = $1
-          JOIN escolas e ON e.id = ae.escola_id AND e.tenant_id = $1
+          CROSS JOIN _tenant _t
+          JOIN alunos_escolas ae ON ae.aluno_id = a.id${alunosEscolasJoinTenant}
+          JOIN escolas e ON e.id = ae.escola_id${escolasJoinTenant}
           LEFT JOIN rotas_escolares_alunos ra
-            ON ra.aluno_id = a.id AND ra.tenant_id = $1
-          ${whereAlunos ? whereAlunos + ' AND' : 'WHERE'} a.transporte_apto = TRUE
+            ON ra.aluno_id = a.id${rotasAlunosJoinTenant}
+          ${whereAlunosComTransporteApto}
           GROUP BY zona, situacao_rota
           ORDER BY zona, situacao_rota;
         `,
@@ -150,14 +234,16 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id)
           SELECT
             ae.ano_letivo AS ano,
             COUNT(DISTINCT ae.aluno_id)::int AS total_matriculados,
             COUNT(DISTINCT ae.aluno_id)
               FILTER (WHERE a.transporte_apto)::int AS total_apto_transporte
           FROM alunos_escolas ae
-          JOIN alunos_municipais a ON a.id = ae.aluno_id AND a.tenant_id = $1
-          ${whereAlunos ? whereAlunos + ' AND' : 'WHERE'} ae.tenant_id = $1
+          CROSS JOIN _tenant _t
+          JOIN alunos_municipais a ON a.id = ae.aluno_id${alunosBaseFilter ? ' AND a.tenant_id = $1' : ''}
+          ${mergeWhere(whereAlunos.replace(/^WHERE\s+/i, ''), alunosEscolasWhereTenant)}
           GROUP BY ae.ano_letivo
           ORDER BY ae.ano_letivo;
         `,
@@ -169,6 +255,7 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id)
           SELECT
             COALESCE(SUM(v.capacidade_lotacao),0)::int AS capacidade_total,
 
@@ -183,12 +270,13 @@ router.get('/dashboard-escolar', async (req, res) => {
             (
               SELECT COUNT(DISTINCT a.id)
               FROM alunos_municipais a
-              JOIN rotas_escolares_alunos ra ON ra.aluno_id = a.id AND ra.tenant_id = $1
-              ${whereAlunos ? whereAlunos + ' AND' : 'WHERE'} a.transporte_apto = TRUE
+              JOIN rotas_escolares_alunos ra ON ra.aluno_id = a.id${rotasAlunosJoinTenant}
+              ${whereAlunosComTransporteApto}
             )::int AS alunos_com_rota
 
           FROM veiculos v
-          WHERE v.tenant_id = $1 AND v.status = 'ativo';
+          CROSS JOIN _tenant _t
+          ${veiculosWhereAtivos};
         `,
         values,
       }),
@@ -198,6 +286,7 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id)
           SELECT
             e.id   AS escola_id,
             e.nome AS escola_nome,
@@ -221,14 +310,15 @@ router.get('/dashboard-escolar', async (req, res) => {
             COUNT(DISTINCT ez.zoneamento_id)::int  AS total_zoneamentos
 
           FROM escolas e
-          JOIN alunos_escolas ae ON ae.escola_id = e.id AND ae.tenant_id = $1
-          JOIN alunos_municipais a ON a.id = ae.aluno_id AND a.tenant_id = $1
-          LEFT JOIN alunos_pontos ap ON ap.aluno_id = a.id
+          CROSS JOIN _tenant _t
+          JOIN alunos_escolas ae ON ae.escola_id = e.id${alunosEscolasJoinTenant}
+          JOIN alunos_municipais a ON a.id = ae.aluno_id${escolasDemandaJoinAlunos}
+          LEFT JOIN alunos_pontos ap ON ap.aluno_id = a.id${alunosPontosJoinTenant}
           LEFT JOIN pontos_parada p ON p.id = ap.ponto_id
-                                     AND p.status = 'ativo'
-          LEFT JOIN escola_zoneamento ez ON ez.escola_id = e.id
+                                     AND p.status = 'ativo'${pontosParadaJoinTenant}
+          LEFT JOIN escola_zoneamento ez ON ez.escola_id = e.id${escolaZoneamentoJoinTenant}
 
-          ${whereAlunos ? whereAlunos + ' AND' : 'WHERE'} a.transporte_apto = TRUE
+          ${whereAlunosComTransporteApto}
 
           GROUP BY e.id, e.nome
           HAVING COUNT(DISTINCT a.id)
@@ -244,6 +334,7 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id)
           SELECT
             COUNT(*)::int AS total_rotas,
             COUNT(*) FILTER (WHERE status = 'ativo')::int   AS total_rotas_ativas,
@@ -270,7 +361,8 @@ router.get('/dashboard-escolar', async (req, res) => {
             ),0)::int AS total_alunos_rotas
 
           FROM rotas_escolares
-          WHERE tenant_id = $1;
+          CROSS JOIN _tenant _t
+          ${rotasWhereTenant};
         `,
         values: valuesTenantOnly,
       }),
@@ -279,6 +371,7 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id)
           SELECT
             COUNT(*) FILTER (WHERE rp.rota_id IS NULL)::int AS rotas_sem_registro_percurso,
             COUNT(*) FILTER (
@@ -291,8 +384,9 @@ router.get('/dashboard-escolar', async (req, res) => {
                  OR COALESCE(rp.overview_polyline,'') <> ''
             )::int AS rotas_com_trajeto_ok
           FROM rotas_escolares r
-          LEFT JOIN rotas_percursos rp ON rp.rota_id = r.id AND rp.tenant_id = $1
-          WHERE r.tenant_id = $1;
+          CROSS JOIN _tenant _t
+          LEFT JOIN rotas_percursos rp ON rp.rota_id = r.id${rotasPercursosJoinTenant}
+          ${mergeWhere(rotasTenantFilter)};
         `,
         values: valuesTenantOnly,
       }),
@@ -302,7 +396,8 @@ router.get('/dashboard-escolar', async (req, res) => {
       // ==========================
       client.query({
         text: `
-          WITH base AS (
+          WITH _tenant AS (SELECT $1::bigint AS tenant_id),
+          base AS (
             SELECT
               r.id,
               r.nome,
@@ -356,8 +451,9 @@ router.get('/dashboard-escolar', async (req, res) => {
                 ', '
               ) AS superlotada_turnos
             FROM rotas_escolares r
-            LEFT JOIN rotas_percursos rp ON rp.rota_id = r.id AND rp.tenant_id = $1
-            WHERE r.tenant_id = $1
+            CROSS JOIN _tenant _t
+            LEFT JOIN rotas_percursos rp ON rp.rota_id = r.id${rotasPercursosJoinTenant}
+            ${mergeWhere(rotasTenantFilter)}
           ),
           zona AS (
             SELECT
@@ -369,7 +465,7 @@ router.get('/dashboard-escolar', async (req, res) => {
               END AS zona
             FROM rotas_escolares_pontos rep
             JOIN pontos_parada pt ON pt.id = rep.ponto_id
-            WHERE rep.tenant_id = $1 AND pt.tenant_id = $1
+            ${mergeWhere(rotasPontosTenantFilter, pontosZonaTenantFilter)}
             GROUP BY rep.rota_id
           )
           SELECT
@@ -495,9 +591,16 @@ router.get('/dashboard-escolar/rotas-mapa', async (req, res) => {
   try {
     client = await pool.connect();
 
+    const tenantSupport = await getTenantColumnSupport();
+    const rotasTenantFilter = tenantSupport.rotas_escolares ? 'r.tenant_id = $1' : '';
+    const rotasPercursosJoinTenant = tenantSupport.rotas_percursos ? ' AND rp.tenant_id = $1' : '';
+    const rotasPontosJoinTenant = tenantSupport.rotas_escolares_pontos ? ' AND rp2.tenant_id = $1' : '';
+    const pontosParadaJoinTenant = tenantSupport.pontos_parada ? ' AND pt.tenant_id = $1' : '';
+
     const { rows } = await client.query({
       text: `
-WITH percurso AS (
+WITH _tenant AS (SELECT $1::bigint AS tenant_id),
+percurso AS (
   SELECT
     r.id,
     r.nome,
@@ -560,9 +663,10 @@ WITH percurso AS (
     END AS destino_4326
 
   FROM rotas_escolares r
+  CROSS JOIN _tenant _t
   LEFT JOIN rotas_percursos rp
-    ON rp.rota_id = r.id AND rp.tenant_id = $1
-  WHERE r.tenant_id = $1
+    ON rp.rota_id = r.id${rotasPercursosJoinTenant}
+  ${mergeWhere(rotasTenantFilter)}
 )
 
 SELECT
@@ -620,10 +724,10 @@ SELECT
 
 FROM percurso p
 LEFT JOIN rotas_escolares_pontos rp2
-  ON rp2.rota_id = p.id AND rp2.tenant_id = $1
+  ON rp2.rota_id = p.id${rotasPontosJoinTenant}
 LEFT JOIN pontos_parada pt
   ON pt.id = rp2.ponto_id
- AND pt.tenant_id = $1
+${pontosParadaJoinTenant}
  AND pt.localizacao IS NOT NULL
 
 -- IMPORTANTÍSSIMO: para o mapa geral, NÃO desenhar "linha reta" quando não houver

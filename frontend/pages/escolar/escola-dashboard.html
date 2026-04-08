@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Dashboard da Escola">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Dashboard da Escola</title>
+
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+    <style>
+        .school-hero {
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .school-kpi-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .school-section-title {
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+
+        .school-action-card .fe {
+            font-size: 1.1rem;
+        }
+
+        .table-clickable tbody tr {
+            cursor: default;
+        }
+    </style>
+</head>
+
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
+                <i class="fe fe-menu navbar-toggler-icon"></i>
+            </button>
+            <form class="form-inline mr-auto searchform text-muted">
+                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search" placeholder="Buscar..." aria-label="Search">
+            </form>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
+                        <i class="fe fe-sun fe-16"></i>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="avatar avatar-sm mt-2">
+                            <img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle">
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="/sistema/configuracoes">Configurações</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="/auth-logout.html">Sair</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
+            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
+                <i class="fe fe-x"><span class="sr-only"></span></i>
+            </a>
+            <nav class="vertnav navbar navbar-light">
+                <div class="w-100 mb-4 d-flex">
+                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
+                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <h2 class="h4 mb-1" id="school-title">Dashboard da Escola</h2>
+                                <p class="text-muted mb-0" id="school-subtitle">Visão operacional e acadêmica da unidade escolar.</p>
+                            </div>
+                            <div class="text-right">
+                                <a href="/escolas" class="btn btn-outline-secondary btn-sm mr-2">Voltar para escolas</a>
+                                <a href="/alunos" class="btn btn-primary btn-sm">Gerenciar alunos</a>
+                            </div>
+                        </div>
+
+                        <div class="card shadow school-hero mb-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <p class="school-section-title text-muted mb-2">Unidade escolar</p>
+                                        <h3 class="mb-2" id="hero-school-name">Carregando...</h3>
+                                        <p class="mb-1 text-muted" id="hero-school-address">Aguarde enquanto buscamos os dados da escola.</p>
+                                        <div id="hero-zoneamentos" class="mt-3"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="row">
+                                            <div class="col-6 mb-3">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="text-muted small">Matrículas</div>
+                                                    <div class="school-kpi-value" id="kpi-matriculas">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 mb-3">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="text-muted small">Turmas</div>
+                                                    <div class="school-kpi-value" id="kpi-turmas">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="text-muted small">Anos letivos</div>
+                                                    <div class="school-kpi-value" id="kpi-anos-letivos">0</div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="border rounded p-3 h-100">
+                                                    <div class="text-muted small">Aptos ao transporte</div>
+                                                    <div class="school-kpi-value" id="kpi-apto-transporte">0</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-4 mb-4">
+                                <div class="card shadow h-100">
+                                    <div class="card-header">
+                                        <strong>Gestão da escola</strong>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="card border mb-3 school-action-card">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <strong>Turmas</strong>
+                                                    <span class="fe fe-layers text-muted"></span>
+                                                </div>
+                                                <p class="text-muted mb-3">Acompanhe a estrutura atual de turmas vinculadas à escola e a distribuição dos estudantes.</p>
+                                                <a href="#secao-turmas" class="btn btn-outline-secondary btn-sm">Ver turmas</a>
+                                            </div>
+                                        </div>
+                                        <div class="card border mb-3 school-action-card">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <strong>Matrículas de alunos</strong>
+                                                    <span class="fe fe-users text-muted"></span>
+                                                </div>
+                                                <p class="text-muted mb-3">Use a base da escola para revisar estudantes vinculados, série/turma e elegibilidade de transporte.</p>
+                                                <a href="/alunos" class="btn btn-outline-secondary btn-sm">Abrir alunos</a>
+                                            </div>
+                                        </div>
+                                        <div class="card border school-action-card">
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <strong>Planejamento territorial</strong>
+                                                    <span class="fe fe-map-pin text-muted"></span>
+                                                </div>
+                                                <p class="text-muted mb-3">Revise zoneamentos, pontos de parada e cobertura territorial que influenciam esta unidade.</p>
+                                                <a href="/zoneamentos" class="btn btn-outline-secondary btn-sm mr-2">Zoneamentos</a>
+                                                <a href="/pontos-parada" class="btn btn-outline-secondary btn-sm">Pontos</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-8 mb-4">
+                                <div class="card shadow h-100" id="secao-turmas">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Turmas da escola</strong>
+                                        <span class="text-muted small">Agrupadas por ano letivo</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0 table-clickable">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Turma</th>
+                                                        <th>Ano letivo</th>
+                                                        <th>Alunos</th>
+                                                        <th>Aptos ao transporte</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="school-turmas-body">
+                                                    <tr>
+                                                        <td colspan="4" class="text-center text-muted py-4">Carregando turmas...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card shadow">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Matrículas e estudantes recentes</strong>
+                                        <span class="text-muted small">Últimos vínculos atualizados na escola</span>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-hover mb-0">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>Aluno</th>
+                                                        <th>Turma</th>
+                                                        <th>Ano letivo</th>
+                                                        <th>Turno</th>
+                                                        <th>Transporte</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="school-alunos-body">
+                                                    <tr>
+                                                        <td colspan="5" class="text-center text-muted py-4">Carregando matrículas...</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/popper.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/simplebar.min.js"></script>
+    <script src="../../js/tinycolor-min.js"></script>
+    <script src="../../js/config.js"></script>
+    <script src="../../js/apps.js"></script>
+    <script src="../../js/sidebar-permissoes.js"></script>
+    <script>
+        function obterEscolaIdDaUrl() {
+            var match = window.location.pathname.match(/\/escolas\/(\d+)\/dashboard/);
+            return match ? Number(match[1]) : null;
+        }
+
+        function renderZoneamentos(zoneamentos) {
+            var host = document.getElementById('hero-zoneamentos');
+            if (!host) return;
+
+            if (!zoneamentos || !zoneamentos.length) {
+                host.innerHTML = '<span class="text-muted">Sem zoneamentos vinculados.</span>';
+                return;
+            }
+
+            host.innerHTML = zoneamentos.map(function (z) {
+                var badgeClass = z.tipo_zona === 'rural' ? 'badge badge-warning mr-1 mb-1' : 'badge badge-success mr-1 mb-1';
+                return '<span class="' + badgeClass + '">' + (z.nome || 'Zoneamento') + '</span>';
+            }).join('');
+        }
+
+        function renderTurmas(turmas) {
+            var tbody = document.getElementById('school-turmas-body');
+            if (!tbody) return;
+
+            if (!turmas || !turmas.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Nenhuma turma vinculada a esta escola.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = turmas.map(function (turma) {
+                return '<tr>' +
+                    '<td><strong>' + (turma.turma || 'Sem turma informada') + '</strong></td>' +
+                    '<td>' + (turma.ano_letivo || '—') + '</td>' +
+                    '<td>' + (turma.total_alunos || 0) + '</td>' +
+                    '<td>' + (turma.total_apto_transporte || 0) + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function renderAlunos(alunos) {
+            var tbody = document.getElementById('school-alunos-body');
+            if (!tbody) return;
+
+            if (!alunos || !alunos.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Nenhuma matrícula localizada para esta escola.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = alunos.map(function (aluno) {
+                var transporte = aluno.transporte_apto ? '<span class="badge badge-success">Apto</span>' : '<span class="badge badge-secondary">Não apto</span>';
+                return '<tr>' +
+                    '<td><strong>' + (aluno.nome || ('Aluno #' + aluno.id)) + '</strong></td>' +
+                    '<td>' + (aluno.turma_escola || aluno.turma || '—') + '</td>' +
+                    '<td>' + (aluno.ano_letivo || '—') + '</td>' +
+                    '<td>' + (aluno.turno || '—') + '</td>' +
+                    '<td>' + transporte + '</td>' +
+                    '</tr>';
+            }).join('');
+        }
+
+        function carregarDashboardEscola() {
+            var escolaId = obterEscolaIdDaUrl();
+            if (!escolaId) return;
+
+            fetch('/api/escolas/' + escolaId + '/dashboard')
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao carregar dashboard da escola');
+                    return resp.json();
+                })
+                .then(function (data) {
+                    var escola = data.escola || {};
+                    var resumo = data.resumo || {};
+                    var endereco = [
+                        escola.logradouro,
+                        escola.numero,
+                        escola.bairro,
+                        escola.cep
+                    ].filter(Boolean).join(', ');
+
+                    document.title = 'SETRANE EXPRESS – ' + (escola.nome || 'Escola');
+                    $('#school-title').text(escola.nome || 'Dashboard da Escola');
+                    $('#school-subtitle').text('INEP: ' + (escola.codigo_inep || 'Não informado'));
+                    $('#hero-school-name').text(escola.nome || 'Escola');
+                    $('#hero-school-address').text(endereco || 'Endereço não informado');
+
+                    $('#kpi-matriculas').text(resumo.total_matriculas || 0);
+                    $('#kpi-turmas').text(resumo.total_turmas || 0);
+                    $('#kpi-anos-letivos').text(resumo.total_anos_letivos || 0);
+                    $('#kpi-apto-transporte').text(resumo.total_alunos_apto_transporte || 0);
+
+                    renderZoneamentos(escola.zoneamentos || []);
+                    renderTurmas(data.turmas || []);
+                    renderAlunos(data.alunos || []);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    $('#school-title').text('Erro ao carregar escola');
+                    $('#school-subtitle').text('Não foi possível montar o dashboard desta unidade.');
+                    $('#hero-school-name').text('Escola indisponível');
+                    $('#hero-school-address').text('Revise o cadastro da escola ou tente novamente.');
+                    $('#school-turmas-body').html('<tr><td colspan="4" class="text-center text-danger py-4">Erro ao carregar turmas.</td></tr>');
+                    $('#school-alunos-body').html('<tr><td colspan="5" class="text-center text-danger py-4">Erro ao carregar matrículas.</td></tr>');
+                });
+        }
+
+        $(document).ready(function () {
+            carregarDashboardEscola();
+        });
+    </script>
+</body>
+
+</html>

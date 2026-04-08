@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Turmas da escola">
+    <link rel="icon" href="../../../assets/favicon.ico">
+    <title>SETRANE EXPRESS - Turmas da Escola</title>
+    <link rel="stylesheet" href="../../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../../css/feather.css">
+    <link rel="stylesheet" href="../../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../../css/app-dark.css" id="darkTheme">
+    <style>
+        .turma-chip-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: .5rem;
+        }
+        .turma-chip-grid .custom-control {
+            padding: .6rem .75rem .6rem 2rem;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: .75rem;
+            background: #fff;
+        }
+        body[data-theme-mode="dark"] .turma-chip-grid .custom-control {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        body[data-theme-mode="light"] .turma-chip-grid .custom-control {
+            background: #fff;
+            border-color: rgba(0, 0, 0, 0.08);
+        }
+        .turma-chip-grid .custom-control-label {
+            width: 100%;
+        }
+        .turma-chip-grid .custom-control-input:checked ~ .custom-control-label {
+            font-weight: 700;
+        }
+        .turma-series-panel {
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: .85rem;
+            padding: .85rem;
+            background: rgba(127, 127, 127, 0.03);
+        }
+        body[data-theme-mode="dark"] .turma-series-panel {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+        .turma-series-group + .turma-series-group {
+            margin-top: .85rem;
+        }
+        .turma-series-group-title {
+            font-size: .78rem;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            margin-bottom: .5rem;
+        }
+        .turma-row-link {
+            cursor: pointer;
+        }
+        .turma-row-link:hover td {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+    </style>
+</head>
+<body class="vertical dark">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar"><i class="fe fe-menu navbar-toggler-icon"></i></button>
+            <form class="form-inline mr-auto searchform text-muted"><input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search" placeholder="Buscar..." aria-label="Search"></form>
+            <ul class="nav"><li class="nav-item"><a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark"><i class="fe fe-sun fe-16"></i></a></li></ul>
+        </nav>
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar><a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle"><i class="fe fe-x"></i></a><nav class="vertnav navbar navbar-light"></nav></aside>
+        <main role="main" class="main-content">
+            <div class="container-fluid">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div>
+                                <h2 class="h4 mb-1" id="page-title">Turmas da escola</h2>
+                                <p class="text-muted mb-0" id="page-subtitle">Estrutura pedagogica e distribuicao de matriculas.</p>
+                            </div>
+                            <div class="text-right">
+                                <button type="button" class="btn btn-success btn-sm mr-2" id="btn-nova-turma">Nova turma</button>
+                                <a href="#" class="btn btn-outline-secondary btn-sm mr-2" id="link-dashboard">Dashboard</a>
+                                <a href="#" class="btn btn-primary btn-sm" id="link-alunos">Alunos</a>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Turmas</div><div class="h3 mb-0" id="kpi-turmas">0</div></div></div></div>
+                            <div class="col-md-4 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Matriculas</div><div class="h3 mb-0" id="kpi-matriculas">0</div></div></div></div>
+                            <div class="col-md-4 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Aptos ao transporte</div><div class="h3 mb-0" id="kpi-transporte">0</div></div></div></div>
+                        </div>
+
+                        <div class="card shadow">
+                            <div class="card-header d-flex align-items-center justify-content-between">
+                                <strong>Quadro de turmas</strong>
+                                <span class="text-muted small" id="school-label">Carregando escola...</span>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-hover mb-0">
+                                        <thead class="thead-light">
+                                            <tr><th>Turma</th><th>Ano letivo</th><th>Turno</th><th>Capacidade</th><th>Alunos</th><th>Transporte</th><th class="text-right">Acoes</th></tr>
+                                        </thead>
+                                        <tbody id="turmas-body">
+                                            <tr><td colspan="7" class="text-center text-muted py-4">Carregando turmas...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal fade" id="modal-turma" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <form id="form-turma">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modal-turma-title">Nova turma</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="turma-id">
+                        <ul class="nav nav-tabs mb-3" role="tablist">
+                            <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#aba-turma-identificacao" role="tab">Identificação</a></li>
+                            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#aba-turma-organizacao" role="tab">Organização</a></li>
+                            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#aba-turma-inclusao" role="tab">Inclusão</a></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="aba-turma-identificacao" role="tabpanel">
+                                <div class="form-row">
+                                    <div class="form-group col-md-5">
+                                        <label for="turma-nome">Nome da turma</label>
+                                        <input type="text" class="form-control" id="turma-nome" required>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label for="turma-ano-letivo">Ano letivo</label>
+                                        <input type="number" class="form-control" id="turma-ano-letivo" min="2000" max="2100" placeholder="2026">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-tipo">Tipo de turma</label>
+                                        <select class="form-control" id="turma-tipo">
+                                            <option value="">Selecione</option>
+                                            <option value="REGULAR">Regular</option>
+                                            <option value="AEE">Atendimento educacional especializado</option>
+                                            <option value="ATIVIDADE_COMPLEMENTAR">Atividade complementar</option>
+                                            <option value="EJA">EJA</option>
+                                            <option value="PROFISSIONAL">Educação profissional</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-etapa">Etapa</label>
+                                        <select class="form-control" id="turma-etapa">
+                                            <option value="">Selecione</option>
+                                            <option value="CRECHE">Creche</option>
+                                            <option value="PRE_ESCOLA">Pré-escola</option>
+                                            <option value="FUNDAMENTAL_ANOS_INICIAIS">Ensino fundamental - anos iniciais</option>
+                                            <option value="FUNDAMENTAL_ANOS_FINAIS">Ensino fundamental - anos finais</option>
+                                            <option value="ENSINO_MEDIO">Ensino médio</option>
+                                            <option value="EJA_FUNDAMENTAL">EJA fundamental</option>
+                                            <option value="EJA_MEDIO">EJA médio</option>
+                                            <option value="EDUCACAO_PROFISSIONAL">Educação profissional</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-modalidade">Modalidade</label>
+                                        <select class="form-control" id="turma-modalidade">
+                                            <option value="">Selecione</option>
+                                            <option value="REGULAR">Regular</option>
+                                            <option value="INDIGENA">Indígena</option>
+                                            <option value="QUILOMBOLA">Quilombola</option>
+                                            <option value="CAMPO">Educação do campo</option>
+                                            <option value="ESPECIAL">Educação especial</option>
+                                            <option value="PROFISSIONAL">Profissional</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-turno">Turno</label>
+                                        <select class="form-control" id="turma-turno">
+                                            <option value="">Selecione</option>
+                                            <option value="Manhã">Manhã</option>
+                                            <option value="Tarde">Tarde</option>
+                                            <option value="Noite">Noite</option>
+                                            <option value="Integral">Integral</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="aba-turma-organizacao" role="tabpanel">
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-organizacao">Organização pedagógica</label>
+                                        <select class="form-control" id="turma-organizacao">
+                                            <option value="">Selecione</option>
+                                            <option value="SERIADA">Seriada</option>
+                                            <option value="CICLOS">Ciclos</option>
+                                            <option value="MODULAR">Modular</option>
+                                            <option value="MULTISSERIADA">Multisseriada</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group col-md-2">
+                                        <label for="turma-capacidade">Capacidade</label>
+                                        <input type="number" class="form-control" id="turma-capacidade" min="0">
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label for="turma-limite-planejado">Limite planejado</label>
+                                        <input type="number" class="form-control" id="turma-limite-planejado" min="0">
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label for="turma-sala">Sala</label>
+                                        <input type="text" class="form-control" id="turma-sala">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-3">
+                                        <label for="turma-horario-inicio">Horário inicial</label>
+                                        <input type="time" class="form-control" id="turma-horario-inicio">
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label for="turma-horario-fim">Horário final</label>
+                                        <input type="time" class="form-control" id="turma-horario-fim">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="turma-professor-referencia">Professor referência</label>
+                                        <input type="text" class="form-control" id="turma-professor-referencia">
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch mb-3">
+                                    <input type="checkbox" class="custom-control-input" id="turma-multisseriada">
+                                    <label class="custom-control-label" for="turma-multisseriada">Turma multisseriada</label>
+                                </div>
+                                <div class="form-group">
+                                    <label for="turma-series-abrangidas">Séries/anos abrangidos</label>
+                                    <div class="turma-series-panel">
+                                        <div class="turma-series-group">
+                                            <div class="turma-series-group-title text-muted">Educação infantil</div>
+                                            <div class="turma-chip-grid">
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-creche-i" value="CRECHE_I"><label class="custom-control-label" for="serie-creche-i">Creche I</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-creche-ii" value="CRECHE_II"><label class="custom-control-label" for="serie-creche-ii">Creche II</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-pre-i" value="PRE_I"><label class="custom-control-label" for="serie-pre-i">Pré I</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-pre-ii" value="PRE_II"><label class="custom-control-label" for="serie-pre-ii">Pré II</label></div>
+                                            </div>
+                                        </div>
+                                        <div class="turma-series-group">
+                                            <div class="turma-series-group-title text-muted">Fundamental</div>
+                                            <div class="turma-chip-grid">
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-1-ano" value="1_ANO"><label class="custom-control-label" for="serie-1-ano">1º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-2-ano" value="2_ANO"><label class="custom-control-label" for="serie-2-ano">2º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-3-ano" value="3_ANO"><label class="custom-control-label" for="serie-3-ano">3º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-4-ano" value="4_ANO"><label class="custom-control-label" for="serie-4-ano">4º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-5-ano" value="5_ANO"><label class="custom-control-label" for="serie-5-ano">5º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-6-ano" value="6_ANO"><label class="custom-control-label" for="serie-6-ano">6º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-7-ano" value="7_ANO"><label class="custom-control-label" for="serie-7-ano">7º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-8-ano" value="8_ANO"><label class="custom-control-label" for="serie-8-ano">8º ano</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-9-ano" value="9_ANO"><label class="custom-control-label" for="serie-9-ano">9º ano</label></div>
+                                            </div>
+                                        </div>
+                                        <div class="turma-series-group">
+                                            <div class="turma-series-group-title text-muted">Ensino médio</div>
+                                            <div class="turma-chip-grid">
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-1-em" value="1_SERIE_EM"><label class="custom-control-label" for="serie-1-em">1ª série EM</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-2-em" value="2_SERIE_EM"><label class="custom-control-label" for="serie-2-em">2ª série EM</label></div>
+                                                <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-serie-item" id="serie-3-em" value="3_SERIE_EM"><label class="custom-control-label" for="serie-3-em">3ª série EM</label></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">Use para turmas multisseriadas ou classes que agrupam mais de uma série/ano.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label>Dias de funcionamento</label>
+                                    <div class="turma-chip-grid">
+                                        <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-dia-semana" id="dia-seg" value="SEG"><label class="custom-control-label" for="dia-seg">Segunda</label></div>
+                                        <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-dia-semana" id="dia-ter" value="TER"><label class="custom-control-label" for="dia-ter">Terça</label></div>
+                                        <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-dia-semana" id="dia-qua" value="QUA"><label class="custom-control-label" for="dia-qua">Quarta</label></div>
+                                        <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-dia-semana" id="dia-qui" value="QUI"><label class="custom-control-label" for="dia-qui">Quinta</label></div>
+                                        <div class="custom-control custom-checkbox"><input type="checkbox" class="custom-control-input turma-dia-semana" id="dia-sex" value="SEX"><label class="custom-control-label" for="dia-sex">Sexta</label></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="aba-turma-inclusao" role="tabpanel">
+                                <div class="alert alert-light border mb-3">
+                                    Os limites de inclusão abaixo são parâmetros de planejamento e acompanhamento. Eles não substituem normas locais do sistema de ensino.
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-total-publico-ee">Estudantes público-alvo EE</label>
+                                        <input type="number" class="form-control" id="turma-total-publico-ee" min="0">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-limite-publico-ee">Limite planejado EE</label>
+                                        <input type="number" class="form-control" id="turma-limite-publico-ee" min="0">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-observacoes">Observações pedagógicas</label>
+                                        <textarea class="form-control" id="turma-observacoes" rows="1"></textarea>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="col-md-4 mb-2">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="turma-auxiliar-apoio">
+                                            <label class="custom-control-label" for="turma-auxiliar-apoio">Auxiliar de apoio</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="turma-interprete-libras">
+                                            <label class="custom-control-label" for="turma-interprete-libras">Intérprete de Libras</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="custom-control custom-switch">
+                                            <input type="checkbox" class="custom-control-input" id="turma-aee">
+                                            <label class="custom-control-label" for="turma-aee">AEE vinculado</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="custom-control custom-switch mt-3">
+                                    <input type="checkbox" class="custom-control-input" id="turma-ativo" checked>
+                                    <label class="custom-control-label" for="turma-ativo">Turma ativa</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar turma</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../../js/jquery.min.js"></script>
+    <script src="../../../js/popper.min.js"></script>
+    <script src="../../../js/bootstrap.min.js"></script>
+    <script src="../../../js/simplebar.min.js"></script>
+    <script src="../../../js/jquery.stickOnScroll.js"></script>
+    <script src="../../../js/tinycolor-min.js"></script>
+    <script src="../../../js/config.js"></script>
+    <script src="../../../js/apps.js"></script>
+    <script src="../../../js/escola-contexto.js"></script>
+    <script src="../../../js/sidebar-escola.js"></script>
+    <script>
+        var turmasCache = [];
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function sincronizarMultisseriadaPorSeries() {
+            var totalSeries = $('.turma-serie-item:checked').length;
+            if (totalSeries > 1) {
+                $('#turma-multisseriada').prop('checked', true);
+            }
+        }
+
+        function abrirModalTurma(turma) {
+            var item = turma || null;
+            $('#modal-turma-title').text(item && item.id ? 'Editar turma' : 'Nova turma');
+            $('#turma-id').val(item && item.id ? item.id : '');
+            $('#turma-nome').val(item ? (item.nome || item.turma || '') : '');
+            $('#turma-ano-letivo').val(item && item.ano_letivo ? item.ano_letivo : '');
+            $('#turma-turno').val(item && item.turno ? item.turno : '');
+            $('#turma-tipo').val(item && item.tipo_turma ? item.tipo_turma : '');
+            $('#turma-organizacao').val(item && item.organizacao_pedagogica ? item.organizacao_pedagogica : '');
+            $('#turma-etapa').val(item && item.etapa ? item.etapa : '');
+            $('#turma-modalidade').val(item && item.modalidade ? item.modalidade : '');
+            $('#turma-multisseriada').prop('checked', item ? item.multisseriada === true : false);
+            $('.turma-serie-item').prop('checked', false);
+            if (item && Array.isArray(item.series_abrangidas)) {
+                item.series_abrangidas.forEach(function (serie) {
+                    $('.turma-serie-item[value="' + serie + '"]').prop('checked', true);
+                });
+            }
+            sincronizarMultisseriadaPorSeries();
+            $('.turma-dia-semana').prop('checked', false);
+            if (item && Array.isArray(item.dias_semana)) {
+                item.dias_semana.forEach(function (dia) {
+                    $('.turma-dia-semana[value="' + dia + '"]').prop('checked', true);
+                });
+            }
+            $('#turma-horario-inicio').val(item && item.horario_inicio ? item.horario_inicio : '');
+            $('#turma-horario-fim').val(item && item.horario_fim ? item.horario_fim : '');
+            $('#turma-capacidade').val(item && item.capacidade != null ? item.capacidade : '');
+            $('#turma-limite-planejado').val(item && item.limite_planejado_alunos != null ? item.limite_planejado_alunos : '');
+            $('#turma-total-publico-ee').val(item && item.total_estudantes_publico_ee != null ? item.total_estudantes_publico_ee : '');
+            $('#turma-limite-publico-ee').val(item && item.limite_estudantes_publico_ee != null ? item.limite_estudantes_publico_ee : '');
+            $('#turma-professor-referencia').val(item && item.professor_referencia ? item.professor_referencia : '');
+            $('#turma-auxiliar-apoio').prop('checked', item ? item.auxiliar_apoio === true : false);
+            $('#turma-interprete-libras').prop('checked', item ? item.interprete_libras === true : false);
+            $('#turma-aee').prop('checked', item ? item.atendimento_educacional_especializado === true : false);
+            $('#turma-sala').val(item && item.sala ? item.sala : '');
+            $('#turma-observacoes').val(item && item.observacoes ? item.observacoes : '');
+            $('#turma-ativo').prop('checked', item ? item.ativo !== false : true);
+            $('.nav-tabs a[href="#aba-turma-identificacao"]').tab('show');
+            $('#modal-turma').modal('show');
+        }
+
+        function excluirTurma(turmaId) {
+            if (!window.confirm('Deseja realmente excluir esta turma?')) return;
+            var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
+
+            fetch('/api/escolas/' + escolaId + '/turmas/' + turmaId, {
+                method: 'DELETE',
+                credentials: 'include'
+            })
+                .then(function (resp) {
+                    if (!resp.ok) throw new Error('Erro ao excluir turma');
+                    return resp.json();
+                })
+                .then(function () {
+                    carregarTurmas();
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    window.alert('Não foi possível excluir a turma.');
+                });
+        }
+
+        function abrirAlunosDaTurma(turma) {
+            if (!turma) return;
+            var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
+            var params = new URLSearchParams();
+            params.set('turma', turma.nome || turma.turma || '');
+            if (turma.ano_letivo) params.set('ano_letivo', turma.ano_letivo);
+            window.location.href = window.EscolaContexto.montarUrlModulo(escolaId, 'alunos') + '?' + params.toString();
+        }
+
+        function renderTurmas(turmas) {
+            turmasCache = turmas || [];
+
+            if (!turmasCache.length) {
+                $('#turmas-body').html('<tr><td colspan="7" class="text-center text-muted py-4">Nenhuma turma vinculada a esta escola.</td></tr>');
+                return;
+            }
+
+            $('#turmas-body').html(turmasCache.map(function (turma) {
+                var capacidade = turma.capacidade != null ? turma.capacidade : ' - ';
+                var turno = turma.turno || ' - ';
+                var badge = turma.id
+                    ? '<span class="badge badge-success">Cadastrada</span>'
+                    : '<span class="badge badge-warning">Somente matrículas</span>';
+                var meta = [];
+                if (turma.etapa) meta.push(escapeHtml(turma.etapa));
+                if (turma.multisseriada) meta.push('Multisseriada');
+                if (turma.total_estudantes_publico_ee != null) meta.push('EE: ' + escapeHtml(turma.total_estudantes_publico_ee));
+                var actions = turma.id
+                    ? '<button type="button" class="btn btn-sm btn-outline-secondary mr-1 action-editar" data-id="' + turma.id + '">Editar</button>' +
+                      '<button type="button" class="btn btn-sm btn-outline-danger action-excluir" data-id="' + turma.id + '">Excluir</button>'
+                    : '<button type="button" class="btn btn-sm btn-primary action-cadastrar" data-key="' + escapeHtml((turma.nome || turma.turma || '') + '|' + (turma.ano_letivo || '')) + '">Cadastrar</button>';
+
+                return '<tr class="turma-row-link" data-key="' + escapeHtml((turma.nome || turma.turma || '') + '|' + (turma.ano_letivo || '')) + '">' +
+                    '<td><strong>' + escapeHtml(turma.nome || turma.turma || 'Sem turma') + '</strong><div class="small text-muted mt-1">' + badge + (meta.length ? ' | ' + meta.join(' | ') : '') + '</div></td>' +
+                    '<td>' + escapeHtml(turma.ano_letivo || ' - ') + '</td>' +
+                    '<td>' + escapeHtml(turno) + '</td>' +
+                    '<td>' + escapeHtml(capacidade) + '</td>' +
+                    '<td>' + escapeHtml(turma.total_alunos || 0) + '</td>' +
+                    '<td>' + escapeHtml(turma.total_apto_transporte || 0) + '</td>' +
+                    '<td class="text-right">' + actions + '</td>' +
+                    '</tr>';
+            }).join(''));
+        }
+
+        function carregarTurmas() {
+            var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
+
+            return window.EscolaContexto.carregarJson('/api/escolas/' + escolaId + '/turmas')
+                .then(function (data) {
+                    var escola = data.escola || {};
+                    var resumo = data.resumo || {};
+                    var turmas = data.turmas || [];
+
+                    document.title = 'SETRANE EXPRESS - Turmas - ' + (escola.nome || 'Escola');
+                    $('#page-title').text('Turmas - ' + (escola.nome || 'Escola'));
+                    $('#page-subtitle').text(window.EscolaContexto.formatarEndereco(escola) || 'Endereco nao informado');
+                    $('#school-label').text(escola.nome || 'Escola');
+                    $('#kpi-turmas').text(resumo.total_turmas || 0);
+                    $('#kpi-matriculas').text(resumo.total_matriculas || 0);
+                    $('#kpi-transporte').text(resumo.total_alunos_apto_transporte || 0);
+
+                    renderTurmas(turmas);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    $('#turmas-body').html('<tr><td colspan="7" class="text-center text-danger py-4">Erro ao carregar turmas.</td></tr>');
+                });
+        }
+
+        $(document).ready(function () {
+            var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
+            $('#link-dashboard').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'dashboard'));
+            $('#link-alunos').attr('href', window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'));
+            carregarTurmas();
+
+            $('#btn-nova-turma').on('click', function () {
+                abrirModalTurma(null);
+            });
+
+            $('.turma-serie-item').on('change', function () {
+                sincronizarMultisseriadaPorSeries();
+            });
+
+            $('#turmas-body').on('click', '.action-editar', function () {
+                var id = Number($(this).data('id'));
+                var turma = turmasCache.find(function (item) { return Number(item.id) === id; });
+                if (turma) abrirModalTurma(turma);
+            });
+
+            $('#turmas-body').on('click', '.action-excluir', function () {
+                excluirTurma(Number($(this).data('id')));
+            });
+
+            $('#turmas-body').on('click', '.action-cadastrar', function () {
+                var rawKey = String($(this).data('key') || '');
+                var parts = rawKey.split('|');
+                abrirModalTurma({
+                    nome: parts[0] || '',
+                    ano_letivo: parts[1] || ''
+                });
+            });
+
+            $('#turmas-body').on('click', 'tr.turma-row-link', function (event) {
+                if ($(event.target).closest('button').length) return;
+                var rawKey = String($(this).data('key') || '');
+                var parts = rawKey.split('|');
+                abrirAlunosDaTurma({
+                    nome: parts[0] || '',
+                    ano_letivo: parts[1] || ''
+                });
+            });
+
+            $('#form-turma').on('submit', function (event) {
+                event.preventDefault();
+
+                var turmaId = $('#turma-id').val();
+                var diasSemana = $('.turma-dia-semana:checked').map(function () { return this.value; }).get();
+                var seriesAbrangidas = $('.turma-serie-item:checked').map(function () { return this.value; }).get();
+                var payload = {
+                    nome: $('#turma-nome').val().trim(),
+                    ano_letivo: $('#turma-ano-letivo').val() || null,
+                    turno: $('#turma-turno').val() || null,
+                    tipo_turma: $('#turma-tipo').val() || null,
+                    organizacao_pedagogica: $('#turma-organizacao').val() || null,
+                    etapa: $('#turma-etapa').val() || null,
+                    modalidade: $('#turma-modalidade').val() || null,
+                    multisseriada: $('#turma-multisseriada').is(':checked'),
+                    series_abrangidas: seriesAbrangidas,
+                    dias_semana: diasSemana,
+                    horario_inicio: $('#turma-horario-inicio').val() || null,
+                    horario_fim: $('#turma-horario-fim').val() || null,
+                    capacidade: $('#turma-capacidade').val() || null,
+                    limite_planejado_alunos: $('#turma-limite-planejado').val() || null,
+                    total_estudantes_publico_ee: $('#turma-total-publico-ee').val() || null,
+                    limite_estudantes_publico_ee: $('#turma-limite-publico-ee').val() || null,
+                    professor_referencia: $('#turma-professor-referencia').val().trim() || null,
+                    auxiliar_apoio: $('#turma-auxiliar-apoio').is(':checked'),
+                    interprete_libras: $('#turma-interprete-libras').is(':checked'),
+                    atendimento_educacional_especializado: $('#turma-aee').is(':checked'),
+                    sala: $('#turma-sala').val().trim() || null,
+                    observacoes: $('#turma-observacoes').val().trim() || null,
+                    ativo: $('#turma-ativo').is(':checked')
+                };
+
+                if (!payload.nome) {
+                    window.alert('Informe o nome da turma.');
+                    return;
+                }
+
+                var url = '/api/escolas/' + escolaId + '/turmas';
+                var method = 'POST';
+                if (turmaId) {
+                    url += '/' + turmaId;
+                    method = 'PUT';
+                }
+
+                fetch(url, {
+                    method: method,
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                    .then(function (resp) {
+                        if (!resp.ok) {
+                            return resp.json().then(function (data) {
+                                throw new Error(data && data.error ? data.error : 'Erro ao salvar turma');
+                            });
+                        }
+                        return resp.json();
+                    })
+                    .then(function () {
+                        $('#modal-turma').modal('hide');
+                        carregarTurmas();
+                    })
+                    .catch(function (err) {
+                        console.error(err);
+                        window.alert(err.message || 'Não foi possível salvar a turma.');
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

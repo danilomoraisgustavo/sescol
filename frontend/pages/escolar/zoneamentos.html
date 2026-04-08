@@ -235,41 +235,27 @@
                                             </small>
                                         </div>
                                         <div class="ml-auto d-flex align-items-center">
+                                            <button type="button" class="btn btn-sm btn-outline-primary mr-2"
+                                                id="btn-toggle-mapa-zoneamentos" data-toggle="collapse"
+                                                data-target="#painel-mapa-zoneamentos" aria-expanded="false"
+                                                aria-controls="painel-mapa-zoneamentos">
+                                                <span class="fe fe-map fe-12 mr-1"></span> Mostrar mapa
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-outline-secondary mr-2"
                                                 id="btn-atualizar-mapa">
                                                 <span class="fe fe-refresh-ccw fe-12 mr-1"></span> Atualizar mapa
                                             </button>
                                         </div>
                                     </div>
+                                    <div class="collapse" id="painel-mapa-zoneamentos">
                                     <div class="card-body">
-                                        <!-- Upload de limite municipal (GeoJSON) -->
-                                        <div class="mb-3">
-                                            <form id="form-upload-territorio" class="form-inline">
-                                                <div class="form-group mr-2 mb-2">
-                                                    <label for="arquivo-territorio" class="sr-only">Limite
-                                                        municipal</label>
-                                                    <input type="file" class="form-control-file" id="arquivo-territorio"
-                                                        name="arquivo"
-                                                        accept=".geojson,application/geo+json,application/json">
-                                                </div>
-                                                <button type="submit" class="btn btn-sm btn-outline-primary mb-2">
-                                                    <span class="fe fe-upload-cloud fe-12 mr-1"></span>
-                                                    Enviar limite municipal (GeoJSON)
-                                                </button>
-                                            </form>
-                                            <small class="text-muted">
-                                                O limite territorial do município será usado para análises de alunos
-                                                dentro/fora do município
-                                                e para contextualizar os zoneamentos no mapa.
-                                            </small>
-                                        </div>
-
                                         <div id="map-zoneamentos"></div>
                                         <div class="mt-3 small text-muted">
                                             <span class="badge badge-success mr-2">&nbsp;</span> Zona urbana
                                             <span class="badge badge-warning text-dark ml-3 mr-2">&nbsp;</span> Zona
                                             rural
                                         </div>
+                                    </div>
                                     </div>
                                 </div>
                             </div>
@@ -315,6 +301,16 @@
                                                         id="btn-abrir-novo-zoneamento">
                                                         Novo zoneamento +
                                                     </button>
+                                                    <form id="form-upload-territorio" class="float-right ml-2 mb-0">
+                                                        <input type="file" class="d-none" id="arquivo-territorio"
+                                                            name="arquivo"
+                                                            accept=".geojson,application/geo+json,application/json">
+                                                        <button class="btn btn-outline-primary" type="button"
+                                                            id="btn-upload-territorio-trigger">
+                                                            <span class="fe fe-upload-cloud fe-12 mr-1"></span>
+                                                            Enviar limite municipal
+                                                        </button>
+                                                    </form>
                                                     <button class="btn btn-secondary dropdown-toggle" type="button"
                                                         id="acoesZoneamentosMenu" data-toggle="dropdown"
                                                         aria-haspopup="true" aria-expanded="false">
@@ -1427,15 +1423,21 @@
             var layer = zoneamentoLayers[id];
             if (!layer || !mapZoneamentos) return;
 
-            var bounds = layer.getBounds && layer.getBounds();
-            if (bounds && bounds.isValid && bounds.isValid()) {
-                mapZoneamentos.fitBounds(bounds.pad(0.3));
-            }
+            $('#painel-mapa-zoneamentos').collapse('show');
 
-            if (layer.getLayers && layer.getLayers().length > 0) {
-                var l = layer.getLayers()[0];
-                if (l.openPopup) l.openPopup();
-            }
+            var bounds = layer.getBounds && layer.getBounds();
+            setTimeout(function () {
+                mapZoneamentos.invalidateSize();
+
+                if (bounds && bounds.isValid && bounds.isValid()) {
+                    mapZoneamentos.fitBounds(bounds.pad(0.3));
+                }
+
+                if (layer.getLayers && layer.getLayers().length > 0) {
+                    var l = layer.getLayers()[0];
+                    if (l.openPopup) l.openPopup();
+                }
+            }, 220);
         }
 
         function salvarZoneamento(event) {
@@ -1559,6 +1561,30 @@
             $('#btn-atualizar-mapa').on('click', function () {
                 carregarZoneamentos();
                 carregarTerritorioMunicipioPrincipal();
+            });
+
+            $('#btn-upload-territorio-trigger').on('click', function () {
+                $('#arquivo-territorio').trigger('click');
+            });
+
+            $('#arquivo-territorio').on('change', function () {
+                if (this.files && this.files[0]) {
+                    $('#form-upload-territorio').trigger('submit');
+                }
+            });
+
+            $('#painel-mapa-zoneamentos').on('shown.bs.collapse', function () {
+                $('#btn-toggle-mapa-zoneamentos').html('<span class="fe fe-eye-off fe-12 mr-1"></span> Ocultar mapa');
+                if (mapZoneamentos) {
+                    setTimeout(function () {
+                        mapZoneamentos.invalidateSize();
+                        atualizarMapaZoneamentos();
+                    }, 180);
+                }
+            });
+
+            $('#painel-mapa-zoneamentos').on('hidden.bs.collapse', function () {
+                $('#btn-toggle-mapa-zoneamentos').html('<span class="fe fe-map fe-12 mr-1"></span> Mostrar mapa');
             });
 
             // Upload do limite municipal (GeoJSON)

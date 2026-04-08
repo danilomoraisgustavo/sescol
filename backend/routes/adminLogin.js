@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import pool from '../db.js';
 import { createRateLimit, buildTenantScopedKey } from '../middleware/rateLimit.js';
 import { resolveTenantFromHost, isLocalhostRequest } from '../services/tenantHost.js';
+import { getUsuarioSelectFields } from '../services/userSchema.js';
 
 const router = express.Router();
 
@@ -22,9 +23,10 @@ function normalizeTenantCode(value) {
 }
 
 async function findAdminUsersByEmail(client, email) {
+    const fields = await getUsuarioSelectFields('u');
     const { rows } = await client.query(
         `
-        SELECT u.id, u.tenant_id, u.nome, u.email, u.senha_hash, u.cargo::text AS cargo, u.fornecedor_id, u.init, u.ativo
+        SELECT ${fields}
         FROM usuarios u
         WHERE lower(u.email) = lower($1)
         ORDER BY u.id ASC;
@@ -35,9 +37,10 @@ async function findAdminUsersByEmail(client, email) {
 }
 
 async function findAdminByEmailAndTenantCode(client, email, tenantCode) {
+    const fields = await getUsuarioSelectFields('u');
     const { rows } = await client.query(
         `
-        SELECT u.id, u.tenant_id, u.nome, u.email, u.senha_hash, u.cargo::text AS cargo, u.fornecedor_id, u.init, u.ativo
+        SELECT ${fields}
         FROM usuarios u
         JOIN tenants t ON t.id = u.tenant_id
         WHERE lower(u.email) = lower($1)
@@ -82,9 +85,10 @@ router.post('/admin-login', adminAuthRateLimit, async (req, res) => {
 
         let user = null;
         if (tenantFromHost?.id) {
+            const fields = await getUsuarioSelectFields('u');
             const { rows } = await client.query(
                 `
-                SELECT u.id, u.tenant_id, u.nome, u.email, u.senha_hash, u.cargo::text AS cargo, u.fornecedor_id, u.init, u.ativo
+                SELECT ${fields}
                 FROM usuarios u
                 WHERE lower(u.email) = lower($1)
                   AND u.tenant_id = $2

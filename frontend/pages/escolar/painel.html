@@ -960,6 +960,12 @@
         // ==========================
         var cacheEscolasDemanda = [];
 
+        function abrirDashboardDaEscola(escolaId) {
+            var id = Number(escolaId);
+            if (!Number.isFinite(id) || id <= 0) return;
+            window.location.href = '/escolar/escola/' + id + '/dashboard';
+        }
+
         function atualizarTabelaEscolas(lista) {
             cacheEscolasDemanda = lista || [];
             var tbody = $('#tabela-escolas-demanda-body');
@@ -973,7 +979,7 @@
             }
 
             lista.forEach(function (esc, idx) {
-                var tr = $('<tr>');
+                var tr = $('<tr class="cursor-pointer">').attr('data-escola-id', esc.escola_id);
                 tr.append($('<td>').text(idx + 1));
                 tr.append($('<td>').html('<strong>' + (esc.escola_nome || 'Escola #' + esc.escola_id) + '</strong>'));
                 tr.append($('<td>').text(esc.total_apto || 0));
@@ -1472,6 +1478,9 @@
             });
 
             $('#btn-exportar-escolas').on('click', exportarEscolasCSV);
+            $('#tabela-escolas-demanda-body').on('click', 'tr[data-escola-id]', function () {
+                abrirDashboardDaEscola($(this).data('escola-id'));
+            });
 
             // Primeiro carregamento
             carregarDashboard();

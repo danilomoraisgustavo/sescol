@@ -10,6 +10,11 @@ import authMiddleware from '../middleware/auth.js';
 import tenantMiddleware from '../middleware/tenant.js';
 
 const router = express.Router();
+let tenantColumnCache = null;
+let tenantColumnCacheAt = 0;
+const TENANT_CACHE_TTL_MS = 5 * 60 * 1000;
+let tableExistsCache = null;
+let tableExistsCacheAt = 0;
 
 // Protege TODAS as rotas deste módulo
 router.use(authMiddleware);
@@ -29,6 +34,53 @@ function resolveTenantId(req) {
     return null;
 }
 
+async function getTenantColumnSupport() {
+    const now = Date.now();
+    if (tenantColumnCache && (now - tenantColumnCacheAt) < TENANT_CACHE_TTL_MS) {
+        return tenantColumnCache;
+    }
+
+    const tables = ['zoneamentos', 'territorios_municipios'];
+    const { rows } = await pool.query(
+        `
+        SELECT table_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = ANY($1::text[])
+          AND column_name = 'tenant_id'
+        `,
+        [tables],
+    );
+
+    const support = new Set((rows || []).map((row) => row.table_name));
+    tenantColumnCache = Object.fromEntries(tables.map((table) => [table, support.has(table)]));
+    tenantColumnCacheAt = now;
+    return tenantColumnCache;
+}
+
+async function getTableSupport() {
+    const now = Date.now();
+    if (tableExistsCache && (now - tableExistsCacheAt) < TENANT_CACHE_TTL_MS) {
+        return tableExistsCache;
+    }
+
+    const tables = ['zoneamentos', 'territorios_municipios'];
+    const { rows } = await pool.query(
+        `
+        SELECT table_name
+        FROM information_schema.tables
+        WHERE table_schema = 'public'
+          AND table_name = ANY($1::text[])
+        `,
+        [tables],
+    );
+
+    const support = new Set((rows || []).map((row) => row.table_name));
+    tableExistsCache = Object.fromEntries(tables.map((table) => [table, support.has(table)]));
+    tableExistsCacheAt = now;
+    return tableExistsCache;
+}
+
 // Upload em memória (GeoJSON do território municipal)
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -40,8 +92,10 @@ const upload = multer({
  * Sempre aplica tenant_id.
  */
 async function insertOrUpdateZoneamento({ tenantId, id = null, nome, tipo_zona, tipo_geometria, geojson }) {
-    if (!tenantId) throw new Error('tenantId é obrigatório.');
     if (!geojson) throw new Error('GeoJSON da geometria é obrigatório.');
+    const tenantSupport = await getTenantColumnSupport();
+    const hasTenantColumn = tenantSupport.zoneamentos;
+    if (hasTenantColumn && !tenantId) throw new Error('tenantId é obrigatório.');
 
     const geomJson = JSON.stringify(geojson);
 
@@ -66,29 +120,40 @@ async function insertOrUpdateZoneamento({ tenantId, id = null, nome, tipo_zona, 
     }
 
     if (id === null) {
-        const insertQuery = `
+        const insertQuery = hasTenantColumn
+            ? `
       INSERT INTO zoneamentos (tenant_id, nome, tipo_zona, tipo_geometria, geom)
       VALUES ($1, $2, $3, $4, ST_SetSRID(ST_GeomFromGeoJSON($5), 4326))
       RETURNING id, nome, tipo_zona, tipo_geometria,
                 ST_AsGeoJSON(geom) AS geom,
                 created_at, updated_at;
+    `
+            : `
+      INSERT INTO zoneamentos (nome, tipo_zona, tipo_geometria, geom)
+      VALUES ($1, $2, $3, ST_SetSRID(ST_GeomFromGeoJSON($4), 4326))
+      RETURNING id, nome, tipo_zona, tipo_geometria,
+                ST_AsGeoJSON(geom) AS geom,
+                created_at, updated_at;
     `;
+        const insertParams = hasTenantColumn
+            ? [tenantId, nome, tipo_zona, tipo_geometria, geomJson]
+            : [nome, tipo_zona, tipo_geometria, geomJson];
 
         try {
-            const { rows } = await pool.query(insertQuery, [tenantId, nome, tipo_zona, tipo_geometria, geomJson]);
+            const { rows } = await pool.query(insertQuery, insertParams);
             return rows[0];
         } catch (err) {
             // 23505 = unique_violation
             if (err?.code === '23505' && String(err?.constraint || '') === 'zoneamentos_pkey') {
                 await ensureZoneamentosIdSequence();
-                const { rows } = await pool.query(insertQuery, [tenantId, nome, tipo_zona, tipo_geometria, geomJson]);
+                const { rows } = await pool.query(insertQuery, insertParams);
                 return rows[0];
             }
             throw err;
         }
     }
 
-    const updateQuery = `
+    const updateQuery = hasTenantColumn ? `
     UPDATE zoneamentos
     SET nome = $1,
         tipo_zona = $2,
@@ -99,8 +164,22 @@ async function insertOrUpdateZoneamento({ tenantId, id = null, nome, tipo_zona, 
     RETURNING id, nome, tipo_zona, tipo_geometria,
               ST_AsGeoJSON(geom) AS geom,
               created_at, updated_at;
+  ` : `
+    UPDATE zoneamentos
+    SET nome = $1,
+        tipo_zona = $2,
+        tipo_geometria = $3,
+        geom = ST_SetSRID(ST_GeomFromGeoJSON($4), 4326),
+        updated_at = NOW()
+    WHERE id = $5
+    RETURNING id, nome, tipo_zona, tipo_geometria,
+              ST_AsGeoJSON(geom) AS geom,
+              created_at, updated_at;
   `;
-    const { rows } = await pool.query(updateQuery, [nome, tipo_zona, tipo_geometria, geomJson, id, tenantId]);
+    const updateParams = hasTenantColumn
+        ? [nome, tipo_zona, tipo_geometria, geomJson, id, tenantId]
+        : [nome, tipo_zona, tipo_geometria, geomJson, id];
+    const { rows } = await pool.query(updateQuery, updateParams);
     return rows[0];
 }
 
@@ -177,6 +256,13 @@ router.post('/territorio/upload', upload.single('arquivo'), async (req, res) => 
     const tenantId = resolveTenantId(req);
     if (!tenantId) return res.status(401).json({ error: 'tenant_id não resolvido' });
 
+    const tableSupport = await getTableSupport();
+    if (!tableSupport.territorios_municipios) {
+        return res.status(400).json({
+            error: 'Funcionalidade de território municipal indisponível nesta base. Crie a tabela territorios_municipios para habilitar o recurso.',
+        });
+    }
+
     if (!req.file) {
         return res.status(400).json({
             error: "Arquivo GeoJSON é obrigatório (campo 'arquivo').",
@@ -251,6 +337,11 @@ router.get('/territorio/geo', async (req, res) => {
     if (!tenantId) return res.status(401).json({ error: 'tenant_id não resolvido' });
 
     try {
+        const tableSupport = await getTableSupport();
+        if (!tableSupport.territorios_municipios) {
+            return res.status(404).json({ error: 'Território municipal não habilitado nesta base.' });
+        }
+
         const sql = `
       SELECT
         id,
@@ -287,9 +378,12 @@ router.get('/territorio/geo', async (req, res) => {
  */
 router.get('/', async (req, res) => {
     const tenantId = resolveTenantId(req);
-    if (!tenantId) return res.status(401).json({ error: 'tenant_id não resolvido' });
 
     try {
+        const tenantSupport = await getTenantColumnSupport();
+        if (tenantSupport.zoneamentos && !tenantId) {
+            return res.status(401).json({ error: 'tenant_id não resolvido' });
+        }
         const sql = `
       SELECT
         id,
@@ -300,10 +394,10 @@ router.get('/', async (req, res) => {
         created_at,
         updated_at
       FROM zoneamentos
-      WHERE tenant_id = $1
+      ${tenantSupport.zoneamentos ? 'WHERE tenant_id = $1' : ''}
       ORDER BY id DESC;
     `;
-        const { rows } = await pool.query(sql, [tenantId]);
+        const { rows } = await pool.query(sql, tenantSupport.zoneamentos ? [tenantId] : []);
         res.json(rows);
     } catch (err) {
         console.error('Erro ao listar zoneamentos:', err);
@@ -319,11 +413,14 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id(\\d+)', async (req, res) => {
     const tenantId = resolveTenantId(req);
-    if (!tenantId) return res.status(401).json({ error: 'tenant_id não resolvido' });
 
     const { id } = req.params;
 
     try {
+        const tenantSupport = await getTenantColumnSupport();
+        if (tenantSupport.zoneamentos && !tenantId) {
+            return res.status(401).json({ error: 'tenant_id não resolvido' });
+        }
         const sql = `
       SELECT
         id,
@@ -334,10 +431,12 @@ router.get('/:id(\\d+)', async (req, res) => {
         created_at,
         updated_at
       FROM zoneamentos
-      WHERE tenant_id = $1 AND id = $2
+      WHERE id = $1
+      ${tenantSupport.zoneamentos ? 'AND tenant_id = $2' : ''}
       LIMIT 1;
     `;
-        const { rows } = await pool.query(sql, [tenantId, id]);
+        const params = tenantSupport.zoneamentos ? [id, tenantId] : [id];
+        const { rows } = await pool.query(sql, params);
 
         if (rows.length === 0) return res.status(404).json({ error: 'Zoneamento não encontrado.' });
         res.json(rows[0]);
@@ -387,11 +486,14 @@ router.post('/', async (req, res) => {
  */
 router.put('/:id(\\d+)', async (req, res) => {
     const tenantId = resolveTenantId(req);
-    if (!tenantId) return res.status(401).json({ error: 'tenant_id não resolvido' });
 
     const { id } = req.params;
 
     try {
+        const tenantSupport = await getTenantColumnSupport();
+        if (tenantSupport.zoneamentos && !tenantId) {
+            return res.status(401).json({ error: 'tenant_id não resolvido' });
+        }
         const { nome, tipo_zona, tipo_geometria, geom } = req.body;
 
         if (!nome || !tipo_zona || !tipo_geometria || !geom) {
@@ -401,8 +503,8 @@ router.put('/:id(\\d+)', async (req, res) => {
         }
 
         const { rows: existing } = await pool.query(
-            'SELECT id FROM zoneamentos WHERE tenant_id = $1 AND id = $2',
-            [tenantId, id],
+            `SELECT id FROM zoneamentos WHERE id = $1 ${tenantSupport.zoneamentos ? 'AND tenant_id = $2' : ''}`,
+            tenantSupport.zoneamentos ? [id, tenantId] : [id],
         );
 
         if (existing.length === 0) return res.status(404).json({ error: 'Zoneamento não encontrado.' });
@@ -433,14 +535,17 @@ router.put('/:id(\\d+)', async (req, res) => {
  */
 router.delete('/:id(\\d+)', async (req, res) => {
     const tenantId = resolveTenantId(req);
-    if (!tenantId) return res.status(401).json({ error: 'tenant_id não resolvido' });
 
     const { id } = req.params;
 
     try {
+        const tenantSupport = await getTenantColumnSupport();
+        if (tenantSupport.zoneamentos && !tenantId) {
+            return res.status(401).json({ error: 'tenant_id não resolvido' });
+        }
         const { rowCount } = await pool.query(
-            'DELETE FROM zoneamentos WHERE tenant_id = $1 AND id = $2',
-            [tenantId, id],
+            `DELETE FROM zoneamentos WHERE id = $1 ${tenantSupport.zoneamentos ? 'AND tenant_id = $2' : ''}`,
+            tenantSupport.zoneamentos ? [id, tenantId] : [id],
         );
 
         if (rowCount === 0) return res.status(404).json({ error: 'Zoneamento não encontrado.' });
