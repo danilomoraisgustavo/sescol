@@ -2,6 +2,20 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import pool from '../db.js';
+import {
+  assignUserProfiles,
+  ensureTenantSecurityDefaults,
+  getEffectiveUserSecurity,
+  getTenantSecurityPolicy,
+  listSecurityLogs,
+  listSecurityPermissions,
+  listSecurityProfiles,
+  listSecurityUsers,
+  recordSecurityLog,
+  saveSecurityProfile,
+  setProfilePermissions,
+  updateTenantSecurityPolicy,
+} from '../services/security.js';
 
 const router = express.Router();
 
@@ -15,6 +29,14 @@ const router = express.Router();
 function requireAdmin(req, res, next) {
   const cargo = String(req.user?.cargo || '').toUpperCase();
   if (cargo !== 'ADMIN') return res.status(403).json({ message: 'Acesso negado: requer ADMIN.' });
+  return next();
+}
+
+function requireAdminOrGestor(req, res, next) {
+  const cargo = String(req.user?.cargo || '').toUpperCase();
+  if (!['ADMIN', 'GESTOR'].includes(cargo)) {
+    return res.status(403).json({ message: 'Acesso negado.' });
+  }
   return next();
 }
 
@@ -51,7 +73,7 @@ async function getUserColumns() {
   return userColumnsCache;
 }
 
-router.use(requireAdmin);
+router.use(requireAdminOrGestor);
 
 // GET /api/admin/me
 router.get('/me', async (req, res) => {
@@ -90,6 +112,27 @@ router.get('/stats', async (req, res) => {
     [tenantId]
   );
 
+  await ensureTenantSecurityDefaults(tenantId);
+  const [logsRows, bloqueiosRows] = await Promise.all([
+    pool.query(
+      `SELECT
+          COUNT(*)::int AS total,
+          SUM(CASE WHEN lower(nivel) = 'danger' THEN 1 ELSE 0 END)::int AS falhas
+       FROM security_logs
+       WHERE tenant_id = $1
+         AND created_at >= NOW() - INTERVAL '30 days'`,
+      [tenantId]
+    ),
+    pool.query(
+      `SELECT COUNT(*)::int AS total
+         FROM security_login_lockouts
+        WHERE tenant_id = $1
+          AND locked_until IS NOT NULL
+          AND locked_until > NOW()`,
+      [tenantId]
+    )
+  ]);
+
   return res.json({
     usuarios_total: urows[0]?.total ?? 0,
     usuarios_ativos: urows[0]?.ativos ?? 0,
@@ -97,10 +140,10 @@ router.get('/stats', async (req, res) => {
     tenants_total: 1,
     tenants_ativos: 1,
     tenants_inativos: 0,
-    logins_total: 0,
-    logins_falha: 0,
-    bloqueios_total: 0,
-    acoes_total: 0,
+    logins_total: logsRows[0]?.total ?? 0,
+    logins_falha: logsRows[0]?.falhas ?? 0,
+    bloqueios_total: bloqueiosRows[0]?.total ?? 0,
+    acoes_total: logsRows[0]?.total ?? 0,
     acoes_criacao: 0,
     acoes_edicao: 0,
     tem_notificacoes: false,
@@ -118,21 +161,11 @@ router.get('/users', async (req, res) => {
   if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
   if (!userId) return res.status(401).json({ message: 'Usuário inválido no token.' });
 
-  const userCols = await getUserColumns();
-  const fornecedorSelect = userCols.has('fornecedor_id')
-    ? 'fornecedor_id'
-    : 'NULL::bigint AS fornecedor_id';
-  const { rows } = await pool.query(
-    `SELECT id, tenant_id, nome, email, cargo::text AS cargo, ${fornecedorSelect}, init, ativo, telefone
-     FROM usuarios
-     WHERE tenant_id = $1
-     ORDER BY id DESC`,
-    [tenantId]
-  );
+  const rows = await listSecurityUsers(tenantId);
   return res.json({ items: rows });
 });
 
-router.post('/users', async (req, res) => {
+router.post('/users', requireAdmin, async (req, res) => {
   const tenantId = tenantIdFromReq(req);
   const userId = userIdFromReq(req);
   if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
@@ -185,6 +218,22 @@ router.post('/users', async (req, res) => {
        RETURNING id, tenant_id, nome, email, cargo::text AS cargo, ${returningFornecedor}, init, ativo, telefone`,
       params
     );
+    await ensureTenantSecurityDefaults(tenantId);
+    const effective = await getEffectiveUserSecurity(rows[0].id, tenantId);
+    await recordSecurityLog({
+      tenantId,
+      userId,
+      email: req.user?.email || null,
+      action: 'SECURITY_USER_CREATED',
+      targetType: 'usuario',
+      targetId: rows[0].id,
+      description: `Usuário ${rows[0].nome} criado.`,
+      level: 'warn',
+      scope: 'Secretaria',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || null,
+      metadata: { cargo, profiles: effective.profiles.map((item) => item.codigo) }
+    });
     return res.status(201).json(rows[0]);
   } catch (e) {
     if (String(e?.code) === '23505') return res.status(409).json({ message: 'Email já cadastrado.' });
@@ -193,7 +242,7 @@ router.post('/users', async (req, res) => {
   }
 });
 
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id', requireAdmin, async (req, res) => {
   const tenantId = tenantIdFromReq(req);
   const userId = userIdFromReq(req);
   if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
@@ -273,6 +322,21 @@ router.put('/users/:id', async (req, res) => {
        RETURNING id, tenant_id, nome, email, cargo::text AS cargo, ${userCols.has('fornecedor_id') ? 'fornecedor_id' : 'NULL::bigint AS fornecedor_id'}, init, ativo, telefone`,
       params
     );
+    await ensureTenantSecurityDefaults(tenantId);
+    await recordSecurityLog({
+      tenantId,
+      userId,
+      email: req.user?.email || null,
+      action: 'SECURITY_USER_UPDATED',
+      targetType: 'usuario',
+      targetId: rows[0]?.id,
+      description: `Usuário ${rows[0]?.nome || id} atualizado.`,
+      level: 'warn',
+      scope: 'Secretaria',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || null,
+      metadata: { cargo, ativo, init }
+    });
     return res.json(rows[0]);
   } catch (e) {
     if (String(e?.code) === '23505') return res.status(409).json({ message: 'Email já cadastrado.' });
@@ -337,7 +401,7 @@ router.get('/tenant', async (req, res) => {
 });
 
 
-router.put('/tenant', async (req, res) => {
+router.put('/tenant', requireAdmin, async (req, res) => {
   const tenantId = tenantIdFromReq(req);
   const userId = userIdFromReq(req);
   if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
@@ -410,7 +474,7 @@ router.get('/branding', async (req, res) => {
   return res.json(rows[0] || { tenant_id: tenantId });
 });
 
-router.put('/branding', async (req, res) => {
+router.put('/branding', requireAdmin, async (req, res) => {
   const tenantId = tenantIdFromReq(req);
   const userId = userIdFromReq(req);
   if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
@@ -525,6 +589,152 @@ router.get('/fornecedores', async (req, res) => {
   }
 });
 
-router.get('/audit', async (req, res) => res.json({ items: [] }));
+router.get('/security/permissions', async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
+  const items = await listSecurityPermissions();
+  return res.json({ items });
+});
+
+router.get('/security/profiles', async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
+  const items = await listSecurityProfiles(tenantId);
+  return res.json({ items });
+});
+
+router.post('/security/profiles', requireAdmin, async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  const userId = userIdFromReq(req);
+  if (!tenantId || !userId) return res.status(401).json({ message: 'Sessão inválida.' });
+  try {
+    const profileId = await saveSecurityProfile(tenantId, req.body || {});
+    await recordSecurityLog({
+      tenantId,
+      userId,
+      email: req.user?.email || null,
+      action: 'SECURITY_PROFILE_SAVED',
+      targetType: 'perfil',
+      targetId: profileId,
+      description: 'Perfil salvo.',
+      level: 'warn',
+      scope: 'Secretaria',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || null,
+      metadata: req.body || {},
+    });
+    const items = await listSecurityProfiles(tenantId);
+    return res.status(201).json({ items });
+  } catch (error) {
+    return res.status(400).json({ message: error.message || 'Erro ao salvar perfil.' });
+  }
+});
+
+router.put('/security/profiles/:id/permissions', requireAdmin, async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  const userId = userIdFromReq(req);
+  const profileId = Number(req.params.id);
+  if (!tenantId || !userId) return res.status(401).json({ message: 'Sessão inválida.' });
+  if (!Number.isFinite(profileId) || profileId <= 0) return res.status(400).json({ message: 'Perfil inválido.' });
+  try {
+    await setProfilePermissions(tenantId, profileId, req.body?.permission_codes || []);
+    await recordSecurityLog({
+      tenantId,
+      userId,
+      email: req.user?.email || null,
+      action: 'SECURITY_PROFILE_PERMISSIONS_UPDATED',
+      targetType: 'perfil',
+      targetId: profileId,
+      description: 'Permissões do perfil atualizadas.',
+      level: 'warn',
+      scope: 'Secretaria',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || null,
+      metadata: { permission_codes: req.body?.permission_codes || [] },
+    });
+    const items = await listSecurityProfiles(tenantId);
+    return res.json({ items });
+  } catch (error) {
+    return res.status(400).json({ message: error.message || 'Erro ao atualizar permissões.' });
+  }
+});
+
+router.put('/users/:id/profiles', requireAdmin, async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  const userId = userIdFromReq(req);
+  const targetId = Number(req.params.id);
+  if (!tenantId || !userId) return res.status(401).json({ message: 'Sessão inválida.' });
+  if (!Number.isFinite(targetId) || targetId <= 0) return res.status(400).json({ message: 'Usuário inválido.' });
+  try {
+    await assignUserProfiles(tenantId, targetId, req.body?.profile_ids || []);
+    const effective = await getEffectiveUserSecurity(targetId, tenantId);
+    await recordSecurityLog({
+      tenantId,
+      userId,
+      email: req.user?.email || null,
+      action: 'SECURITY_USER_PROFILES_UPDATED',
+      targetType: 'usuario',
+      targetId,
+      description: 'Perfis do usuário atualizados.',
+      level: 'warn',
+      scope: 'Secretaria',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || null,
+      metadata: { profiles: effective.profiles.map((item) => item.codigo) },
+    });
+    const items = await listSecurityUsers(tenantId);
+    return res.json({ items });
+  } catch (error) {
+    return res.status(400).json({ message: error.message || 'Erro ao atualizar perfis do usuário.' });
+  }
+});
+
+router.get('/security/policies', async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
+  const item = await getTenantSecurityPolicy(tenantId);
+  return res.json(item || {});
+});
+
+router.put('/security/policies', requireAdmin, async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  const userId = userIdFromReq(req);
+  if (!tenantId || !userId) return res.status(401).json({ message: 'Sessão inválida.' });
+  const item = await updateTenantSecurityPolicy(tenantId, req.body || {});
+  await recordSecurityLog({
+    tenantId,
+    userId,
+    email: req.user?.email || null,
+    action: 'SECURITY_POLICY_UPDATED',
+    targetType: 'tenant',
+    targetId: tenantId,
+    description: 'Política de segurança atualizada.',
+    level: 'warn',
+    scope: 'Secretaria',
+    ip: req.ip,
+    userAgent: req.headers['user-agent'] || null,
+    metadata: item,
+  });
+  return res.json(item);
+});
+
+router.get('/security/logs', async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
+  const items = await listSecurityLogs(tenantId, {
+    search: req.query?.search || '',
+    level: req.query?.level || '',
+    scope: req.query?.scope || '',
+    limit: req.query?.limit || 200,
+  });
+  return res.json({ items });
+});
+
+router.get('/audit', async (req, res) => {
+  const tenantId = tenantIdFromReq(req);
+  if (!tenantId) return res.status(401).json({ message: 'Tenant inválido no token.' });
+  const items = await listSecurityLogs(tenantId, { limit: 100 });
+  return res.json({ items });
+});
 
 export default router;

@@ -64,6 +64,51 @@
         .turma-row-link:hover td {
             background-color: rgba(0, 0, 0, 0.02);
         }
+        .turma-progress {
+            height: .65rem;
+            border-radius: 999px;
+            background: rgba(127, 127, 127, 0.18);
+            overflow: hidden;
+        }
+        .turma-progress-bar {
+            height: 100%;
+            border-radius: 999px;
+        }
+        .turma-progress-bar.saude {
+            background: #31b379;
+        }
+        .turma-progress-bar.atencao {
+            background: #f0ad4e;
+        }
+        .turma-progress-bar.lotada {
+            background: #dc3545;
+        }
+        .turma-progress-bar.sem-referencia {
+            background: #6c757d;
+            width: 18%;
+        }
+        .turma-meta-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .35rem;
+            margin-top: .35rem;
+        }
+        .turma-meta-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: .2rem .55rem;
+            border-radius: 999px;
+            font-size: .72rem;
+            background: rgba(127,127,127,.12);
+        }
+        .turma-ocupacao-texto {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+            font-size: .8rem;
+            margin-bottom: .35rem;
+        }
     </style>
 </head>
 <body class="vertical dark">
@@ -97,9 +142,10 @@
                         </div>
 
                         <div class="row mb-4">
-                            <div class="col-md-4 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Turmas</div><div class="h3 mb-0" id="kpi-turmas">0</div></div></div></div>
-                            <div class="col-md-4 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Matriculas</div><div class="h3 mb-0" id="kpi-matriculas">0</div></div></div></div>
-                            <div class="col-md-4 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Aptos ao transporte</div><div class="h3 mb-0" id="kpi-transporte">0</div></div></div></div>
+                            <div class="col-md-3 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Turmas</div><div class="h3 mb-0" id="kpi-turmas">0</div></div></div></div>
+                            <div class="col-md-3 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Matrículas</div><div class="h3 mb-0" id="kpi-matriculas">0</div></div></div></div>
+                            <div class="col-md-3 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Vagas livres</div><div class="h3 mb-0" id="kpi-vagas-livres">0</div></div></div></div>
+                            <div class="col-md-3 mb-3"><div class="card shadow"><div class="card-body"><div class="small text-muted">Ocupação média</div><div class="h3 mb-0" id="kpi-ocupacao-media">0%</div></div></div></div>
                         </div>
 
                         <div class="card shadow">
@@ -111,10 +157,10 @@
                                 <div class="table-responsive table-padrao-wrapper">
                                     <table class="table table-hover mb-0 table-padrao-escolar">
                                         <thead>
-                                            <tr><th>Turma</th><th>Ano letivo</th><th>Turno</th><th>Capacidade</th><th>Alunos</th><th>Transporte</th><th class="text-right">Acoes</th></tr>
+                                            <tr><th>Turma</th><th>Organização</th><th>Ocupação</th><th>Inclusão e transporte</th><th class="text-right">Ações</th></tr>
                                         </thead>
                                         <tbody id="turmas-body">
-                                            <tr><td colspan="7" class="text-center text-muted py-4">Carregando turmas...</td></tr>
+                                            <tr><td colspan="5" class="text-center text-muted py-4">Carregando turmas...</td></tr>
                                         </tbody>
                                     </table>
                                 </div>
@@ -149,6 +195,10 @@
                                     <div class="form-group col-md-5">
                                         <label for="turma-nome">Nome da turma</label>
                                         <input type="text" class="form-control" id="turma-nome" required>
+                                    </div>
+                                    <div class="form-group col-md-3">
+                                        <label for="turma-codigo">Código interno</label>
+                                        <input type="text" class="form-control" id="turma-codigo">
                                     </div>
                                     <div class="form-group col-md-3">
                                         <label for="turma-ano-letivo">Ano letivo</label>
@@ -203,6 +253,16 @@
                                             <option value="Integral">Integral</option>
                                         </select>
                                     </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-regime-letivo">Regime letivo</label>
+                                        <select class="form-control" id="turma-regime-letivo">
+                                            <option value="">Selecione</option>
+                                            <option value="ANUAL">Anual</option>
+                                            <option value="SEMESTRAL">Semestral</option>
+                                            <option value="MODULAR">Modular</option>
+                                            <option value="CICLO">Ciclo</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                             <div class="tab-pane fade" id="aba-turma-organizacao" role="tabpanel">
@@ -242,6 +302,20 @@
                                     <div class="form-group col-md-6">
                                         <label for="turma-professor-referencia">Professor referência</label>
                                         <input type="text" class="form-control" id="turma-professor-referencia">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-monitor-referencia">Monitor/apoio de referência</label>
+                                        <input type="text" class="form-control" id="turma-monitor-referencia">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-vagas-transporte">Vagas planejadas para transporte</label>
+                                        <input type="number" class="form-control" id="turma-vagas-transporte" min="0">
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label for="turma-vagas-inclusao">Vagas planejadas para inclusão</label>
+                                        <input type="number" class="form-control" id="turma-vagas-inclusao" min="0">
                                     </div>
                                 </div>
                                 <div class="custom-control custom-switch mb-3">
@@ -335,6 +409,10 @@
                                     </div>
                                 </div>
                                 <div class="custom-control custom-switch mt-3">
+                                    <input type="checkbox" class="custom-control-input" id="turma-sala-acessivel">
+                                    <label class="custom-control-label" for="turma-sala-acessivel">Sala acessível para mobilidade reduzida</label>
+                                </div>
+                                <div class="custom-control custom-switch mt-3">
                                     <input type="checkbox" class="custom-control-input" id="turma-ativo" checked>
                                     <label class="custom-control-label" for="turma-ativo">Turma ativa</label>
                                 </div>
@@ -384,12 +462,14 @@
             $('#modal-turma-title').text(item && item.id ? 'Editar turma' : 'Nova turma');
             $('#turma-id').val(item && item.id ? item.id : '');
             $('#turma-nome').val(item ? (item.nome || item.turma || '') : '');
+            $('#turma-codigo').val(item && item.codigo_turma ? item.codigo_turma : '');
             $('#turma-ano-letivo').val(item && item.ano_letivo ? item.ano_letivo : '');
             $('#turma-turno').val(item && item.turno ? item.turno : '');
             $('#turma-tipo').val(item && item.tipo_turma ? item.tipo_turma : '');
             $('#turma-organizacao').val(item && item.organizacao_pedagogica ? item.organizacao_pedagogica : '');
             $('#turma-etapa').val(item && item.etapa ? item.etapa : '');
             $('#turma-modalidade').val(item && item.modalidade ? item.modalidade : '');
+            $('#turma-regime-letivo').val(item && item.regime_letivo ? item.regime_letivo : '');
             $('#turma-multisseriada').prop('checked', item ? item.multisseriada === true : false);
             $('.turma-serie-item').prop('checked', false);
             if (item && Array.isArray(item.series_abrangidas)) {
@@ -408,13 +488,17 @@
             $('#turma-horario-fim').val(item && item.horario_fim ? item.horario_fim : '');
             $('#turma-capacidade').val(item && item.capacidade != null ? item.capacidade : '');
             $('#turma-limite-planejado').val(item && item.limite_planejado_alunos != null ? item.limite_planejado_alunos : '');
+            $('#turma-vagas-transporte').val(item && item.vagas_transporte_planejadas != null ? item.vagas_transporte_planejadas : '');
+            $('#turma-vagas-inclusao').val(item && item.vagas_inclusao_planejadas != null ? item.vagas_inclusao_planejadas : '');
             $('#turma-total-publico-ee').val(item && item.total_estudantes_publico_ee != null ? item.total_estudantes_publico_ee : '');
             $('#turma-limite-publico-ee').val(item && item.limite_estudantes_publico_ee != null ? item.limite_estudantes_publico_ee : '');
             $('#turma-professor-referencia').val(item && item.professor_referencia ? item.professor_referencia : '');
+            $('#turma-monitor-referencia').val(item && item.monitor_referencia ? item.monitor_referencia : '');
             $('#turma-auxiliar-apoio').prop('checked', item ? item.auxiliar_apoio === true : false);
             $('#turma-interprete-libras').prop('checked', item ? item.interprete_libras === true : false);
             $('#turma-aee').prop('checked', item ? item.atendimento_educacional_especializado === true : false);
             $('#turma-sala').val(item && item.sala ? item.sala : '');
+            $('#turma-sala-acessivel').prop('checked', item ? item.sala_acessivel === true : false);
             $('#turma-observacoes').val(item && item.observacoes ? item.observacoes : '');
             $('#turma-ativo').prop('checked', item ? item.ativo !== false : true);
             $('.nav-tabs a[href="#aba-turma-identificacao"]').tab('show');
@@ -455,32 +539,65 @@
             turmasCache = turmas || [];
 
             if (!turmasCache.length) {
-                $('#turmas-body').html('<tr><td colspan="7" class="text-center text-muted py-4">Nenhuma turma vinculada a esta escola.</td></tr>');
+                $('#turmas-body').html('<tr><td colspan="5" class="text-center text-muted py-4">Nenhuma turma vinculada a esta escola.</td></tr>');
                 return;
             }
 
+            function renderOccupancy(turma) {
+                var percentual = turma.percentual_ocupacao;
+                var total = Number(turma.total_alunos || 0);
+                var referencia = turma.capacidade_referencia;
+                var vagasLivres = turma.vagas_livres;
+                var classe = turma.ocupacao_status === 'lotada'
+                    ? 'lotada'
+                    : (turma.ocupacao_status === 'atencao' ? 'atencao' : (turma.ocupacao_status === 'saudavel' ? 'saude' : 'sem-referencia'));
+                var width = percentual == null ? 18 : Math.max(4, Math.min(percentual, 100));
+                return '<div class="turma-ocupacao-texto">'
+                    + '<strong>' + escapeHtml(percentual == null ? 'Sem referência' : (percentual + '%')) + '</strong>'
+                    + '<span class="text-muted">' + escapeHtml(total + (referencia != null ? (' / ' + referencia) : ' alunos')) + '</span>'
+                    + '</div>'
+                    + '<div class="turma-progress"><div class="turma-progress-bar ' + classe + '" style="width:' + width + '%"></div></div>'
+                    + '<div class="small text-muted mt-2">' + (vagasLivres == null ? 'Capacidade ou limite planejado não informado.' : (escapeHtml(String(vagasLivres)) + ' vaga(s) livre(s)')) + '</div>';
+            }
+
             $('#turmas-body').html(turmasCache.map(function (turma) {
-                var capacidade = turma.capacidade != null ? turma.capacidade : ' - ';
-                var turno = turma.turno || ' - ';
                 var badge = turma.id
                     ? '<span class="badge badge-success">Cadastrada</span>'
                     : '<span class="badge badge-warning">Somente matrículas</span>';
-                var meta = [];
+                var meta = [badge];
+                if (turma.codigo_turma) meta.push('<span class="turma-meta-pill">Cod. ' + escapeHtml(turma.codigo_turma) + '</span>');
                 if (turma.etapa) meta.push(escapeHtml(turma.etapa));
-                if (turma.multisseriada) meta.push('Multisseriada');
-                if (turma.total_estudantes_publico_ee != null) meta.push('EE: ' + escapeHtml(turma.total_estudantes_publico_ee));
+                if (turma.modalidade) meta.push(escapeHtml(turma.modalidade));
+                if (turma.multisseriada) meta.push('<span class="turma-meta-pill">Multisseriada</span>');
+                if (turma.regime_letivo) meta.push('<span class="turma-meta-pill">' + escapeHtml(turma.regime_letivo) + '</span>');
+                var organizacao = [];
+                if (turma.turno) organizacao.push('<div><strong>Turno:</strong> ' + escapeHtml(turma.turno) + '</div>');
+                if (turma.organizacao_pedagogica) organizacao.push('<div><strong>Organização:</strong> ' + escapeHtml(turma.organizacao_pedagogica) + '</div>');
+                if (turma.sala) organizacao.push('<div><strong>Sala:</strong> ' + escapeHtml(turma.sala) + (turma.sala_acessivel ? ' <span class="badge badge-info">Acessível</span>' : '') + '</div>');
+                if (turma.professor_referencia) organizacao.push('<div><strong>Professor:</strong> ' + escapeHtml(turma.professor_referencia) + '</div>');
+                if (turma.monitor_referencia) organizacao.push('<div><strong>Monitor:</strong> ' + escapeHtml(turma.monitor_referencia) + '</div>');
+                if (turma.horario_inicio || turma.horario_fim) organizacao.push('<div><strong>Horário:</strong> ' + escapeHtml((turma.horario_inicio || '--:--') + ' às ' + (turma.horario_fim || '--:--')) + '</div>');
+                var inclusao = [];
+                inclusao.push('<div><strong>EE registrados:</strong> ' + escapeHtml(String(turma.total_estudantes_publico_ee || 0)) + (turma.limite_estudantes_publico_ee != null ? (' / ' + escapeHtml(String(turma.limite_estudantes_publico_ee))) : '') + '</div>');
+                inclusao.push('<div><strong>Aptos ao transporte:</strong> ' + escapeHtml(String(turma.total_apto_transporte || 0)) + (turma.vagas_transporte_planejadas != null ? (' / ' + escapeHtml(String(turma.vagas_transporte_planejadas)) + ' planejadas') : '') + '</div>');
+                if (turma.vagas_inclusao_planejadas != null) inclusao.push('<div><strong>Vagas de inclusão:</strong> ' + escapeHtml(String(turma.vagas_inclusao_planejadas)) + '</div>');
+                if (turma.auxiliar_apoio || turma.interprete_libras || turma.atendimento_educacional_especializado) {
+                    var apoios = [];
+                    if (turma.auxiliar_apoio) apoios.push('Auxiliar de apoio');
+                    if (turma.interprete_libras) apoios.push('Intérprete de Libras');
+                    if (turma.atendimento_educacional_especializado) apoios.push('AEE');
+                    inclusao.push('<div><strong>Apoios:</strong> ' + escapeHtml(apoios.join(' • ')) + '</div>');
+                }
                 var actions = turma.id
                     ? '<button type="button" class="btn btn-sm btn-outline-secondary mr-1 action-editar" data-id="' + turma.id + '">Editar</button>' +
                       '<button type="button" class="btn btn-sm btn-outline-danger action-excluir" data-id="' + turma.id + '">Excluir</button>'
                     : '<button type="button" class="btn btn-sm btn-primary action-cadastrar" data-key="' + escapeHtml((turma.nome || turma.turma || '') + '|' + (turma.ano_letivo || '')) + '">Cadastrar</button>';
 
                 return '<tr class="turma-row-link" data-key="' + escapeHtml((turma.nome || turma.turma || '') + '|' + (turma.ano_letivo || '')) + '">' +
-                    '<td><strong>' + escapeHtml(turma.nome || turma.turma || 'Sem turma') + '</strong><div class="small text-muted mt-1">' + badge + (meta.length ? ' | ' + meta.join(' | ') : '') + '</div></td>' +
-                    '<td>' + escapeHtml(turma.ano_letivo || ' - ') + '</td>' +
-                    '<td>' + escapeHtml(turno) + '</td>' +
-                    '<td>' + escapeHtml(capacidade) + '</td>' +
-                    '<td>' + escapeHtml(turma.total_alunos || 0) + '</td>' +
-                    '<td>' + escapeHtml(turma.total_apto_transporte || 0) + '</td>' +
+                    '<td><strong>' + escapeHtml(turma.nome || turma.turma || 'Sem turma') + '</strong><div class="small text-muted mt-1">Ano letivo ' + escapeHtml(turma.ano_letivo || ' - ') + '</div><div class="turma-meta-stack">' + meta.join(' ') + '</div></td>' +
+                    '<td><div class="small">' + organizacao.join('') + '</div></td>' +
+                    '<td>' + renderOccupancy(turma) + '</td>' +
+                    '<td><div class="small">' + inclusao.join('') + '</div></td>' +
                     '<td class="text-right">' + actions + '</td>' +
                     '</tr>';
             }).join(''));
@@ -507,13 +624,14 @@
                     }).join(''));
                     $('#kpi-turmas').text(resumo.total_turmas || 0);
                     $('#kpi-matriculas').text(resumo.total_matriculas || 0);
-                    $('#kpi-transporte').text(resumo.total_alunos_apto_transporte || 0);
+                    $('#kpi-vagas-livres').text(resumo.total_vagas_livres || 0);
+                    $('#kpi-ocupacao-media').text((resumo.ocupacao_media != null ? resumo.ocupacao_media : 0) + '%');
 
                     renderTurmas(turmas);
                 })
                 .catch(function (err) {
                     console.error(err);
-                    $('#turmas-body').html('<tr><td colspan="7" class="text-center text-danger py-4">Erro ao carregar turmas.</td></tr>');
+                    $('#turmas-body').html('<tr><td colspan="5" class="text-center text-danger py-4">Erro ao carregar turmas.</td></tr>');
                 });
         }
 
@@ -583,12 +701,14 @@
                 var seriesAbrangidas = $('.turma-serie-item:checked').map(function () { return this.value; }).get();
                 var payload = {
                     nome: $('#turma-nome').val().trim(),
+                    codigo_turma: $('#turma-codigo').val().trim() || null,
                     ano_letivo: $('#turma-ano-letivo').val() || null,
                     turno: $('#turma-turno').val() || null,
                     tipo_turma: $('#turma-tipo').val() || null,
                     organizacao_pedagogica: $('#turma-organizacao').val() || null,
                     etapa: $('#turma-etapa').val() || null,
                     modalidade: $('#turma-modalidade').val() || null,
+                    regime_letivo: $('#turma-regime-letivo').val() || null,
                     multisseriada: $('#turma-multisseriada').is(':checked'),
                     series_abrangidas: seriesAbrangidas,
                     dias_semana: diasSemana,
@@ -596,13 +716,17 @@
                     horario_fim: $('#turma-horario-fim').val() || null,
                     capacidade: $('#turma-capacidade').val() || null,
                     limite_planejado_alunos: $('#turma-limite-planejado').val() || null,
+                    vagas_transporte_planejadas: $('#turma-vagas-transporte').val() || null,
+                    vagas_inclusao_planejadas: $('#turma-vagas-inclusao').val() || null,
                     total_estudantes_publico_ee: $('#turma-total-publico-ee').val() || null,
                     limite_estudantes_publico_ee: $('#turma-limite-publico-ee').val() || null,
                     professor_referencia: $('#turma-professor-referencia').val().trim() || null,
+                    monitor_referencia: $('#turma-monitor-referencia').val().trim() || null,
                     auxiliar_apoio: $('#turma-auxiliar-apoio').is(':checked'),
                     interprete_libras: $('#turma-interprete-libras').is(':checked'),
                     atendimento_educacional_especializado: $('#turma-aee').is(':checked'),
                     sala: $('#turma-sala').val().trim() || null,
+                    sala_acessivel: $('#turma-sala-acessivel').is(':checked'),
                     observacoes: $('#turma-observacoes').val().trim() || null,
                     ativo: $('#turma-ativo').is(':checked')
                 };

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="SETRANE EXPRESS - Cadastro mestre institucional">
+    <meta name="author" content="PyDen Technologies">
+    <link rel="icon" href="../../assets/favicon.ico">
+    <title>SETRANE EXPRESS – Disciplinas</title>
+    <link rel="stylesheet" href="../../css/simplebar.css">
+    <link href="https://fonts.googleapis.com/css2?family=Overpass:wght@100;200;300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../css/feather.css">
+    <link rel="stylesheet" href="../../css/escolar-table-standard.css">
+    <link rel="stylesheet" href="../../css/modal-slide-right.css">
+    <link rel="stylesheet" href="../../css/institucional-module.css">
+    <link rel="stylesheet" href="../../css/app-light.css" id="lightTheme" disabled>
+    <link rel="stylesheet" href="../../css/app-dark.css" id="darkTheme">
+</head>
+<body class="vertical dark" data-institucional-page="disciplinas">
+    <div class="wrapper">
+        <nav class="topnav navbar navbar-light">
+            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar"><i class="fe fe-menu navbar-toggler-icon"></i></button>
+            <form class="form-inline mr-auto searchform text-muted"><input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search" placeholder="Buscar..." aria-label="Search"></form>
+            <ul class="nav">
+                <li class="nav-item"><a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark"><i class="fe fe-sun fe-16"></i></a></li>
+                <li class="nav-item dropdown"><a class="nav-link dropdown-toggle text-muted pr-0" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown"><span class="avatar avatar-sm mt-2"><img src="../../assets/icons/user.png" alt="Usuário" class="avatar-img rounded-circle"></span></a><div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink"><a class="dropdown-item" href="/sistema/configuracoes">Configurações</a><div class="dropdown-divider"></div><a class="dropdown-item text-danger" href="/auth-logout.html">Sair</a></div></li>
+            </ul>
+        </nav>
+        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar><a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3"><i class="fe fe-x"></i></a><nav class="vertnav navbar navbar-light"><div class="w-100 mb-4 d-flex"><a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard"><span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span></a></div></nav></aside>
+        <main role="main" class="main-content"><div class="container-fluid"><div class="institutional-hero"><div class="d-flex flex-wrap justify-content-between align-items-start"><div><h2 class="mb-1" data-role="page-title">Disciplinas</h2><p class="text-muted mb-0" data-role="page-description"></p></div><div class="institutional-inline-actions mt-3 mt-md-0"><button class="btn btn-primary" id="btn-new-resource">Novo cadastro +</button></div></div></div><div class="card shadow mb-4"><div class="card-body"><div class="institutional-filter-bar mb-3"><input type="search" class="form-control" id="institutional-search" placeholder="Pesquisar disciplina, código ou área"></div><div class="row" data-role="stats"></div></div></div><div class="card shadow"><div class="card-body"><div class="table-padrao-wrapper"><table class="table table-hover table-padrao-escolar mb-0"><thead id="institutional-thead"></thead><tbody id="institutional-tbody"></tbody></table></div></div></div></div></main>
+    </div>
+    <div class="modal fade modal-slide-right" id="modal-institucional-form" tabindex="-1" role="dialog"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><form id="form-institucional"><div class="modal-header"><h5 class="modal-title" id="modal-institucional-label">Novo cadastro</h5><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button></div><div class="modal-body" id="modal-institucional-body"></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar cadastro</button></div></form></div></div></div>
+    <script src="../../js/jquery.min.js"></script><script src="../../js/popper.min.js"></script><script src="../../js/bootstrap.min.js"></script><script src="../../js/simplebar.min.js"></script><script src="../../js/jquery.stickOnScroll.js"></script><script src="../../js/tinycolor-min.js"></script><script src="../../js/config.js"></script><script src="../../js/apps.js"></script><script src="../../js/escola-contexto.js"></script><script src="../../js/sidebar-escola.js"></script><script src="../../js/sidebar-permissoes.js"></script><script src="../../js/institucional-module.js"></script>
+</body>
+</html>

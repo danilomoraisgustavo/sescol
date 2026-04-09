@@ -20,12 +20,11 @@
 <body class="vertical dark" data-security-page="unit-selection">
     <div class="wrapper">
         <nav class="topnav navbar navbar-light">
-            <button type="button" class="navbar-toggler text-muted mt-2 p-0 mr-3 collapseSidebar">
-                <i class="fe fe-menu navbar-toggler-icon"></i>
-            </button>
-            <form class="form-inline mr-auto searchform text-muted">
-                <input class="form-control mr-sm-2 bg-transparent border-0 pl-4 text-muted" type="search" placeholder="Buscar..." aria-label="Search">
-            </form>
+            <div class="mr-auto d-flex align-items-center">
+                <a class="navbar-brand d-flex align-items-center text-dark mb-0" href="/selecao-unidade">
+                    <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
+                </a>
+            </div>
             <ul class="nav">
                 <li class="nav-item">
                     <a class="nav-link text-muted my-2" href="#" id="modeSwitcher" data-mode="dark">
@@ -48,20 +47,7 @@
             </ul>
         </nav>
 
-        <aside class="sidebar-left border-right bg-white shadow" id="leftSidebar" data-simplebar>
-            <a href="#" class="btn collapseSidebar toggle-btn d-lg-none text-muted ml-2 mt-3" data-toggle="toggle">
-                <i class="fe fe-x"><span class="sr-only"></span></i>
-            </a>
-            <nav class="vertnav navbar navbar-light">
-                <div class="w-100 mb-4 d-flex">
-                    <a class="navbar-brand mx-auto mt-2 flex-fill text-center" href="/dashboard">
-                        <span class="h5 mb-0 text-uppercase font-weight-bold">SETRANE EXPRESS</span>
-                    </a>
-                </div>
-            </nav>
-        </aside>
-
-        <main role="main" class="main-content">
+        <main role="main" class="main-content" style="margin-left:0;">
             <div class="container-fluid">
                 <div class="security-hero shadow-sm mb-4">
                     <div class="d-flex flex-wrap justify-content-between align-items-start">
@@ -84,8 +70,9 @@
     <script src="/js/moment.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
     <script src="/js/simplebar.min.js"></script>
+    <script src="/js/tinycolor-min.js"></script>
+    <script src="/js/config.js"></script>
     <script src="/js/apps.js"></script>
-    <script src="/js/sidebar-permissoes.js"></script>
     <script src="/js/security-module.js"></script>
 </body>
 

@@ -1,5 +1,6 @@
 // backend/middleware/auth.js
 import jwt from 'jsonwebtoken';
+import { getEffectiveUserSecurity } from '../services/security.js';
 
 function getJwtSecret() {
     const secret = process.env.JWT_SECRET;
@@ -72,12 +73,30 @@ export default function authMiddleware(req, res, next) {
         const payload = jwt.verify(token, getJwtSecret());
         req.user = payload;
 
-        // tenant_id costuma vir no payload
-        if (payload?.tenant_id != null) {
-            req.tenantId = String(payload.tenant_id);
-        }
+        const maybeHydrate = async () => {
+            if (payload?.id != null && payload?.tenant_id != null) {
+                const security = await getEffectiveUserSecurity(Number(payload.id), Number(payload.tenant_id));
+                req.user = {
+                    ...payload,
+                    profiles: security.profiles,
+                    permissions: security.permissions,
+                };
+            }
 
-        return next();
+            if (payload?.tenant_id != null) {
+                req.tenantId = String(payload.tenant_id);
+            }
+
+            return next();
+        };
+
+        Promise.resolve(maybeHydrate()).catch(() => {
+            if (payload?.tenant_id != null) {
+                req.tenantId = String(payload.tenant_id);
+            }
+            return next();
+        });
+        return;
     } catch {
         return res.status(401).json({ error: 'Unauthorized' });
     }
@@ -97,13 +116,33 @@ export function makePageAuth({ loginPath = '/' } = {}) {
             if (!token) return res.redirect(withNext(loginPath, req.originalUrl));
 
             const payload = jwt.verify(token, getJwtSecret());
-            req.user = payload;
+            const proceed = async () => {
+                if (payload?.id != null && payload?.tenant_id != null) {
+                    const security = await getEffectiveUserSecurity(Number(payload.id), Number(payload.tenant_id));
+                    req.user = {
+                        ...payload,
+                        profiles: security.profiles,
+                        permissions: security.permissions,
+                    };
+                } else {
+                    req.user = payload;
+                }
 
-            if (payload?.tenant_id != null) {
-                req.tenantId = String(payload.tenant_id);
-            }
+                if (payload?.tenant_id != null) {
+                    req.tenantId = String(payload.tenant_id);
+                }
 
-            return next();
+                return next();
+            };
+
+            Promise.resolve(proceed()).catch(() => {
+                req.user = payload;
+                if (payload?.tenant_id != null) {
+                    req.tenantId = String(payload.tenant_id);
+                }
+                return next();
+            });
+            return;
         } catch {
             return res.redirect(withNext(loginPath, req.originalUrl));
         }
@@ -146,6 +185,19 @@ export function requirePageRole(...allowed) {
         if (!cargo || !allow.includes(cargo)) {
             // Redireciona para dashboard padrão (ou login), sem expor detalhes
             return res.redirect('/dashboard');
+        }
+        return next();
+    };
+}
+
+export function requirePermission(...requiredPermissions) {
+    const needed = requiredPermissions.map((item) => String(item || '').trim()).filter(Boolean);
+    return function permissionMiddleware(req, res, next) {
+        const permissions = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+        if (!needed.length) return next();
+        const hasAll = needed.every((permission) => permissions.includes(permission));
+        if (!hasAll) {
+            return res.status(403).json({ error: 'Forbidden', message: 'Sem permissão granular para esta operação' });
         }
         return next();
     };

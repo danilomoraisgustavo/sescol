@@ -25,6 +25,20 @@
             ],
         },
         {
+            id: 'institucional',
+            title: 'Institucional',
+            items: [
+                { href: '/institucional/servidores', label: 'Servidores', icon: 'fe-briefcase', permission: 'institution.master.view' },
+                { href: '/institucional/disciplinas', label: 'Disciplinas', icon: 'fe-book-open', permission: 'institution.master.view' },
+                { href: '/institucional/series', label: 'Séries', icon: 'fe-list', permission: 'institution.master.view' },
+                { href: '/institucional/turnos', label: 'Turnos', icon: 'fe-clock', permission: 'institution.master.view' },
+                { href: '/institucional/calendarios-letivos', label: 'Calendários', icon: 'fe-calendar', permission: 'institution.master.view' },
+                { href: '/institucional/periodos-letivos', label: 'Períodos', icon: 'fe-calendar', permission: 'institution.master.view' },
+                { href: '/institucional/turmas', label: 'Turmas', icon: 'fe-grid', permission: 'institution.master.view' },
+                { href: '/institucional/parametros-gerais', label: 'Parâmetros', icon: 'fe-sliders', permission: 'institution.master.view' },
+            ],
+        },
+        {
             id: 'rotas',
             title: 'Rotas',
             items: [
@@ -92,16 +106,23 @@
         return normalizedHref === normalizedCurrent;
     }
 
-    function filterModulesByCargo(cargo) {
+    function filterModulesBySecurity(me = {}) {
+        const cargo = String(me?.cargo || '').toUpperCase();
+        const permissions = Array.isArray(me?.permissions) ? me.permissions : [];
         const normalizedCargo = String(cargo || '').toUpperCase();
         if (normalizedCargo !== 'FORNECEDOR_ESCOLAR' && normalizedCargo !== 'FORNECEDOR') {
-            return MODULES;
+            return MODULES
+                .map((module) => ({
+                    ...module,
+                    items: module.items.filter((item) => !item.permission || permissions.includes(item.permission)),
+                }))
+                .filter((module) => module.items.length > 0);
         }
 
         return MODULES
             .map((module) => ({
                 ...module,
-                items: module.items.filter((item) => FORNECEDOR_ALLOWED.has(item.href)),
+                items: module.items.filter((item) => FORNECEDOR_ALLOWED.has(item.href) && (!item.permission || permissions.includes(item.permission))),
             }))
             .filter((module) => module.items.length > 0);
     }
@@ -127,7 +148,7 @@
         `;
     }
 
-    function renderSidebar(cargo) {
+    function renderSidebar(me) {
         const sidebar = q('aside#leftSidebar');
         const nav = q('.vertnav.navbar', sidebar);
         if (!sidebar || !nav) return;
@@ -141,7 +162,7 @@
             </div>
         `;
 
-        const modules = filterModulesByCargo(cargo);
+        const modules = filterModulesBySecurity(me);
         const currentPath = window.location.pathname || '/';
 
         nav.innerHTML = `
@@ -151,12 +172,15 @@
     }
 
     document.addEventListener('DOMContentLoaded', async function () {
+        var isInstitutionalSchoolContext = !!document.body.getAttribute('data-institucional-page')
+            && new URLSearchParams(window.location.search || '').get('contexto') === 'escola';
+        if (isInstitutionalSchoolContext) return;
         try {
             const me = await getMe();
             if (me) window.__ME = me;
-            renderSidebar(me?.cargo || '');
+            renderSidebar(me || {});
         } catch (e) {
-            renderSidebar('');
+            renderSidebar({});
         }
     });
 })();

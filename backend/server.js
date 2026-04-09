@@ -23,6 +23,7 @@ import monitoresRouter from './routes/monitores.js';
 import veiculosRouter from './routes/veiculos.js';
 import fornecedoresRoutes from './routes/fornecedores.js';
 import brandingRoutes from './routes/branding.js';
+import institucionalRoutes from './routes/institucional.js';
 import itinerariosRoutes from './routes/itinerarios.js';
 import rotasEscolaresRouter from './routes/rotas-escolares.js';
 import rotasExclusivasRouter from './routes/rotas-exclusivas.js';
@@ -399,7 +400,9 @@ app.get('/api/me', authMiddleware, tenantMiddleware, (req, res) => {
         nome: u.nome ?? null,
         email: u.email ?? null,
         cargo: u.cargo ?? null,
-        fornecedor_id: u.fornecedor_id ?? null
+        fornecedor_id: u.fornecedor_id ?? null,
+        profiles: Array.isArray(u.profiles) ? u.profiles : [],
+        permissions: Array.isArray(u.permissions) ? u.permissions : []
     });
 });
 
@@ -456,6 +459,7 @@ app.use('/api/monitores', authMiddleware, tenantMiddleware, monitoresRouter);
 app.use('/api/veiculos', authMiddleware, tenantMiddleware, veiculosRouter);
 app.use('/api/fornecedores', authMiddleware, tenantMiddleware, fornecedoresRoutes);
 app.use('/api/itinerarios', authMiddleware, tenantMiddleware, itinerariosRoutes);
+app.use('/api/institucional', authMiddleware, tenantMiddleware, institucionalRoutes);
 app.use('/api/rotas-escolares', authMiddleware, tenantMiddleware, rotasEscolaresRouter);
 app.use('/api/rotas-exclusivas', authMiddleware, tenantMiddleware, rotasExclusivasRouter);
 app.use('/api', painelEscolarRouter);
@@ -505,6 +509,38 @@ app.get('/escolas', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath:
     res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escolas.html'));
 });
 
+app.get('/institucional/servidores', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'servidores.html'));
+});
+
+app.get('/institucional/disciplinas', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'disciplinas.html'));
+});
+
+app.get('/institucional/series', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'series.html'));
+});
+
+app.get('/institucional/turnos', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'turnos.html'));
+});
+
+app.get('/institucional/calendarios-letivos', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'calendarios-letivos.html'));
+});
+
+app.get('/institucional/periodos-letivos', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'periodos-letivos.html'));
+});
+
+app.get('/institucional/turmas', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'turmas.html'));
+});
+
+app.get('/institucional/parametros-gerais', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'institucional', 'parametros-gerais.html'));
+});
+
 app.get('/escolas/:id/dashboard', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
     return res.redirect(`/escolar/escola/${req.params.id}/dashboard`);
 });
@@ -536,7 +572,7 @@ app.get('/alunos-mapa', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginP
 });
 
 app.get('/selecao-unidade', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
-    return res.redirect('/escolas');
+    return res.sendFile(path.join(PUBLIC_DIR, 'selecao-unidade.html'));
 });
 
 app.get('/seguranca', requireRolePage(['ADMIN', 'GESTOR'], { loginPath: '/' }), (req, res) => {

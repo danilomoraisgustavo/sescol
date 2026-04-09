@@ -5,6 +5,8 @@ import pool from "../db.js";
 
 import authMiddleware from "../middleware/auth.js";
 import tenantMiddleware from "../middleware/tenant.js";
+import { requirePermission } from "../middleware/auth.js";
+import { recordSecurityLog } from "../services/security.js";
 
 import PDFDocument from "pdfkit";
 import { getBranding, drawCabecalho, drawRodape } from "../services/brandingConfig.js";
@@ -34,6 +36,27 @@ function __bumpVersion(tenantId) {
 }
 function __getVersion(tenantId) {
     return __tenantVersion.get(Number(tenantId)) || 0;
+}
+
+async function registrarSegurancaAluno(req, payload = {}) {
+    try {
+        await recordSecurityLog({
+            tenantId: payload.tenantId || req.tenantId || req.user?.tenant_id || null,
+            userId: req.user?.id || null,
+            email: req.user?.email || null,
+            action: payload.action || 'STUDENT_OPERATION',
+            targetType: payload.targetType || 'aluno',
+            targetId: payload.targetId || null,
+            description: payload.description || null,
+            level: payload.level || 'warn',
+            scope: payload.scope || 'Escola',
+            ip: req.ip,
+            userAgent: req.headers['user-agent'] || null,
+            metadata: payload.metadata || {},
+        });
+    } catch (error) {
+        console.error('Falha ao registrar log de segurança do aluno:', error);
+    }
 }
 
 const upload = multer({
@@ -2052,7 +2075,7 @@ router.get("/geo/municipio", async (req, res) => {
  * PUT /api/alunos/:id/dados-transporte
  * Atualiza dados de endereço e responsáveis.
  */
-router.put("/:id/dados-transporte", async (req, res) => {
+router.put("/:id/dados-transporte", requirePermission('school.transport.manage'), async (req, res) => {
     const { id } = req.params;
     const tenantId = requireTenantId(req);
 
@@ -2139,6 +2162,13 @@ router.put("/:id/dados-transporte", async (req, res) => {
         }
 
         const alunoAtualizado = result.rows[0];
+        await registrarSegurancaAluno(req, {
+            action: 'STUDENT_TRANSPORT_DATA_UPDATED',
+            targetType: 'aluno',
+            targetId: id,
+            description: 'Dados de transporte do aluno atualizados.',
+            metadata: { aluno_id: id, tenant_id: tenantId }
+        });
         __bumpVersion(tenantId);
         return res.json(alunoAtualizado);
     } catch (err) {
@@ -2155,7 +2185,7 @@ router.put("/:id/dados-transporte", async (req, res) => {
 // POST /api/alunos/:id/associar-ponto
 // Associa (ou troca) o ponto de parada do aluno.
 // Body aceito: { ponto_id } ou { ponto_parada_id } ou { pontoId }
-router.post("/:id/associar-ponto", async (req, res) => {
+router.post("/:id/associar-ponto", requirePermission('school.transport.manage'), async (req, res) => {
     const tenantId = requireTenantId(req);
 
     const alunoId = parseInt(req.params.id, 10);
@@ -2205,6 +2235,13 @@ router.post("/:id/associar-ponto", async (req, res) => {
         );
 
         await client.query("COMMIT");
+        await registrarSegurancaAluno(req, {
+            action: 'STUDENT_STOP_ASSOCIATED',
+            targetType: 'aluno',
+            targetId: alunoId,
+            description: 'Aluno associado a ponto de parada.',
+            metadata: { aluno_id: alunoId, ponto_id: pontoId, tenant_id: tenantId }
+        });
         __bumpVersion(tenantId);
         return res.json({ ok: true, aluno_id: alunoId, ponto_id: pontoId });
     } catch (err) {
@@ -2337,7 +2374,7 @@ router.get("/:id/pontos-parada-por-escola", async (req, res) => {
  * - Localização/elegibilidade e dados do fluxo de solicitação de transporte
  *   possuem endpoints dedicados (/localizacao, /dados-transporte, etc.).
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", requirePermission('school.students.manage'), async (req, res) => {
     const { id } = req.params;
     const body = req.body || {};
     const tenantId = requireTenantId(req);
@@ -2500,6 +2537,13 @@ router.put("/:id", async (req, res) => {
         }
 
         const alunoAtualizado = result.rows[0];
+        await registrarSegurancaAluno(req, {
+            action: 'STUDENT_UPDATED',
+            targetType: 'aluno',
+            targetId: id,
+            description: 'Cadastro do aluno atualizado.',
+            metadata: { aluno_id: id, tenant_id: tenantId }
+        });
         __bumpVersion(tenantId);
         return res.json(alunoAtualizado);
     } catch (err) {
@@ -2687,7 +2731,7 @@ router.get("/:id/historico", async (req, res) => {
  * DELETE /api/alunos/:id
  * Remove aluno e vinculações com escolas.
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requirePermission('school.students.manage'), async (req, res) => {
     const { id } = req.params;
     const tenantId = requireTenantId(req);
 
@@ -2714,6 +2758,13 @@ router.delete("/:id", async (req, res) => {
             __bumpVersion(tenantId);
             return res.status(404).json({ error: "Aluno não encontrado." });
         }
+        await registrarSegurancaAluno(req, {
+            action: 'STUDENT_DELETED',
+            targetType: 'aluno',
+            targetId: id,
+            description: 'Aluno excluído.',
+            metadata: { aluno_id: id, tenant_id: tenantId }
+        });
         __bumpVersion(tenantId);
         return res.status(204).send();
     } catch (err) {
@@ -2727,7 +2778,7 @@ router.delete("/:id", async (req, res) => {
  * PUT /api/alunos/:id/localizacao
  * Atualiza localização e flags de transporte.
  */
-router.put("/:id/localizacao", async (req, res) => {
+router.put("/:id/localizacao", requirePermission('school.transport.manage'), async (req, res) => {
     const { id } = req.params;
     const tenantId = requireTenantId(req);
     const {
@@ -2791,6 +2842,13 @@ router.put("/:id/localizacao", async (req, res) => {
         }
 
         const alunoAtualizado = result.rows[0];
+        await registrarSegurancaAluno(req, {
+            action: 'STUDENT_LOCATION_UPDATED',
+            targetType: 'aluno',
+            targetId: id,
+            description: 'Localização do aluno atualizada.',
+            metadata: { aluno_id: id, tenant_id: tenantId, latitude: lat, longitude: lng }
+        });
         __bumpVersion(tenantId);
         return res.json(alunoAtualizado);
     } catch (err) {

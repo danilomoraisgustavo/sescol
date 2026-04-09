@@ -1287,6 +1287,7 @@
         }
 
         function abrirModalTransferenciaInterna(aluno) {
+            var escolaId = window.EscolaContexto.obterEscolaIdDaUrl();
             resetarModalTransferencia();
             preencherSelectEscolasTransferencia(escolaId);
             $('#transferencia-aluno-id').val(aluno.id || '');

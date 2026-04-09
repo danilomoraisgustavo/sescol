@@ -2,6 +2,8 @@ import express from "express";
 import PDFDocument from "pdfkit";
 import pool from "../db.js";
 import { getBranding, drawCabecalho, drawRodape } from "../services/brandingConfig.js";
+import { requirePermission } from "../middleware/auth.js";
+import { recordSecurityLog } from "../services/security.js";
 
 const router = express.Router();
 let tenantColumnCache = null;
@@ -14,6 +16,8 @@ let alunoComplementosTableEnsured = false;
 let matriculasHistoricoTableEnsured = false;
 let auditoriaEscolarTableEnsured = false;
 let transferenciasInternasTableEnsured = false;
+let institutionalSupportCache = null;
+let institutionalSupportCacheAt = 0;
 
 function buildPoint(lat, lng) {
     return `ST_SetSRID(ST_Point(${lng}, ${lat}), 4326)`;
@@ -80,6 +84,206 @@ async function getColumnSupport() {
     return columnCache;
 }
 
+async function getInstitutionalSupport() {
+    const now = Date.now();
+    if (institutionalSupportCache && (now - institutionalSupportCacheAt) < TENANT_CACHE_TTL_MS) {
+        return institutionalSupportCache;
+    }
+
+    const tables = [
+        'institucional_servidores',
+        'institucional_servidor_lotacoes',
+        'institucional_calendarios_letivos',
+        'institucional_periodos_letivos',
+        'institucional_parametros_gerais',
+    ];
+
+    const { rows } = await pool.query(
+        `
+        SELECT table_name, column_name
+          FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = ANY($1::text[])
+        `,
+        [tables],
+    );
+
+    const grouped = {};
+    for (const row of rows || []) {
+        grouped[row.table_name] = grouped[row.table_name] || new Set();
+        grouped[row.table_name].add(row.column_name);
+    }
+
+    institutionalSupportCache = {
+        institucional_servidores: !!grouped.institucional_servidores,
+        institucional_servidor_lotacoes: !!grouped.institucional_servidor_lotacoes,
+        institucional_calendarios_letivos: !!grouped.institucional_calendarios_letivos,
+        institucional_periodos_letivos: !!grouped.institucional_periodos_letivos,
+        institucional_parametros_gerais: !!grouped.institucional_parametros_gerais,
+        servidorFuncaoPrincipal: grouped.institucional_servidores?.has('funcao_principal') || false,
+        servidorFuncao: grouped.institucional_servidores?.has('funcao') || false,
+        servidorMatriculaRede: grouped.institucional_servidores?.has('matricula_rede') || false,
+        servidorMatricula: grouped.institucional_servidores?.has('matricula') || false,
+        periodosStatus: grouped.institucional_periodos_letivos?.has('status') || false,
+        periodosAtivo: grouped.institucional_periodos_letivos?.has('ativo') || false,
+        periodosUpdatedAt: grouped.institucional_periodos_letivos?.has('updated_at') || false,
+        periodosAtualizadoEm: grouped.institucional_periodos_letivos?.has('atualizado_em') || false,
+        parametrosFrequenciaMinima: grouped.institucional_parametros_gerais?.has('frequencia_minima') || false,
+        parametrosNotaMinima: grouped.institucional_parametros_gerais?.has('nota_minima') || false,
+        parametrosTurnoPadrao: grouped.institucional_parametros_gerais?.has('turno_padrao') || false,
+        parametrosUsaRecuperacaoParalela: grouped.institucional_parametros_gerais?.has('usa_recuperacao_paralela') || false,
+        parametrosPermiteMultisseriada: grouped.institucional_parametros_gerais?.has('permite_multisseriada') || false,
+        parametrosDiasLetivosMinimos: grouped.institucional_parametros_gerais?.has('dias_letivos_minimos') || false,
+    };
+    institutionalSupportCacheAt = now;
+    return institutionalSupportCache;
+}
+
+async function loadEscolaInstitutionalData({ escolaId, tenantId, escolaNome }) {
+    const support = await getInstitutionalSupport();
+    const empty = {
+        calendario: null,
+        periodos: [],
+        equipe: { total: 0, principais: [], funcoes: [] },
+        parametros: null,
+        alertas: [],
+    };
+
+    if (!support.institucional_parametros_gerais &&
+        !support.institucional_calendarios_letivos &&
+        !support.institucional_servidor_lotacoes) {
+        return empty;
+    }
+
+    const response = { ...empty };
+
+    if (support.institucional_calendarios_letivos) {
+        const { rows } = await pool.query(
+            `
+            SELECT c.*,
+                   CASE WHEN c.escola_id = $2 THEN 0 WHEN c.escola_id IS NULL THEN 1 ELSE 2 END AS prioridade
+              FROM institucional_calendarios_letivos c
+             WHERE c.tenant_id = $1
+               AND (c.escola_id = $2 OR c.escola_id IS NULL)
+             ORDER BY prioridade ASC,
+                      CASE WHEN upper(coalesce(c.status,'')) = 'EM_EXECUCAO' THEN 0 WHEN upper(coalesce(c.status,'')) = 'PLANEJADO' THEN 1 ELSE 2 END,
+                      c.ano_letivo DESC NULLS LAST,
+                      c.updated_at DESC NULLS LAST
+             LIMIT 1
+            `,
+            [tenantId, escolaId],
+        );
+        response.calendario = rows[0] || null;
+
+        if (response.calendario && support.institucional_periodos_letivos) {
+            const periodStatusExpr = support.periodosStatus
+                ? 'status'
+                : (support.periodosAtivo ? "CASE WHEN ativo IS TRUE THEN 'ATIVO' ELSE 'INATIVO' END AS status" : "'ABERTO'::text AS status");
+            const periodOrderExpr = support.periodosUpdatedAt ? 'updated_at' : (support.periodosAtualizadoEm ? 'atualizado_em' : 'data_inicio');
+            const { rows: periodRows } = await pool.query(
+                `
+                SELECT *, ${periodStatusExpr}
+                  FROM institucional_periodos_letivos
+                 WHERE tenant_id = $1
+                   AND calendario_id = $2
+                 ORDER BY ordem ASC, ${periodOrderExpr} DESC NULLS LAST, data_inicio ASC NULLS LAST
+                `,
+                [tenantId, response.calendario.id],
+            );
+            response.periodos = periodRows || [];
+        }
+    }
+
+    if (support.institucional_servidor_lotacoes && support.institucional_servidores) {
+        const servidorFuncaoPrincipalExpr = support.servidorFuncaoPrincipal
+            ? 's.funcao_principal'
+            : (support.servidorFuncao ? 's.funcao AS funcao_principal' : 'NULL::text AS funcao_principal');
+        const { rows } = await pool.query(
+            `
+            SELECT s.id, s.nome, s.cargo, ${servidorFuncaoPrincipalExpr}, s.ativo,
+                   l.funcao, l.carga_horaria, l.principal, l.inicio_vigencia, l.fim_vigencia
+              FROM institucional_servidor_lotacoes l
+              JOIN institucional_servidores s
+                ON s.id = l.servidor_id
+               AND s.tenant_id = l.tenant_id
+             WHERE l.tenant_id = $1
+               AND l.escola_id = $2
+             ORDER BY l.principal DESC, s.nome ASC
+            `,
+            [tenantId, escolaId],
+        );
+        response.equipe.total = rows.length;
+        response.equipe.principais = rows.filter((row) => row.principal).slice(0, 4);
+        response.equipe.funcoes = Object.entries(
+            rows.reduce((acc, row) => {
+                const key = parseOptionalText(row.funcao || row.funcao_principal || row.cargo) || 'Nao informada';
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {})
+        ).map(([funcao, total]) => ({ funcao, total })).sort((a, b) => b.total - a.total);
+    }
+
+    if (support.institucional_parametros_gerais) {
+        const { rows } = await pool.query(
+            `
+            SELECT *
+              FROM institucional_parametros_gerais
+             WHERE tenant_id = $1
+             ORDER BY id NULLS LAST
+             LIMIT 1
+            `,
+            [tenantId],
+        );
+        response.parametros = rows[0] || null;
+        if (response.parametros) {
+            if (!support.parametrosFrequenciaMinima && response.parametros.regra_avaliacao && !response.parametros.frequencia_minima) {
+                response.parametros.frequencia_minima = null;
+            }
+            if (!support.parametrosNotaMinima) {
+                response.parametros.nota_minima = response.parametros.nota_minima ?? null;
+            }
+            if (!support.parametrosTurnoPadrao) {
+                response.parametros.turno_padrao = response.parametros.turno_padrao ?? null;
+            }
+            if (!support.parametrosUsaRecuperacaoParalela) {
+                response.parametros.usa_recuperacao_paralela = response.parametros.usa_recuperacao_paralela ?? null;
+            }
+            if (!support.parametrosPermiteMultisseriada && Object.prototype.hasOwnProperty.call(response.parametros, 'permite_multisseriacao')) {
+                response.parametros.permite_multisseriada = response.parametros.permite_multisseriacao;
+            }
+            if (!support.parametrosDiasLetivosMinimos && Object.prototype.hasOwnProperty.call(response.parametros, 'dias_letivos_minimos')) {
+                response.parametros.dias_letivos_minimos = response.parametros.dias_letivos_minimos;
+            }
+        }
+    }
+
+    if (!response.calendario) {
+        response.alertas.push({
+            tipo: 'warning',
+            titulo: 'Unidade sem calendário institucional',
+            detalhe: `A escola ${escolaNome || ''} ainda não possui calendário letivo vinculado ou de rede aplicável.`,
+        });
+    }
+
+    if (!response.equipe.total) {
+        response.alertas.push({
+            tipo: 'warning',
+            titulo: 'Escola sem equipe lotada',
+            detalhe: 'Não há servidores vinculados à unidade no cadastro mestre institucional.',
+        });
+    }
+
+    if (response.equipe.total && !response.equipe.principais.length) {
+        response.alertas.push({
+            tipo: 'info',
+            titulo: 'Sem lotação principal definida',
+            detalhe: 'Há equipe vinculada, mas nenhuma lotação principal marcada para a unidade.',
+        });
+    }
+
+    return response;
+}
+
 async function ensureEscolaTurmasTable() {
     if (escolaTurmasTableEnsured) return;
 
@@ -89,12 +293,14 @@ async function ensureEscolaTurmasTable() {
             tenant_id BIGINT NULL,
             escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
             nome TEXT NOT NULL,
+            codigo_turma TEXT NULL,
             ano_letivo INTEGER NULL,
             turno TEXT NULL,
             tipo_turma TEXT NULL,
             organizacao_pedagogica TEXT NULL,
             etapa TEXT NULL,
             modalidade TEXT NULL,
+            regime_letivo TEXT NULL,
             multisseriada BOOLEAN NOT NULL DEFAULT FALSE,
             series_abrangidas TEXT[] NULL,
             dias_semana TEXT[] NULL,
@@ -102,13 +308,17 @@ async function ensureEscolaTurmasTable() {
             horario_fim TEXT NULL,
             capacidade INTEGER NULL,
             limite_planejado_alunos INTEGER NULL,
+            vagas_transporte_planejadas INTEGER NULL,
+            vagas_inclusao_planejadas INTEGER NULL,
             total_estudantes_publico_ee INTEGER NULL,
             limite_estudantes_publico_ee INTEGER NULL,
             professor_referencia TEXT NULL,
+            monitor_referencia TEXT NULL,
             auxiliar_apoio BOOLEAN NOT NULL DEFAULT FALSE,
             interprete_libras BOOLEAN NOT NULL DEFAULT FALSE,
             atendimento_educacional_especializado BOOLEAN NOT NULL DEFAULT FALSE,
             sala TEXT NULL,
+            sala_acessivel BOOLEAN NOT NULL DEFAULT FALSE,
             observacoes TEXT NULL,
             ativo BOOLEAN NOT NULL DEFAULT TRUE,
             criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
@@ -128,20 +338,26 @@ async function ensureEscolaTurmasTable() {
 
     await pool.query(`
         ALTER TABLE escola_turmas
+        ADD COLUMN IF NOT EXISTS codigo_turma TEXT NULL,
         ADD COLUMN IF NOT EXISTS tipo_turma TEXT NULL,
         ADD COLUMN IF NOT EXISTS organizacao_pedagogica TEXT NULL,
+        ADD COLUMN IF NOT EXISTS regime_letivo TEXT NULL,
         ADD COLUMN IF NOT EXISTS multisseriada BOOLEAN NOT NULL DEFAULT FALSE,
         ADD COLUMN IF NOT EXISTS series_abrangidas TEXT[] NULL,
         ADD COLUMN IF NOT EXISTS dias_semana TEXT[] NULL,
         ADD COLUMN IF NOT EXISTS horario_inicio TEXT NULL,
         ADD COLUMN IF NOT EXISTS horario_fim TEXT NULL,
         ADD COLUMN IF NOT EXISTS limite_planejado_alunos INTEGER NULL,
+        ADD COLUMN IF NOT EXISTS vagas_transporte_planejadas INTEGER NULL,
+        ADD COLUMN IF NOT EXISTS vagas_inclusao_planejadas INTEGER NULL,
         ADD COLUMN IF NOT EXISTS total_estudantes_publico_ee INTEGER NULL,
         ADD COLUMN IF NOT EXISTS limite_estudantes_publico_ee INTEGER NULL,
         ADD COLUMN IF NOT EXISTS professor_referencia TEXT NULL,
+        ADD COLUMN IF NOT EXISTS monitor_referencia TEXT NULL,
         ADD COLUMN IF NOT EXISTS auxiliar_apoio BOOLEAN NOT NULL DEFAULT FALSE,
         ADD COLUMN IF NOT EXISTS interprete_libras BOOLEAN NOT NULL DEFAULT FALSE,
-        ADD COLUMN IF NOT EXISTS atendimento_educacional_especializado BOOLEAN NOT NULL DEFAULT FALSE
+        ADD COLUMN IF NOT EXISTS atendimento_educacional_especializado BOOLEAN NOT NULL DEFAULT FALSE,
+        ADD COLUMN IF NOT EXISTS sala_acessivel BOOLEAN NOT NULL DEFAULT FALSE
     `);
 
     escolaTurmasTableEnsured = true;
@@ -586,6 +802,27 @@ async function registrarAuditoriaEscolar(client, req, payload = {}) {
     );
 }
 
+async function registrarSegurancaEscolar(req, payload = {}) {
+    try {
+        await recordSecurityLog({
+            tenantId: payload.tenantId || getTenantId(req) || null,
+            userId: req?.user?.id || null,
+            email: req?.user?.email || null,
+            action: payload.action || 'SCHOOL_OPERATION',
+            targetType: payload.targetType || 'escolar',
+            targetId: payload.targetId || null,
+            description: payload.description || null,
+            level: payload.level || 'warn',
+            scope: payload.scope || 'Escola',
+            ip: req.ip,
+            userAgent: req.headers['user-agent'] || null,
+            metadata: payload.metadata || {},
+        });
+    } catch (error) {
+        console.error('Falha ao registrar log de segurança escolar:', error);
+    }
+}
+
 async function loadEscolaById(client, escolaId, tenantId) {
     const tenantSupport = await getTenantColumnSupport();
     const params = [escolaId];
@@ -825,12 +1062,14 @@ async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
         SELECT
             t.id,
             t.nome,
+            t.codigo_turma,
             t.ano_letivo,
             t.turno,
             t.tipo_turma,
             t.organizacao_pedagogica,
             t.etapa,
             t.modalidade,
+            t.regime_letivo,
             t.multisseriada,
             t.series_abrangidas,
             t.dias_semana,
@@ -838,13 +1077,17 @@ async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
             t.horario_fim,
             t.capacidade,
             t.limite_planejado_alunos,
+            t.vagas_transporte_planejadas,
+            t.vagas_inclusao_planejadas,
             t.total_estudantes_publico_ee,
             t.limite_estudantes_publico_ee,
             t.professor_referencia,
+            t.monitor_referencia,
             t.auxiliar_apoio,
             t.interprete_libras,
             t.atendimento_educacional_especializado,
             t.sala,
+            t.sala_acessivel,
             t.observacoes,
             t.ativo,
             t.criado_em,
@@ -865,12 +1108,14 @@ async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
             id: turma.id,
             nome: turma.nome,
             turma: turma.nome,
+            codigo_turma: turma.codigo_turma,
             ano_letivo: turma.ano_letivo,
             turno: turma.turno,
             tipo_turma: turma.tipo_turma,
             organizacao_pedagogica: turma.organizacao_pedagogica,
             etapa: turma.etapa,
             modalidade: turma.modalidade,
+            regime_letivo: turma.regime_letivo,
             multisseriada: turma.multisseriada,
             series_abrangidas: turma.series_abrangidas,
             dias_semana: turma.dias_semana,
@@ -878,13 +1123,17 @@ async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
             horario_fim: turma.horario_fim,
             capacidade: turma.capacidade,
             limite_planejado_alunos: turma.limite_planejado_alunos,
+            vagas_transporte_planejadas: turma.vagas_transporte_planejadas,
+            vagas_inclusao_planejadas: turma.vagas_inclusao_planejadas,
             total_estudantes_publico_ee: turma.total_estudantes_publico_ee,
             limite_estudantes_publico_ee: turma.limite_estudantes_publico_ee,
             professor_referencia: turma.professor_referencia,
+            monitor_referencia: turma.monitor_referencia,
             auxiliar_apoio: turma.auxiliar_apoio,
             interprete_libras: turma.interprete_libras,
             atendimento_educacional_especializado: turma.atendimento_educacional_especializado,
             sala: turma.sala,
+            sala_acessivel: turma.sala_acessivel,
             observacoes: turma.observacoes,
             ativo: turma.ativo,
             total_alunos: 0,
@@ -906,12 +1155,14 @@ async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
                 id: null,
                 nome: nomeTurma,
                 turma: nomeTurma,
+                codigo_turma: null,
                 ano_letivo: turma.ano_letivo,
                 turno: null,
                 tipo_turma: null,
                 organizacao_pedagogica: null,
                 etapa: null,
                 modalidade: null,
+                regime_letivo: null,
                 multisseriada: false,
                 series_abrangidas: null,
                 dias_semana: null,
@@ -919,13 +1170,17 @@ async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
                 horario_fim: null,
                 capacidade: null,
                 limite_planejado_alunos: null,
+                vagas_transporte_planejadas: null,
+                vagas_inclusao_planejadas: null,
                 total_estudantes_publico_ee: null,
                 limite_estudantes_publico_ee: null,
                 professor_referencia: null,
+                monitor_referencia: null,
                 auxiliar_apoio: false,
                 interprete_libras: false,
                 atendimento_educacional_especializado: false,
                 sala: null,
+                sala_acessivel: false,
                 observacoes: null,
                 ativo: true,
                 total_alunos: turma.total_alunos || 0,
@@ -942,12 +1197,37 @@ async function loadEscolaTurmasData(escolaId, tenantId, options = {}) {
         return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
     });
 
+    turmas.forEach((turma) => {
+        const referenciaCapacidade = Number.isFinite(Number(turma.capacidade)) && Number(turma.capacidade) > 0
+            ? Number(turma.capacidade)
+            : (Number.isFinite(Number(turma.limite_planejado_alunos)) && Number(turma.limite_planejado_alunos) > 0 ? Number(turma.limite_planejado_alunos) : null);
+        const totalAlunos = Number(turma.total_alunos || 0);
+        const vagasLivres = referenciaCapacidade != null ? Math.max(referenciaCapacidade - totalAlunos, 0) : null;
+        const percentualOcupacao = referenciaCapacidade != null && referenciaCapacidade > 0
+            ? Math.min(Math.round((totalAlunos / referenciaCapacidade) * 100), 999)
+            : null;
+        turma.capacidade_referencia = referenciaCapacidade;
+        turma.vagas_livres = vagasLivres;
+        turma.percentual_ocupacao = percentualOcupacao;
+        turma.ocupacao_status = percentualOcupacao == null
+            ? 'sem_referencia'
+            : percentualOcupacao >= 100
+                ? 'lotada'
+                : percentualOcupacao >= 85
+                    ? 'atencao'
+                    : 'saudavel';
+    });
+
     return {
         escola: dashboardData.escola,
         resumo: {
             ...dashboardData.resumo,
             total_turmas: turmas.length,
             total_anos_letivos: countDistinctAnosLetivos(turmas),
+            total_vagas_livres: turmas.reduce((acc, turma) => acc + Number(turma.vagas_livres || 0), 0),
+            ocupacao_media: turmas.filter((turma) => turma.percentual_ocupacao != null).length
+                ? Math.round(turmas.filter((turma) => turma.percentual_ocupacao != null).reduce((acc, turma) => acc + Number(turma.percentual_ocupacao || 0), 0) / turmas.filter((turma) => turma.percentual_ocupacao != null).length)
+                : null,
         },
         turmas,
         anos_disponiveis: sortAnosDesc([
@@ -1306,6 +1586,32 @@ router.get("/:id/dashboard", async (req, res) => {
             alunos_com_deficiencia: alunos.filter((aluno) => parseOptionalText(aluno?.deficiencia)).length,
         };
 
+        const institutionalPermissions = Array.isArray(req.user?.permissions) ? req.user.permissions : [];
+        const institutionalData = await loadEscolaInstitutionalData({
+            escolaId: id,
+            tenantId,
+            escolaNome: dashboardData.escola?.nome,
+        });
+        const canManageInstitutional = institutionalPermissions.includes('institution.master.manage');
+        const canViewInstitutional = institutionalPermissions.includes('institution.master.view')
+            || institutionalPermissions.includes('school.dashboard.view')
+            || canManageInstitutional;
+
+        if (institutionalData?.parametros?.turno_padrao) {
+            const turnoPadrao = String(institutionalData.parametros.turno_padrao || '').trim().toLowerCase();
+            const turmasForaPadrao = turmas.filter((turma) => {
+                const turno = String(turma?.turno || '').trim().toLowerCase();
+                return turno && turnoPadrao && turno !== turnoPadrao;
+            }).length;
+            if (turmasForaPadrao) {
+                institutionalData.alertas.push({
+                    tipo: 'info',
+                    titulo: 'Turnos fora do padrão institucional',
+                    detalhe: `${turmasForaPadrao} turma(s) operam com turno diferente do padrão definido pela rede.`,
+                });
+            }
+        }
+
         const distribuicoes = {
             etapas: Object.entries(
                 alunos.reduce((acc, aluno) => {
@@ -1338,6 +1644,20 @@ router.get("/:id/dashboard", async (req, res) => {
             metricasPedagogicas.alunos_com_deficiencia ? { tipo: 'primary', titulo: 'Acompanhamento inclusivo', detalhe: `${metricasPedagogicas.alunos_com_deficiencia} aluno(s) com deficiência/condição registrada.` } : null,
         ].filter(Boolean);
 
+        const institutionPayload = canViewInstitutional ? {
+            ...institutionalData,
+            can_view: true,
+            can_manage: canManageInstitutional,
+        } : {
+            can_view: false,
+            can_manage: false,
+            calendario: null,
+            periodos: [],
+            equipe: { total: 0, principais: [], funcoes: [] },
+            parametros: null,
+            alertas: [],
+        };
+
         return res.json({
             escola: dashboardData.escola,
             resumo: {
@@ -1360,6 +1680,7 @@ router.get("/:id/dashboard", async (req, res) => {
                 distribuicoes,
                 alertas,
             },
+            institucional: institutionPayload,
         });
     } catch (err) {
         console.error("Erro ao carregar dashboard da escola:", err);
@@ -1395,7 +1716,7 @@ router.get("/:id/turmas", async (req, res) => {
     }
 });
 
-router.post("/:id/turmas", async (req, res) => {
+router.post("/:id/turmas", requirePermission('school.students.manage'), async (req, res) => {
     try {
         const escolaId = parseInt(req.params.id, 10);
         if (isNaN(escolaId)) {
@@ -1417,10 +1738,12 @@ router.post("/:id/turmas", async (req, res) => {
 
         const anoLetivo = parseOptionalInt(req.body?.ano_letivo);
         const turno = parseOptionalText(req.body?.turno);
+        const codigoTurma = parseOptionalText(req.body?.codigo_turma);
         const tipoTurma = parseOptionalText(req.body?.tipo_turma);
         const organizacaoPedagogica = parseOptionalText(req.body?.organizacao_pedagogica);
         const etapa = parseOptionalText(req.body?.etapa);
         const modalidade = parseOptionalText(req.body?.modalidade);
+        const regimeLetivo = parseOptionalText(req.body?.regime_letivo);
         const multisseriada = Boolean(req.body?.multisseriada);
         const seriesAbrangidas = parseOptionalTextArray(req.body?.series_abrangidas);
         const diasSemana = parseOptionalTextArray(req.body?.dias_semana);
@@ -1428,42 +1751,56 @@ router.post("/:id/turmas", async (req, res) => {
         const horarioFim = parseOptionalText(req.body?.horario_fim);
         const capacidade = parseOptionalInt(req.body?.capacidade);
         const limitePlanejadoAlunos = parseOptionalInt(req.body?.limite_planejado_alunos);
+        const vagasTransportePlanejadas = parseOptionalInt(req.body?.vagas_transporte_planejadas);
+        const vagasInclusaoPlanejadas = parseOptionalInt(req.body?.vagas_inclusao_planejadas);
         const totalEstudantesPublicoEe = parseOptionalInt(req.body?.total_estudantes_publico_ee);
         const limiteEstudantesPublicoEe = parseOptionalInt(req.body?.limite_estudantes_publico_ee);
         const professorReferencia = parseOptionalText(req.body?.professor_referencia);
+        const monitorReferencia = parseOptionalText(req.body?.monitor_referencia);
         const auxiliarApoio = Boolean(req.body?.auxiliar_apoio);
         const interpreteLibras = Boolean(req.body?.interprete_libras);
         const atendimentoEducacionalEspecializado = Boolean(req.body?.atendimento_educacional_especializado);
         const sala = parseOptionalText(req.body?.sala);
+        const salaAcessivel = Boolean(req.body?.sala_acessivel);
         const observacoes = parseOptionalText(req.body?.observacoes);
         const ativo = req.body?.ativo === undefined ? true : Boolean(req.body.ativo);
 
         const result = await pool.query(
             `
             INSERT INTO escola_turmas (
-                tenant_id, escola_id, nome, ano_letivo, turno, tipo_turma, organizacao_pedagogica,
-                etapa, modalidade, multisseriada, series_abrangidas, dias_semana, horario_inicio, horario_fim,
-                capacidade, limite_planejado_alunos, total_estudantes_publico_ee, limite_estudantes_publico_ee,
-                professor_referencia, auxiliar_apoio, interprete_libras, atendimento_educacional_especializado,
-                sala, observacoes, ativo
+                tenant_id, escola_id, nome, codigo_turma, ano_letivo, turno, tipo_turma, organizacao_pedagogica,
+                etapa, modalidade, regime_letivo, multisseriada, series_abrangidas, dias_semana, horario_inicio, horario_fim,
+                capacidade, limite_planejado_alunos, vagas_transporte_planejadas, vagas_inclusao_planejadas,
+                total_estudantes_publico_ee, limite_estudantes_publico_ee,
+                professor_referencia, monitor_referencia, auxiliar_apoio, interprete_libras, atendimento_educacional_especializado,
+                sala, sala_acessivel, observacoes, ativo
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7,
-                $8, $9, $10, $11, $12, $13, $14,
-                $15, $16, $17, $18,
-                $19, $20, $21, $22,
-                $23, $24, $25
+                $1, $2, $3, $4, $5, $6, $7, $8,
+                $9, $10, $11, $12, $13, $14, $15, $16,
+                $17, $18, $19, $20,
+                $21, $22,
+                $23, $24, $25, $26, $27,
+                $28, $29, $30, $31
             )
             RETURNING *
             `,
             [
-                tenantId, escolaId, nome, anoLetivo, turno, tipoTurma, organizacaoPedagogica,
-                etapa, modalidade, multisseriada, seriesAbrangidas, diasSemana, horarioInicio, horarioFim,
-                capacidade, limitePlanejadoAlunos, totalEstudantesPublicoEe, limiteEstudantesPublicoEe,
-                professorReferencia, auxiliarApoio, interpreteLibras, atendimentoEducacionalEspecializado,
-                sala, observacoes, ativo
+                tenantId, escolaId, nome, codigoTurma, anoLetivo, turno, tipoTurma, organizacaoPedagogica,
+                etapa, modalidade, regimeLetivo, multisseriada, seriesAbrangidas, diasSemana, horarioInicio, horarioFim,
+                capacidade, limitePlanejadoAlunos, vagasTransportePlanejadas, vagasInclusaoPlanejadas,
+                totalEstudantesPublicoEe, limiteEstudantesPublicoEe,
+                professorReferencia, monitorReferencia, auxiliarApoio, interpreteLibras, atendimentoEducacionalEspecializado,
+                sala, salaAcessivel, observacoes, ativo
             ]
         );
 
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_TURMA_CREATED',
+            targetType: 'turma',
+            targetId: result.rows[0]?.id,
+            description: 'Turma cadastrada na escola.',
+            metadata: { escola_id: escolaId, turma: nome, ano_letivo: anoLetivo }
+        });
         return res.status(201).json({
             message: "Turma cadastrada com sucesso",
             turma: result.rows[0],
@@ -1474,7 +1811,7 @@ router.post("/:id/turmas", async (req, res) => {
     }
 });
 
-router.put("/:id/turmas/:turmaId", async (req, res) => {
+router.put("/:id/turmas/:turmaId", requirePermission('school.students.manage'), async (req, res) => {
     try {
         const escolaId = parseInt(req.params.id, 10);
         const turmaId = parseInt(req.params.turmaId, 10);
@@ -1492,10 +1829,12 @@ router.put("/:id/turmas/:turmaId", async (req, res) => {
 
         const anoLetivo = parseOptionalInt(req.body?.ano_letivo);
         const turno = parseOptionalText(req.body?.turno);
+        const codigoTurma = parseOptionalText(req.body?.codigo_turma);
         const tipoTurma = parseOptionalText(req.body?.tipo_turma);
         const organizacaoPedagogica = parseOptionalText(req.body?.organizacao_pedagogica);
         const etapa = parseOptionalText(req.body?.etapa);
         const modalidade = parseOptionalText(req.body?.modalidade);
+        const regimeLetivo = parseOptionalText(req.body?.regime_letivo);
         const multisseriada = Boolean(req.body?.multisseriada);
         const seriesAbrangidas = parseOptionalTextArray(req.body?.series_abrangidas);
         const diasSemana = parseOptionalTextArray(req.body?.dias_semana);
@@ -1503,27 +1842,32 @@ router.put("/:id/turmas/:turmaId", async (req, res) => {
         const horarioFim = parseOptionalText(req.body?.horario_fim);
         const capacidade = parseOptionalInt(req.body?.capacidade);
         const limitePlanejadoAlunos = parseOptionalInt(req.body?.limite_planejado_alunos);
+        const vagasTransportePlanejadas = parseOptionalInt(req.body?.vagas_transporte_planejadas);
+        const vagasInclusaoPlanejadas = parseOptionalInt(req.body?.vagas_inclusao_planejadas);
         const totalEstudantesPublicoEe = parseOptionalInt(req.body?.total_estudantes_publico_ee);
         const limiteEstudantesPublicoEe = parseOptionalInt(req.body?.limite_estudantes_publico_ee);
         const professorReferencia = parseOptionalText(req.body?.professor_referencia);
+        const monitorReferencia = parseOptionalText(req.body?.monitor_referencia);
         const auxiliarApoio = Boolean(req.body?.auxiliar_apoio);
         const interpreteLibras = Boolean(req.body?.interprete_libras);
         const atendimentoEducacionalEspecializado = Boolean(req.body?.atendimento_educacional_especializado);
         const sala = parseOptionalText(req.body?.sala);
+        const salaAcessivel = Boolean(req.body?.sala_acessivel);
         const observacoes = parseOptionalText(req.body?.observacoes);
         const ativo = req.body?.ativo === undefined ? true : Boolean(req.body.ativo);
 
         const params = [
-            nome, anoLetivo, turno, tipoTurma, organizacaoPedagogica,
-            etapa, modalidade, multisseriada, seriesAbrangidas, diasSemana, horarioInicio, horarioFim,
-            capacidade, limitePlanejadoAlunos, totalEstudantesPublicoEe, limiteEstudantesPublicoEe,
-            professorReferencia, auxiliarApoio, interpreteLibras, atendimentoEducacionalEspecializado,
-            sala, observacoes, ativo, turmaId, escolaId
+            nome, codigoTurma, anoLetivo, turno, tipoTurma, organizacaoPedagogica,
+            etapa, modalidade, regimeLetivo, multisseriada, seriesAbrangidas, diasSemana, horarioInicio, horarioFim,
+            capacidade, limitePlanejadoAlunos, vagasTransportePlanejadas, vagasInclusaoPlanejadas,
+            totalEstudantesPublicoEe, limiteEstudantesPublicoEe,
+            professorReferencia, monitorReferencia, auxiliarApoio, interpreteLibras, atendimentoEducacionalEspecializado,
+            sala, salaAcessivel, observacoes, ativo, turmaId, escolaId
         ];
         let tenantWhere = '';
         if (tenantId) {
             params.push(tenantId);
-            tenantWhere = `AND (tenant_id = $26 OR tenant_id IS NULL)`;
+            tenantWhere = `AND (tenant_id = $32 OR tenant_id IS NULL)`;
         }
 
         const result = await pool.query(
@@ -1531,31 +1875,37 @@ router.put("/:id/turmas/:turmaId", async (req, res) => {
             UPDATE escola_turmas
             SET
                 nome = $1,
-                ano_letivo = $2,
-                turno = $3,
-                tipo_turma = $4,
-                organizacao_pedagogica = $5,
-                etapa = $6,
-                modalidade = $7,
-                multisseriada = $8,
-                series_abrangidas = $9,
-                dias_semana = $10,
-                horario_inicio = $11,
-                horario_fim = $12,
-                capacidade = $13,
-                limite_planejado_alunos = $14,
-                total_estudantes_publico_ee = $15,
-                limite_estudantes_publico_ee = $16,
-                professor_referencia = $17,
-                auxiliar_apoio = $18,
-                interprete_libras = $19,
-                atendimento_educacional_especializado = $20,
-                sala = $21,
-                observacoes = $22,
-                ativo = $23,
+                codigo_turma = $2,
+                ano_letivo = $3,
+                turno = $4,
+                tipo_turma = $5,
+                organizacao_pedagogica = $6,
+                etapa = $7,
+                modalidade = $8,
+                regime_letivo = $9,
+                multisseriada = $10,
+                series_abrangidas = $11,
+                dias_semana = $12,
+                horario_inicio = $13,
+                horario_fim = $14,
+                capacidade = $15,
+                limite_planejado_alunos = $16,
+                vagas_transporte_planejadas = $17,
+                vagas_inclusao_planejadas = $18,
+                total_estudantes_publico_ee = $19,
+                limite_estudantes_publico_ee = $20,
+                professor_referencia = $21,
+                monitor_referencia = $22,
+                auxiliar_apoio = $23,
+                interprete_libras = $24,
+                atendimento_educacional_especializado = $25,
+                sala = $26,
+                sala_acessivel = $27,
+                observacoes = $28,
+                ativo = $29,
                 atualizado_em = NOW()
-            WHERE id = $24
-              AND escola_id = $25
+            WHERE id = $30
+              AND escola_id = $31
               ${tenantWhere}
             RETURNING *
             `,
@@ -1566,6 +1916,13 @@ router.put("/:id/turmas/:turmaId", async (req, res) => {
             return res.status(404).json({ error: "Turma não encontrada." });
         }
 
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_TURMA_UPDATED',
+            targetType: 'turma',
+            targetId: turmaId,
+            description: 'Turma atualizada.',
+            metadata: { escola_id: escolaId, turma: nome, ano_letivo: anoLetivo }
+        });
         return res.json({
             message: "Turma atualizada com sucesso",
             turma: result.rows[0],
@@ -1576,7 +1933,7 @@ router.put("/:id/turmas/:turmaId", async (req, res) => {
     }
 });
 
-router.delete("/:id/turmas/:turmaId", async (req, res) => {
+router.delete("/:id/turmas/:turmaId", requirePermission('school.students.manage'), async (req, res) => {
     try {
         const escolaId = parseInt(req.params.id, 10);
         const turmaId = parseInt(req.params.turmaId, 10);
@@ -1609,6 +1966,13 @@ router.delete("/:id/turmas/:turmaId", async (req, res) => {
             return res.status(404).json({ error: "Turma não encontrada." });
         }
 
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_TURMA_DELETED',
+            targetType: 'turma',
+            targetId: turmaId,
+            description: 'Turma excluída.',
+            metadata: { escola_id: escolaId }
+        });
         return res.json({ message: "Turma excluída com sucesso" });
     } catch (err) {
         console.error("Erro ao excluir turma da escola:", err);
@@ -1616,7 +1980,7 @@ router.delete("/:id/turmas/:turmaId", async (req, res) => {
     }
 });
 
-router.post("/:id/matriculas", async (req, res) => {
+router.post("/:id/matriculas", requirePermission('school.students.manage'), async (req, res) => {
     const client = await pool.connect();
     try {
         const escolaId = parseInt(req.params.id, 10);
@@ -1966,6 +2330,13 @@ router.post("/:id/matriculas", async (req, res) => {
         await saveAlunoComplementos(client, tenantId, alunoId, complementarPayload);
 
         await client.query("COMMIT");
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_ENROLLMENT_SAVED',
+            targetType: 'aluno_matricula',
+            targetId: alunoId,
+            description: 'Matrícula escolar salva.',
+            metadata: { escola_id: escolaId, aluno_id: alunoId, ano_letivo: anoLetivo, turma }
+        });
         return res.status(201).json({
             message: "Aluno matriculado com sucesso",
             aluno_id: alunoId,
@@ -2043,7 +2414,7 @@ router.get("/:id/alunos/:alunoId/matricula", async (req, res) => {
     }
 });
 
-router.post("/:id/alunos/:alunoId/transferencias-internas", async (req, res) => {
+router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('school.transfer.manage'), async (req, res) => {
     const client = await pool.connect();
     try {
         const escolaOrigemId = parseInt(req.params.id, 10);
@@ -2159,6 +2530,13 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", async (req, res) => 
         });
 
         await client.query("COMMIT");
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_TRANSFER_REQUESTED',
+            targetType: 'aluno_transferencia',
+            targetId: transferenciaId,
+            description: 'Transferência interna solicitada.',
+            metadata: { aluno_id: alunoId, escola_origem_id: escolaOrigemId, escola_destino_id: escolaDestinoId, ano_letivo: anoLetivo, turma_destino: turmaDestino }
+        });
         return res.status(201).json({
             message: "Solicitação de transferência interna registrada.",
             transferencia_id: transferenciaId,
@@ -2175,7 +2553,7 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", async (req, res) => 
     }
 });
 
-router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concluir", async (req, res) => {
+router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concluir", requirePermission('school.transfer.manage'), async (req, res) => {
     const client = await pool.connect();
     try {
         const escolaOrigemId = parseInt(req.params.id, 10);
@@ -2404,6 +2782,13 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
         });
 
         await client.query("COMMIT");
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_TRANSFER_COMPLETED',
+            targetType: 'aluno_transferencia',
+            targetId: transferenciaId,
+            description: 'Transferência interna concluída.',
+            metadata: { aluno_id: alunoId, escola_origem_id: escolaOrigemId, escola_destino_id: Number(transferencia.escola_destino_id), ano_letivo: anoLetivo, turma_destino: turmaDestino }
+        });
         return res.json({
             message: "Transferência interna concluída com sucesso.",
             transferencia_id: transferenciaId,
@@ -2422,7 +2807,7 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
     }
 });
 
-router.get("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/autorizacao-pdf", async (req, res) => {
+router.get("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/autorizacao-pdf", requirePermission('school.documents.emit'), async (req, res) => {
     try {
         const escolaOrigemId = parseInt(req.params.id, 10);
         const alunoId = parseInt(req.params.alunoId, 10);
@@ -2469,6 +2854,13 @@ router.get("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/autori
         if (!transferencia) {
             return res.status(404).json({ error: "Solicitação de transferência não encontrada." });
         }
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_TRANSFER_AUTHORIZATION_EMITTED',
+            targetType: 'documento',
+            targetId: transferenciaId,
+            description: 'Autorização de transferência interna emitida.',
+            metadata: { escola_id: escolaOrigemId, aluno_id: alunoId, transferencia_id: transferenciaId }
+        });
 
         const branding = await getBranding(tenantId);
         res.setHeader("Content-Type", "application/pdf");
@@ -2519,7 +2911,7 @@ router.get("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/autori
     }
 });
 
-router.get("/:id/alunos/:alunoId/atestado-matricula-pdf", async (req, res) => {
+router.get("/:id/alunos/:alunoId/atestado-matricula-pdf", requirePermission('school.documents.emit'), async (req, res) => {
     try {
         const escolaId = parseInt(req.params.id, 10);
         const alunoId = parseInt(req.params.alunoId, 10);
@@ -2532,6 +2924,13 @@ router.get("/:id/alunos/:alunoId/atestado-matricula-pdf", async (req, res) => {
         if (!aluno) {
             return res.status(404).json({ error: "Aluno não encontrado." });
         }
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_DOCUMENT_ATTESTATION_EMITTED',
+            targetType: 'documento',
+            targetId: alunoId,
+            description: 'Atestado de matrícula emitido.',
+            metadata: { escola_id: escolaId, aluno_id: alunoId, documento: 'atestado_matricula' }
+        });
 
         const branding = await getBranding(tenantId);
         res.setHeader("Content-Type", "application/pdf");
@@ -2568,7 +2967,7 @@ router.get("/:id/alunos/:alunoId/atestado-matricula-pdf", async (req, res) => {
     }
 });
 
-router.get("/:id/alunos/:alunoId/ficha-matricula-pdf", async (req, res) => {
+router.get("/:id/alunos/:alunoId/ficha-matricula-pdf", requirePermission('school.documents.emit'), async (req, res) => {
     try {
         const escolaId = parseInt(req.params.id, 10);
         const alunoId = parseInt(req.params.alunoId, 10);
@@ -2581,6 +2980,13 @@ router.get("/:id/alunos/:alunoId/ficha-matricula-pdf", async (req, res) => {
         if (!aluno) {
             return res.status(404).json({ error: "Aluno não encontrado." });
         }
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_DOCUMENT_ENROLLMENT_FORM_EMITTED',
+            targetType: 'documento',
+            targetId: alunoId,
+            description: 'Ficha de matrícula emitida.',
+            metadata: { escola_id: escolaId, aluno_id: alunoId, documento: 'ficha_matricula' }
+        });
 
         const extras = aluno.dados_complementares || {};
         const branding = await getBranding(tenantId);
@@ -2673,7 +3079,7 @@ router.get("/:id/alunos/:alunoId/ficha-matricula-pdf", async (req, res) => {
     }
 });
 
-router.post("/:id/transporte/rota-pedestre", async (req, res) => {
+router.post("/:id/transporte/rota-pedestre", requirePermission('school.transport.manage'), async (req, res) => {
     try {
         const escolaId = parseInt(req.params.id, 10);
         if (isNaN(escolaId)) {
@@ -2726,6 +3132,13 @@ router.post("/:id/transporte/rota-pedestre", async (req, res) => {
         }
 
         const trajeto = await calcularTrajetoPedestre({ origem, destino });
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_TRANSPORT_ROUTE_SIMULATED',
+            targetType: 'transporte',
+            targetId: escolaId,
+            description: 'Trajeto pedestre calculado para transporte escolar.',
+            metadata: { escola_id: escolaId, origem, destino, distancia_metros: trajeto?.distanceMeters || null }
+        });
         return res.json({
             escola: {
                 id: escola.id,
@@ -2854,7 +3267,7 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", requirePermission('school.students.manage'), async (req, res) => {
     const client = await pool.connect();
     try {
         const tenantSupport = await getTenantColumnSupport();
@@ -2949,6 +3362,13 @@ router.post("/", async (req, res) => {
         }
 
         await client.query("COMMIT");
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_CREATED',
+            targetType: 'escola',
+            targetId: escolaId,
+            description: 'Escola criada.',
+            metadata: { escola_id: escolaId, nome, codigo_inep }
+        });
         return res.json({ id: escolaId, message: "Escola criada com sucesso" });
     } catch (err) {
         try { await client.query("ROLLBACK"); } catch (_) { }
@@ -2959,7 +3379,7 @@ router.post("/", async (req, res) => {
     }
 });
 
-router.put("/:id", async (req, res) => {
+router.put("/:id", requirePermission('school.students.manage'), async (req, res) => {
     const client = await pool.connect();
     try {
         const tenantSupport = await getTenantColumnSupport();
@@ -3073,6 +3493,13 @@ router.put("/:id", async (req, res) => {
         }
 
         await client.query("COMMIT");
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_UPDATED',
+            targetType: 'escola',
+            targetId: id,
+            description: 'Escola atualizada.',
+            metadata: { escola_id: id, nome, codigo_inep }
+        });
         return res.json({ message: "Escola atualizada com sucesso" });
     } catch (err) {
         try { await client.query("ROLLBACK"); } catch (_) { }
@@ -3083,7 +3510,7 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requirePermission('school.students.manage'), async (req, res) => {
     const client = await pool.connect();
     try {
         const tenantSupport = await getTenantColumnSupport();
@@ -3115,6 +3542,13 @@ router.delete("/:id", async (req, res) => {
         }
 
         await client.query("COMMIT");
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_DELETED',
+            targetType: 'escola',
+            targetId: id,
+            description: 'Escola excluída.',
+            metadata: { escola_id: id }
+        });
         return res.json({ message: "Escola excluída com sucesso" });
     } catch (err) {
         try { await client.query("ROLLBACK"); } catch (_) { }

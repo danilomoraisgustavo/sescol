@@ -6,6 +6,15 @@ import pool from '../db.js';
 import { createRateLimit, buildTenantScopedKey } from '../middleware/rateLimit.js';
 import { resolveTenantFromHost, isLocalhostRequest } from '../services/tenantHost.js';
 import { getUsuarioSelectFields } from '../services/userSchema.js';
+import {
+    clearLoginFailures,
+    ensureTenantSecurityDefaults,
+    getEffectiveUserSecurity,
+    getLoginLockoutStatus,
+    getTenantSecurityPolicy,
+    recordSecurityLog,
+    registerFailedLoginAttempt,
+} from '../services/security.js';
 
 const router = express.Router();
 
@@ -84,6 +93,7 @@ router.post('/login', authRateLimit, async (req, res) => {
         const resolvedTenantCode = tenantFromHost ? null : tenantCode;
 
         let user = null;
+        const tenantCandidateId = tenantFromHost?.id || null;
         if (tenantFromHost?.id) {
             const fields = await getUsuarioSelectFields('u');
             const { rows } = await client.query(
@@ -111,7 +121,47 @@ router.post('/login', authRateLimit, async (req, res) => {
             user = matches[0] || null;
         }
 
+        const lockoutTenantId = user?.tenant_id || tenantCandidateId || null;
+        if (lockoutTenantId) {
+            await ensureTenantSecurityDefaults(lockoutTenantId);
+            const lockout = await getLoginLockoutStatus({ tenantId: lockoutTenantId, email });
+            if (lockout?.is_locked) {
+                await recordSecurityLog({
+                    tenantId: lockoutTenantId,
+                    userId: user?.id || null,
+                    email,
+                    action: 'AUTH_LOGIN_BLOCKED',
+                    targetType: 'usuario',
+                    targetId: user?.id || email,
+                    description: 'Tentativa de login bloqueada por política de segurança.',
+                    level: 'danger',
+                    scope: 'Usuário',
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent'] || null,
+                    metadata: { locked_until: lockout.locked_until }
+                });
+                return res.status(423).json({ error: 'Conta temporariamente bloqueada por tentativas inválidas.' });
+            }
+        }
+
         if (!user) {
+            if (lockoutTenantId) {
+                const policy = await getTenantSecurityPolicy(lockoutTenantId);
+                await registerFailedLoginAttempt({ tenantId: lockoutTenantId, email, ip: req.ip, lockoutPolicy: policy });
+                await recordSecurityLog({
+                    tenantId: lockoutTenantId,
+                    email,
+                    action: 'AUTH_LOGIN_FAILURE',
+                    targetType: 'usuario',
+                    targetId: email,
+                    description: 'Falha de login por credenciais inválidas.',
+                    level: 'danger',
+                    scope: 'Usuário',
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent'] || null,
+                    metadata: { motivo: 'user_not_found' }
+                });
+            }
             return res.status(401).json({ error: 'Credenciais inválidas.' });
         }
         if (!user.ativo) {
@@ -132,8 +182,30 @@ router.post('/login', authRateLimit, async (req, res) => {
 
         const ok = await bcrypt.compare(String(senha), String(user.senha_hash));
         if (!ok) {
+            await ensureTenantSecurityDefaults(user.tenant_id);
+            const policy = await getTenantSecurityPolicy(user.tenant_id);
+            await registerFailedLoginAttempt({ tenantId: user.tenant_id, email, ip: req.ip, lockoutPolicy: policy, metadata: { user_id: user.id } });
+            await recordSecurityLog({
+                tenantId: user.tenant_id,
+                userId: user.id,
+                email,
+                action: 'AUTH_LOGIN_FAILURE',
+                targetType: 'usuario',
+                targetId: user.id,
+                description: 'Falha de login por senha inválida.',
+                level: 'danger',
+                scope: 'Usuário',
+                ip: req.ip,
+                userAgent: req.headers['user-agent'] || null,
+                metadata: { motivo: 'invalid_password' }
+            });
             return res.status(401).json({ error: 'Credenciais inválidas.' });
         }
+
+        await ensureTenantSecurityDefaults(user.tenant_id);
+        const policy = await getTenantSecurityPolicy(user.tenant_id);
+        const security = await getEffectiveUserSecurity(user.id, user.tenant_id);
+        await clearLoginFailures({ tenantId: user.tenant_id, email, ip: req.ip });
 
         const token = jwt.sign(
             {
@@ -143,13 +215,15 @@ router.post('/login', authRateLimit, async (req, res) => {
                 email: user.email,
                 cargo,
                 fornecedor_id: user.fornecedor_id ?? null,
+                profiles: security.profiles,
+                permissions: security.permissions,
             },
             getJwtSecret(),
-            { expiresIn: '8h' }
+            { expiresIn: `${Math.max(30, Number(policy?.session_minutes || 480))}m` }
         );
 
         // ADMIN pode ter acesso ao painel admin do seu tenant (se você desejar)
-        const redirectUrl = '/dashboard';
+        const redirectUrl = '/selecao-unidade';
 
         const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
         // Cookie opcional para facilitar autenticação em páginas que não usam localStorage
@@ -159,6 +233,21 @@ router.post('/login', authRateLimit, async (req, res) => {
             secure: isSecure,
             maxAge: 8 * 60 * 60 * 1000,
             path: '/'
+        });
+
+        await recordSecurityLog({
+            tenantId: user.tenant_id,
+            userId: user.id,
+            email: user.email,
+            action: 'AUTH_LOGIN_SUCCESS',
+            targetType: 'usuario',
+            targetId: user.id,
+            description: 'Login efetuado com sucesso.',
+            level: 'info',
+            scope: cargo === 'USUARIO' ? 'Escola' : 'Secretaria',
+            ip: req.ip,
+            userAgent: req.headers['user-agent'] || null,
+            metadata: { cargo, profiles: security.profiles.map((item) => item.codigo) }
         });
 
         return res.json({
@@ -171,6 +260,8 @@ router.post('/login', authRateLimit, async (req, res) => {
                 email: user.email,
                 cargo,
                 fornecedor_id: user.fornecedor_id ?? null,
+                profiles: security.profiles,
+                permissions: security.permissions,
             },
             redirectUrl,
             tenant_codigo: resolvedTenantCode || null,

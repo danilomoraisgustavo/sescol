@@ -6,6 +6,7 @@ import pool from '../db.js';
 import { sendPasswordResetEmail } from '../utils/mailer.js';
 import { createRateLimit, buildTenantScopedKey } from '../middleware/rateLimit.js';
 import { resolveTenantFromHost, isLocalhostRequest } from '../services/tenantHost.js';
+import { ensureTenantSecurityDefaults, getTenantSecurityPolicy, recordSecurityLog } from '../services/security.js';
 
 const router = express.Router();
 
@@ -197,6 +198,9 @@ router.post('/password-reset/request', passwordResetRateLimit, async (req, res) 
     const tenantId = requestedTenantId ?? tenantFromHost?.id ?? await resolveTenantIdForReset(email, tenantCode);
 
     if (!email) return res.status(400).json({ success: false, message: 'Informe um e-mail válido.' });
+    if (tenantId) await ensureTenantSecurityDefaults(tenantId);
+    const policy = tenantId ? await getTenantSecurityPolicy(tenantId) : null;
+    const ttlMinutes = Math.max(5, Number(policy?.reset_link_minutes || CODE_TTL_MIN));
 
     // Always invalidate previous active resets for this email(/tenant)
     await invalidateResets(email, tenantId);
@@ -210,7 +214,7 @@ router.post('/password-reset/request', passwordResetRateLimit, async (req, res) 
     if (user) {
       const code = gen6Digits();
       const codeHash = await bcrypt.hash(code, BCRYPT_ROUNDS);
-      const expiresAt = new Date(Date.now() + CODE_TTL_MIN * 60 * 1000);
+      const expiresAt = new Date(Date.now() + ttlMinutes * 60 * 1000);
 
       await pool.query(
         `
@@ -225,7 +229,7 @@ router.post('/password-reset/request', passwordResetRateLimit, async (req, res) 
         await sendPasswordResetEmail({
           to: email,
           code,
-          expiresMinutes: CODE_TTL_MIN,
+          expiresMinutes: ttlMinutes,
           appName: process.env.APP_NAME || 'PyDenTech',
           appUrl: process.env.APP_URL || '',
           logoUrl: process.env.MAIL_LOGO_URL || 'https://pydentech.com/img/logo.png',
@@ -235,6 +239,21 @@ router.post('/password-reset/request', passwordResetRateLimit, async (req, res) 
         console.error('Erro ao enviar e-mail de reset:', mailErr);
         // still respond success to avoid enumeration
       }
+
+      await recordSecurityLog({
+        tenantId: user.tenant_id ?? tenantId,
+        userId: user.id,
+        email,
+        action: 'AUTH_PASSWORD_RESET_REQUEST',
+        targetType: 'usuario',
+        targetId: user.id,
+        description: 'Solicitação de redefinição de senha.',
+        level: 'warn',
+        scope: 'Usuário',
+        ip: req.ip,
+        userAgent: req.headers['user-agent'] || null,
+        metadata: { expires_minutes: ttlMinutes }
+      });
     }
 
     return res.json({
@@ -287,6 +306,20 @@ router.post('/password-reset/verify', passwordResetRateLimit, async (req, res) =
 
     if (!ok) return res.json({ valid: false, message: 'Código inválido ou expirado.' });
 
+    await recordSecurityLog({
+      tenantId,
+      userId: reset.user_id || null,
+      email,
+      action: 'AUTH_PASSWORD_RESET_CODE_VERIFIED',
+      targetType: 'usuario',
+      targetId: reset.user_id || email,
+      description: 'Código de redefinição validado.',
+      level: 'info',
+      scope: 'Usuário',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || null,
+    });
+
     return res.json({ valid: true });
   } catch (err) {
     console.error(err);
@@ -312,9 +345,6 @@ router.post('/password-reset/confirm', passwordResetRateLimit, async (req, res) 
     if (!email || !code || !novaSenha) {
       return res.status(400).json({ success: false, message: 'Informe e-mail, código e nova senha.' });
     }
-    if (novaSenha.length < 6) {
-      return res.status(400).json({ success: false, message: 'A senha deve ter pelo menos 6 caracteres.' });
-    }
     if (tenantId === null) {
       return res.status(400).json({
         success: false,
@@ -322,6 +352,13 @@ router.post('/password-reset/confirm', passwordResetRateLimit, async (req, res) 
           ? 'Informe o código do tenant para redefinir a senha em ambiente local.'
           : 'Não foi possível determinar o tenant pelo domínio acessado.'
       });
+    }
+
+    await ensureTenantSecurityDefaults(tenantId);
+    const policy = await getTenantSecurityPolicy(tenantId);
+    const minPasswordLength = Math.max(6, Number(policy?.password_min_length || 8));
+    if (novaSenha.length < minPasswordLength) {
+      return res.status(400).json({ success: false, message: `A senha deve ter pelo menos ${minPasswordLength} caracteres.` });
     }
 
     const reset = await getActiveReset(email, tenantId);
@@ -342,6 +379,20 @@ router.post('/password-reset/confirm', passwordResetRateLimit, async (req, res) 
     await updateUserPassword(email, reset.tenant_id ?? tenantId, passwordHash);
 
     await pool.query(`UPDATE public.password_resets SET used_at = NOW() WHERE id = $1`, [reset.id]);
+
+    await recordSecurityLog({
+      tenantId: reset.tenant_id ?? tenantId,
+      userId: reset.user_id || null,
+      email,
+      action: 'AUTH_PASSWORD_RESET_CONFIRMED',
+      targetType: 'usuario',
+      targetId: reset.user_id || email,
+      description: 'Senha redefinida com sucesso.',
+      level: 'warn',
+      scope: 'Usuário',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || null,
+    });
 
     return res.json({ success: true });
   } catch (err) {

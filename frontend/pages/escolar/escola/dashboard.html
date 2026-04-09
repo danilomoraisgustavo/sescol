@@ -27,6 +27,9 @@
         .school-progress-sm { height: .55rem; }
         .school-avatar-mini { width: 34px; height: 34px; object-fit: cover; border-radius: 50%; }
         .school-action-card { min-height: 100%; }
+        .school-institutional-mini { border: 1px solid rgba(255,255,255,.08); border-radius: .75rem; padding: .9rem; height: 100%; }
+        .school-institutional-mini .small-label { font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; color: #6c757d; }
+        .school-inline-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: .18rem .5rem; margin: 0 .35rem .35rem 0; font-size: .75rem; font-weight: 600; border: 1px solid rgba(255,255,255,.12); }
     </style>
 </head>
 <body class="vertical dark">
@@ -208,6 +211,61 @@
                                                     <a href="/pontos-parada" class="btn btn-sm btn-outline-secondary">Abrir pontos</a>
                                                 </div>
                                             </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-12 mb-4" id="school-institutional-shell">
+                                <div class="card shadow h-100">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <strong>Integração institucional da unidade</strong>
+                                        <span class="small text-muted" id="school-institutional-caption">Calendário, equipe e parâmetros aplicados à escola</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-4 mb-3">
+                                                <div class="school-institutional-mini">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div class="small-label">Calendário da unidade</div>
+                                                        <a href="#" class="btn btn-sm btn-outline-primary d-none" id="institutional-link-calendario">Abrir</a>
+                                                    </div>
+                                                    <h6 class="mb-1" id="institutional-calendar-name">Carregando...</h6>
+                                                    <p class="text-muted small mb-2" id="institutional-calendar-meta">Aguarde.</p>
+                                                    <div id="institutional-periodos-body" class="mb-2"></div>
+                                                    <div class="text-muted small" id="institutional-calendar-status"></div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4 mb-3">
+                                                <div class="school-institutional-mini">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div class="small-label">Equipe lotada</div>
+                                                        <a href="#" class="btn btn-sm btn-outline-primary d-none" id="institutional-link-equipe">Abrir</a>
+                                                    </div>
+                                                    <h6 class="mb-1"><span id="institutional-team-total">0</span> servidor(es) vinculados</h6>
+                                                    <p class="text-muted small mb-2" id="institutional-team-caption">Nenhuma lotação principal definida.</p>
+                                                    <div id="institutional-team-principais" class="mb-2"></div>
+                                                    <div id="institutional-team-funcoes"></div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4 mb-3">
+                                                <div class="school-institutional-mini">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div class="small-label">Parâmetros da rede</div>
+                                                        <span class="badge badge-light">Somente leitura</span>
+                                                    </div>
+                                                    <h6 class="mb-1" id="institutional-params-title">Regras vigentes da rede</h6>
+                                                    <p class="text-muted small mb-2" id="institutional-params-caption">Frequência, avaliação e organização escolar.</p>
+                                                    <div id="institutional-params-pills"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="border-top pt-3 mt-2">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <div class="school-section-title mb-0">Alertas institucionais</div>
+                                                <a href="#" class="small d-none" id="institutional-link-master">abrir visão contextual</a>
+                                            </div>
+                                            <div id="institutional-alerts-body" class="mb-0"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -423,6 +481,85 @@
             }).join('');
         }
 
+        function renderInstitutional(data) {
+            var shell = document.getElementById('school-institutional-shell');
+            if (!shell) return;
+            if (!data || data.can_view === false) {
+                shell.style.display = 'none';
+                return;
+            }
+
+            shell.style.display = '';
+            var escolaId = window.EscolaContexto && window.EscolaContexto.obterEscolaIdDaUrl ? window.EscolaContexto.obterEscolaIdDaUrl() : '';
+            var contextualSuffix = '?contexto=escola&escola_id=' + encodeURIComponent(escolaId || '');
+            if (data.can_manage) {
+                ['institutional-link-calendario', 'institutional-link-equipe', 'institutional-link-master'].forEach(function (id) {
+                    var link = document.getElementById(id);
+                    if (link) link.classList.remove('d-none');
+                });
+            }
+            var linkCalendario = document.getElementById('institutional-link-calendario');
+            var linkEquipe = document.getElementById('institutional-link-equipe');
+            var linkMaster = document.getElementById('institutional-link-master');
+            if (linkCalendario) linkCalendario.href = '/institucional/calendarios-letivos' + contextualSuffix;
+            if (linkEquipe) linkEquipe.href = '/institucional/servidores' + contextualSuffix;
+            if (linkMaster) linkMaster.href = '/institucional/servidores' + contextualSuffix;
+
+            var calendario = data.calendario || null;
+            document.getElementById('institutional-calendar-name').textContent = calendario ? (calendario.nome || 'Calendário institucional') : 'Sem calendário vinculado';
+            document.getElementById('institutional-calendar-meta').textContent = calendario
+                ? ('Ano letivo ' + (calendario.ano_letivo || 'N/I') + ' • ' + (calendario.escola_id ? 'Exclusivo da unidade' : 'Calendário da rede'))
+                : 'Cadastre um calendário da unidade ou utilize um calendário da rede.';
+            document.getElementById('institutional-calendar-status').textContent = calendario
+                ? ('Status: ' + (calendario.status || 'PLANEJADO') + ' • Dias previstos: ' + (calendario.dias_letivos_previstos || 'N/I'))
+                : 'Nenhum período letivo aplicável encontrado.';
+
+            var periodosHost = document.getElementById('institutional-periodos-body');
+            var periodos = Array.isArray(data.periodos) ? data.periodos : [];
+            periodosHost.innerHTML = periodos.length
+                ? periodos.slice(0, 4).map(function (periodo) {
+                    return '<span class="school-inline-pill">' + (periodo.nome || 'Período') + ' • ' + (periodo.status || 'ABERTO') + '</span>';
+                }).join('')
+                : '<span class="text-muted small">Sem períodos letivos vinculados.</span>';
+
+            var equipe = data.equipe || { total: 0, principais: [], funcoes: [] };
+            document.getElementById('institutional-team-total').textContent = equipe.total || 0;
+            document.getElementById('institutional-team-caption').textContent = equipe.principais && equipe.principais.length
+                ? ('Referências principais da unidade cadastradas no módulo institucional.')
+                : 'Nenhuma lotação principal definida para a escola.';
+            document.getElementById('institutional-team-principais').innerHTML = (equipe.principais || []).length
+                ? equipe.principais.map(function (item) {
+                    var funcao = item.funcao || item.funcao_principal || item.cargo || 'Função não informada';
+                    return '<div class="mb-2"><strong>' + (item.nome || 'Servidor') + '</strong><div class="small text-muted">' + funcao + (item.carga_horaria ? ' • ' + item.carga_horaria + 'h' : '') + '</div></div>';
+                }).join('')
+                : '<span class="text-muted small">Sem destaques de equipe.</span>';
+            document.getElementById('institutional-team-funcoes').innerHTML = (equipe.funcoes || []).length
+                ? equipe.funcoes.slice(0, 5).map(function (item) {
+                    return '<span class="school-inline-pill">' + item.funcao + ' • ' + item.total + '</span>';
+                }).join('')
+                : '';
+
+            var parametros = data.parametros || null;
+            document.getElementById('institutional-params-pills').innerHTML = parametros
+                ? [
+                    'Frequência mínima: ' + (parametros.frequencia_minima || 'N/I') + '%',
+                    'Nota mínima: ' + (parametros.nota_minima || 'N/I'),
+                    'Dias letivos: ' + (parametros.dias_letivos_minimos || 'N/I'),
+                    'Turno padrão: ' + (parametros.turno_padrao || 'Não definido'),
+                    'Multisseriada: ' + (parametros.permite_multisseriada ? 'Sim' : 'Não'),
+                    'Recuperação paralela: ' + (parametros.usa_recuperacao_paralela ? 'Sim' : 'Não')
+                ].map(function (text) { return '<span class="school-inline-pill">' + text + '</span>'; }).join('')
+                : '<span class="text-muted small">Sem parâmetros institucionais consolidados.</span>';
+
+            var alertsHost = document.getElementById('institutional-alerts-body');
+            var alerts = Array.isArray(data.alertas) ? data.alertas : [];
+            alertsHost.innerHTML = alerts.length
+                ? alerts.map(function (alerta) {
+                    return '<div class="border rounded p-3 mb-2 school-alert-card alert-' + (alerta.tipo || 'info') + '-soft"><div class="font-weight-bold mb-1">' + alerta.titulo + '</div><div class="text-muted small">' + alerta.detalhe + '</div></div>';
+                }).join('')
+                : '<div class="text-muted small">Nenhuma inconsistência institucional relevante para esta escola.</div>';
+        }
+
         function renderTurmas(turmas) {
             var tbody = document.getElementById('school-turmas-body');
             if (!tbody) return;
@@ -549,6 +686,7 @@
                     renderAttentionTable((data.alunos || []).filter(function (aluno) {
                         return !aluno.turma_escola || !aluno.responsavel || !aluno.telefone_responsavel || !aluno.cpf || !(aluno.localizacao_geojson && aluno.localizacao_geojson.coordinates);
                     }));
+                    renderInstitutional(data.institucional || null);
                 })
                 .catch(function () {
                     $('#school-title').text('Erro ao carregar escola');

@@ -4,7 +4,10 @@
         if (match) return Number(match[1]);
 
         match = window.location.pathname.match(/\/escolas\/(\d+)\/dashboard/);
-        return match ? Number(match[1]) : null;
+        if (match) return Number(match[1]);
+
+        var queryId = new URLSearchParams(window.location.search || '').get('escola_id');
+        return queryId ? Number(queryId) : null;
     }
 
     function montarUrlModulo(escolaId, secao) {
