@@ -557,6 +557,54 @@ app.get('/escolar/escola/:id/alunos', requireRolePage(['ADMIN', 'GESTOR', 'USUAR
     res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'alunos.html'));
 });
 
+app.get('/escolar/escola/:id/matriculas', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'matriculas.html'));
+});
+
+app.get('/escolar/escola/:id/diario-classe', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'diario-classe.html'));
+});
+
+app.get('/escolar/escola/:id/notas-componentes', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'notas-componentes.html'));
+});
+
+app.get('/escolar/escola/:id/rematriculas', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'rematriculas.html'));
+});
+
+app.get('/escolar/escola/:id/enturmacao', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'enturmacao.html'));
+});
+
+app.get('/escolar/escola/:id/transferencias', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'transferencias.html'));
+});
+
+app.get('/escolar/escola/:id/conselho-classe', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'conselho-classe.html'));
+});
+
+app.get('/escolar/escola/:id/fechamentos', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'fechamentos.html'));
+});
+
+app.get('/escolar/escola/:id/historico-escolar', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'historico-escolar.html'));
+});
+
+app.get('/escolar/escola/:id/documentos', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'documentos.html'));
+});
+
+app.get('/escolar/escola/:id/ocorrencias', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'ocorrencias.html'));
+});
+
+app.get('/escolar/escola/:id/relatorios', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'pages', 'escolar', 'escola', 'relatorios.html'));
+});
+
 app.get('/pontos-parada', requireRolePage(['ADMIN', 'GESTOR', 'USUARIO'], { loginPath: '/' }), (req, res) => {
     res.sendFile(
         path.join(PUBLIC_DIR, 'pages', 'escolar', 'pontos-parada.html')

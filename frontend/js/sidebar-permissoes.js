@@ -174,7 +174,9 @@
     document.addEventListener('DOMContentLoaded', async function () {
         var isInstitutionalSchoolContext = !!document.body.getAttribute('data-institucional-page')
             && new URLSearchParams(window.location.search || '').get('contexto') === 'escola';
-        if (isInstitutionalSchoolContext) return;
+        var isAcademicSchoolContext = !!document.body.getAttribute('data-academic-page');
+        var isSchoolModulePath = normalizePath(window.location.pathname || '').startsWith('/escolar/escola/');
+        if (isInstitutionalSchoolContext || isAcademicSchoolContext || isSchoolModulePath) return;
         try {
             const me = await getMe();
             if (me) window.__ME = me;

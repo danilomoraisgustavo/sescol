@@ -135,6 +135,7 @@
                             </div>
                             <div class="text-right">
                                 <button type="button" class="btn btn-success btn-sm mr-2" id="btn-matricular-aluno">Matricular aluno</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm mr-2" id="btn-transferencias-recebidas">Transferências recebidas <span class="badge badge-light ml-1" id="transferencias-recebidas-count">0</span></button>
                                 <a href="#" class="btn btn-outline-secondary btn-sm mr-2" id="link-dashboard">Dashboard</a>
                                 <a href="#" class="btn btn-primary btn-sm" id="link-turmas">Turmas</a>
                             </div>
@@ -1188,11 +1189,38 @@
                     <div class="modal-footer justify-content-between">
                         <div class="d-flex align-items-center">
                             <button type="button" class="btn btn-outline-primary mr-2" id="btn-gerar-autorizacao-transferencia">Gerar autorização PDF</button>
-                            <button type="button" class="btn btn-primary" id="btn-concluir-transferencia" disabled>Concluir transferência</button>
                         </div>
                         <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Fechar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade modal-slide-right" id="modal-transferencias-recebidas" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h5 class="modal-title mb-1">Transferências recebidas</h5>
+                        <div class="small text-muted">A escola de destino valida o código do documento assinado e aceita a transferência.</div>
+                    </div>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr><th>Aluno</th><th>Origem</th><th>Destino</th><th>Validação</th><th class="text-right">Ação</th></tr>
+                            </thead>
+                            <tbody id="transferencias-recebidas-body">
+                                <tr><td colspan="5" class="text-center text-muted py-4">Carregando transferências pendentes...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1225,6 +1253,7 @@
         var directionsRendererTransporte = null;
         var cameraStreamFoto = null;
         var transferenciaAtualSolicitada = null;
+        var transferenciasRecebidasCache = [];
 
         function escapeHtml(value) {
             return String(value == null ? '' : value)
@@ -1249,8 +1278,7 @@
             $('#form-transferencia-interna')[0].reset();
             $('#transferencia-id').val('');
             $('#transferencia-aluno-id').val('');
-            $('#transferencia-protocolo-info').text('Gere primeiro a autorização em PDF para formalizar a trilha da transferência.');
-            $('#btn-concluir-transferencia').prop('disabled', true);
+            $('#transferencia-protocolo-info').text('Gere primeiro a autorização em PDF. O estudante ficará em transferência e a escola de destino fará o aceite com o código do documento.');
             transferenciaAtualSolicitada = null;
         }
 
@@ -1318,6 +1346,56 @@
                 responsavel_telefone: $('#transferencia-responsavel-telefone').val(),
                 responsavel_email: $('#transferencia-responsavel-email').val()
             };
+        }
+
+        function renderTransferenciasRecebidas() {
+            var $body = $('#transferencias-recebidas-body');
+            if (!transferenciasRecebidasCache.length) {
+                $body.html('<tr><td colspan="5" class="text-center text-muted py-4">Nenhuma transferência pendente para esta escola.</td></tr>');
+                return;
+            }
+
+            $body.html(transferenciasRecebidasCache.map(function (item) {
+                return '<tr>' +
+                    '<td><strong>' + escapeHtml(item.pessoa_nome || ('Aluno #' + item.aluno_id)) + '</strong><div class="small text-muted">Protocolo ' + escapeHtml(item.protocolo || 'N/I') + '</div></td>' +
+                    '<td><strong>' + escapeHtml(item.escola_origem_nome || 'Não informada') + '</strong><div class="small text-muted">Turma origem: ' + escapeHtml(item.turma_origem || 'N/I') + '</div></td>' +
+                    '<td><div class="small">Ano letivo: ' + escapeHtml(item.ano_letivo || 'N/I') + '</div><div class="small text-muted">Turma destino: ' + escapeHtml(item.turma_destino || 'N/I') + '</div></td>' +
+                    '<td>' +
+                        '<input type="text" class="form-control form-control-sm mb-2 transferencia-codigo-validacao" data-id="' + item.id + '" placeholder="Código do documento">' +
+                        '<div class="custom-control custom-checkbox">' +
+                            '<input type="checkbox" class="custom-control-input transferencia-assinada" id="transferencia-assinada-' + item.id + '" data-id="' + item.id + '">' +
+                            '<label class="custom-control-label small" for="transferencia-assinada-' + item.id + '">Documento assinado conferido</label>' +
+                        '</div>' +
+                    '</td>' +
+                    '<td class="text-right"><button type="button" class="btn btn-sm btn-primary aceitar-transferencia-recebida" data-id="' + item.id + '">Aceitar</button></td>' +
+                '</tr>';
+            }).join(''));
+        }
+
+        function carregarTransferenciasRecebidas(escolaId) {
+            return fetch('/api/escolas/' + escolaId + '/transferencias-internas/recebidas', {
+                credentials: 'include'
+            })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.json().then(function (data) {
+                            throw new Error(data && data.error ? data.error : 'Erro ao carregar transferências recebidas.');
+                        });
+                    }
+                    return resp.json();
+                })
+                .then(function (data) {
+                    transferenciasRecebidasCache = Array.isArray(data) ? data : [];
+                    $('#transferencias-recebidas-count').text(transferenciasRecebidasCache.length);
+                    renderTransferenciasRecebidas();
+                    return transferenciasRecebidasCache;
+                })
+                .catch(function (err) {
+                    transferenciasRecebidasCache = [];
+                    $('#transferencias-recebidas-count').text('0');
+                    $('#transferencias-recebidas-body').html('<tr><td colspan="5" class="text-center text-danger py-4">' + escapeHtml(err.message || 'Erro ao carregar transferências pendentes.') + '</td></tr>');
+                    throw err;
+                });
         }
 
         function valorGeoJsonParaLatLng(geojson) {
@@ -2389,8 +2467,7 @@
                     .then(function (data) {
                         transferenciaAtualSolicitada = data || null;
                         $('#transferencia-id').val(data.transferencia_id || '');
-                        $('#transferencia-protocolo-info').text('Protocolo ' + (data.protocolo || 'N/I') + ' gerado. Colete a assinatura do responsável e depois conclua a transferência.');
-                        $('#btn-concluir-transferencia').prop('disabled', false);
+                        $('#transferencia-protocolo-info').text('Protocolo ' + (data.protocolo || 'N/I') + ' gerado. O aluno ficará em transferência e a escola de destino deverá aceitar usando o código do documento assinado.');
                         return abrirPdfEmNovaAba(data.pdf_url, 'autorizacao_transferencia_' + (data.protocolo || 'aluno') + '.pdf');
                     })
                     .catch(function (err) {
@@ -2399,43 +2476,57 @@
                     });
             });
 
-            $('#btn-concluir-transferencia').on('click', function () {
-                var transferenciaId = $('#transferencia-id').val();
-                var alunoId = $('#transferencia-aluno-id').val();
-                if (!transferenciaId) {
-                    window.alert('Gere a autorização da transferência antes de concluir.');
+            $('#modal-transferencia-interna').on('hidden.bs.modal', function () {
+                resetarModalTransferencia();
+            });
+
+            $('#btn-transferencias-recebidas').on('click', function () {
+                $('#modal-transferencias-recebidas').modal('show');
+                carregarTransferenciasRecebidas(escolaId).catch(function (err) {
+                    console.error(err);
+                });
+            });
+
+            $('#transferencias-recebidas-body').on('click', '.aceitar-transferencia-recebida', function () {
+                var transferenciaId = $(this).data('id');
+                var codigo = $('.transferencia-codigo-validacao[data-id="' + transferenciaId + '"]').val();
+                var assinada = $('.transferencia-assinada[data-id="' + transferenciaId + '"]').is(':checked');
+                if (!codigo) {
+                    window.alert('Digite o código do documento para aceitar a transferência.');
                     return;
                 }
-                if (!$('#transferencia-autorizacao-assinada').is(':checked')) {
-                    window.alert('Marque que a autorização foi assinada e recebida para concluir.');
+                if (!assinada) {
+                    window.alert('Confirme que o documento assinado foi conferido.');
                     return;
                 }
-                fetch('/api/escolas/' + escolaId + '/alunos/' + alunoId + '/transferencias-internas/' + transferenciaId + '/concluir', {
+                fetch('/api/escolas/' + escolaId + '/transferencias-internas/' + transferenciaId + '/aceitar', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ autorizacao_assinada: true })
+                    body: JSON.stringify({
+                        codigo_validacao: codigo,
+                        autorizacao_assinada: true
+                    })
                 })
                     .then(function (resp) {
                         if (!resp.ok) {
                             return resp.json().then(function (data) {
-                                throw new Error(data && data.error ? data.error : 'Erro ao concluir a transferência interna.');
+                                throw new Error(data && data.error ? data.error : 'Erro ao aceitar a transferência.');
                             });
                         }
                         return resp.json();
                     })
                     .then(function () {
-                        $('#modal-transferencia-interna').modal('hide');
+                        return carregarTransferenciasRecebidas(escolaId);
+                    })
+                    .then(function () {
+                        $('#modal-transferencias-recebidas').modal('hide');
                         window.location.reload();
                     })
                     .catch(function (err) {
                         console.error(err);
-                        window.alert(err.message || 'Não foi possível concluir a transferência interna.');
+                        window.alert(err.message || 'Não foi possível aceitar a transferência.');
                     });
-            });
-
-            $('#modal-transferencia-interna').on('hidden.bs.modal', function () {
-                resetarModalTransferencia();
             });
 
             $('#btn-matricular-aluno').on('click', function () {
@@ -2449,6 +2540,8 @@
                 $('#modal-matricula-aluno').modal('show');
                 $('a[href="#tab-matricula"]').tab('show');
             });
+
+            carregarTransferenciasRecebidas(escolaId).catch(function () {});
 
             $('#modal-matricula-aluno').on('shown.bs.modal', function () {
                 garantirMapaMatricula();

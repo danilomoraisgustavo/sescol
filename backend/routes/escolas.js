@@ -16,6 +16,10 @@ let alunoComplementosTableEnsured = false;
 let matriculasHistoricoTableEnsured = false;
 let auditoriaEscolarTableEnsured = false;
 let transferenciasInternasTableEnsured = false;
+let alunosEscolasWorkflowEnsured = false;
+let ocorrenciasEscolaresTableEnsured = false;
+let transferenciasExternasTableEnsured = false;
+let academicMaturityTablesEnsured = false;
 let institutionalSupportCache = null;
 let institutionalSupportCacheAt = 0;
 
@@ -479,6 +483,7 @@ async function ensureTransferenciasInternasTable() {
             motivo TEXT NULL,
             observacoes TEXT NULL,
             protocolo TEXT NULL,
+            codigo_validacao TEXT NULL,
             responsavel_nome TEXT NULL,
             responsavel_documento TEXT NULL,
             responsavel_parentesco TEXT NULL,
@@ -499,7 +504,272 @@ async function ensureTransferenciasInternasTable() {
         ON alunos_transferencias_internas (aluno_id, criado_em DESC)
     `);
 
+    await pool.query(`ALTER TABLE alunos_transferencias_internas ADD COLUMN IF NOT EXISTS codigo_validacao TEXT NULL`);
+
     transferenciasInternasTableEnsured = true;
+}
+
+async function ensureOcorrenciasEscolaresTable() {
+    if (ocorrenciasEscolaresTableEnsured) return;
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS aluno_ocorrencias_escolares (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
+            aluno_id INTEGER NOT NULL,
+            turma TEXT NULL,
+            ano_letivo INTEGER NULL,
+            categoria TEXT NOT NULL,
+            subcategoria TEXT NULL,
+            gravidade TEXT NOT NULL DEFAULT 'MEDIA',
+            status TEXT NOT NULL DEFAULT 'ABERTA',
+            titulo TEXT NOT NULL,
+            descricao TEXT NULL,
+            providencias TEXT NULL,
+            encaminhamento TEXT NULL,
+            data_ocorrencia TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            data_fechamento TIMESTAMP WITHOUT TIME ZONE NULL,
+            responsavel_registro_id BIGINT NULL,
+            responsavel_registro_nome TEXT NULL,
+            sigilosa BOOLEAN NOT NULL DEFAULT FALSE,
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            atualizado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_aluno_ocorrencias_escolares_aluno
+        ON aluno_ocorrencias_escolares (aluno_id, data_ocorrencia DESC)
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_aluno_ocorrencias_escolares_escola
+        ON aluno_ocorrencias_escolares (escola_id, ano_letivo, status)
+    `);
+
+    ocorrenciasEscolaresTableEnsured = true;
+}
+
+async function ensureTransferenciasExternasTable() {
+    if (transferenciasExternasTableEnsured) return;
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS alunos_transferencias_externas (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            aluno_id INTEGER NOT NULL,
+            escola_origem_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
+            escola_destino_nome TEXT NOT NULL,
+            rede_destino TEXT NULL,
+            municipio_destino TEXT NULL,
+            uf_destino TEXT NULL,
+            ano_letivo INTEGER NULL,
+            turma_origem TEXT NULL,
+            status TEXT NOT NULL DEFAULT 'SOLICITADA',
+            motivo TEXT NULL,
+            observacoes TEXT NULL,
+            protocolo TEXT NULL,
+            codigo_validacao TEXT NULL,
+            responsavel_nome TEXT NULL,
+            responsavel_documento TEXT NULL,
+            responsavel_parentesco TEXT NULL,
+            responsavel_telefone TEXT NULL,
+            responsavel_email TEXT NULL,
+            autorizacao_assinada BOOLEAN NOT NULL DEFAULT FALSE,
+            documento_recebido BOOLEAN NOT NULL DEFAULT FALSE,
+            solicitado_por_usuario_id BIGINT NULL,
+            concluido_por_usuario_id BIGINT NULL,
+            autorizado_em TIMESTAMP WITHOUT TIME ZONE NULL,
+            concluido_em TIMESTAMP WITHOUT TIME ZONE NULL,
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            atualizado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_alunos_transferencias_externas_aluno
+        ON alunos_transferencias_externas (aluno_id, criado_em DESC)
+    `);
+
+    transferenciasExternasTableEnsured = true;
+}
+
+async function ensureAlunosEscolasWorkflowColumns() {
+    if (alunosEscolasWorkflowEnsured) return;
+
+    await pool.query(`
+        ALTER TABLE alunos_escolas
+        ADD COLUMN IF NOT EXISTS status_matricula TEXT NULL,
+        ADD COLUMN IF NOT EXISTS transferencia_id INTEGER NULL,
+        ADD COLUMN IF NOT EXISTS motivo_status TEXT NULL,
+        ADD COLUMN IF NOT EXISTS data_entrada TIMESTAMP WITHOUT TIME ZONE NULL,
+        ADD COLUMN IF NOT EXISTS data_saida TIMESTAMP WITHOUT TIME ZONE NULL
+    `);
+
+    await pool.query(`
+        UPDATE alunos_escolas
+           SET status_matricula = COALESCE(status_matricula, 'ATIVO'),
+               data_entrada = COALESCE(data_entrada, atualizado_em, NOW())
+         WHERE status_matricula IS NULL
+            OR data_entrada IS NULL
+    `);
+
+    alunosEscolasWorkflowEnsured = true;
+}
+
+async function ensureAcademicMaturityTables() {
+    if (academicMaturityTablesEnsured) return;
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS escola_diario_classe (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
+            turma TEXT NOT NULL,
+            ano_letivo INTEGER NOT NULL,
+            data_aula DATE NOT NULL,
+            periodo_letivo TEXT NULL,
+            disciplina_id BIGINT NULL,
+            disciplina_nome TEXT NOT NULL,
+            professor_nome TEXT NULL,
+            conteudo TEXT NULL,
+            metodologia TEXT NULL,
+            atividade_prevista TEXT NULL,
+            observacoes TEXT NULL,
+            total_previsto INTEGER NOT NULL DEFAULT 0,
+            presentes INTEGER NOT NULL DEFAULT 0,
+            ausentes INTEGER NOT NULL DEFAULT 0,
+            justificados INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'LANÇADO',
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            atualizado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS escola_avaliacoes_componentes (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
+            aluno_id INTEGER NOT NULL,
+            turma TEXT NULL,
+            ano_letivo INTEGER NOT NULL,
+            periodo_letivo TEXT NOT NULL,
+            disciplina_id BIGINT NULL,
+            disciplina_nome TEXT NOT NULL,
+            tipo_avaliacao TEXT NOT NULL DEFAULT 'REGULAR',
+            nota NUMERIC(5,2) NULL,
+            frequencia NUMERIC(5,2) NULL,
+            faltas INTEGER NOT NULL DEFAULT 0,
+            recuperacao BOOLEAN NOT NULL DEFAULT FALSE,
+            parecer_descritivo TEXT NULL,
+            status TEXT NOT NULL DEFAULT 'LANÇADO',
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            atualizado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS escola_conselho_classe (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
+            turma TEXT NOT NULL,
+            ano_letivo INTEGER NOT NULL,
+            periodo_letivo TEXT NOT NULL,
+            data_reuniao DATE NULL,
+            status TEXT NOT NULL DEFAULT 'PLANEJADO',
+            coordenador_nome TEXT NULL,
+            pauta TEXT NULL,
+            deliberacoes TEXT NULL,
+            encaminhamentos TEXT NULL,
+            alunos_em_atencao JSONB NULL,
+            participantes JSONB NULL,
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            atualizado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS escola_fechamentos_periodo (
+            id SERIAL PRIMARY KEY,
+            tenant_id BIGINT NULL,
+            escola_id INTEGER NOT NULL REFERENCES escolas(id) ON DELETE CASCADE,
+            turma TEXT NULL,
+            ano_letivo INTEGER NOT NULL,
+            periodo_letivo TEXT NOT NULL,
+            data_inicio DATE NULL,
+            data_fechamento DATE NULL,
+            status TEXT NOT NULL DEFAULT 'ABERTO',
+            frequencia_minima NUMERIC(5,2) NULL,
+            nota_minima NUMERIC(5,2) NULL,
+            total_alunos INTEGER NOT NULL DEFAULT 0,
+            total_aprovados INTEGER NOT NULL DEFAULT 0,
+            total_reprovados INTEGER NOT NULL DEFAULT 0,
+            total_transferidos INTEGER NOT NULL DEFAULT 0,
+            total_abandono INTEGER NOT NULL DEFAULT 0,
+            observacoes TEXT NULL,
+            criado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+            atualizado_em TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_escola_diario_classe_escola ON escola_diario_classe (escola_id, ano_letivo, turma, data_aula DESC)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_escola_avaliacoes_componentes_escola ON escola_avaliacoes_componentes (escola_id, ano_letivo, turma, aluno_id)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_escola_conselho_classe_escola ON escola_conselho_classe (escola_id, ano_letivo, turma, periodo_letivo)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_escola_fechamentos_periodo_escola ON escola_fechamentos_periodo (escola_id, ano_letivo, periodo_letivo, turma)`);
+
+    academicMaturityTablesEnsured = true;
+}
+
+function randomCode(prefix, length = 6) {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let output = prefix ? String(prefix).toUpperCase() + '-' : '';
+    for (let i = 0; i < length; i += 1) {
+        output += alphabet[Math.floor(Math.random() * alphabet.length)];
+    }
+    return output;
+}
+
+function academicLabel(value, fallback = 'Não informado') {
+    return parseOptionalText(value) || fallback;
+}
+
+function parseOptionalJsonArray(value) {
+    if (Array.isArray(value)) return value;
+    if (value === undefined || value === null || value === '') return null;
+    try {
+        const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+        return Array.isArray(parsed) ? parsed : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function formatDecimal(value, fallback = 'N/I') {
+    if (value === undefined || value === null || value === '') return fallback;
+    const num = Number(value);
+    return Number.isFinite(num) ? num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : fallback;
+}
+
+async function loadDisciplinasContexto(tenantId) {
+    await ensureAcademicMaturityTables();
+    try {
+        const result = await pool.query(
+            `
+            SELECT id, codigo, nome, area_conhecimento, usa_nota, carga_horaria_padrao
+            FROM institucional_disciplinas
+            WHERE tenant_id = $1
+              AND COALESCE(ativo, TRUE) = TRUE
+            ORDER BY COALESCE(ordem_curricular, 9999), nome ASC
+            `,
+            [tenantId]
+        );
+        return result.rows || [];
+    } catch (_) {
+        return [];
+    }
 }
 
 async function generateNextNetworkEnrollmentId(client, tenantId) {
@@ -849,6 +1119,10 @@ function formatProtocoloTransferencia(transferId, anoLetivo) {
     return `TRI-${ano}-${String(transferId).padStart(6, '0')}`;
 }
 
+function generateTransferValidationCode() {
+    return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 /**
  * Tenta resolver o tenant_id do request de forma compatível com diferentes middlewares.
  * - Preferência: req.user.tenant_id / req.user.tenantId
@@ -886,6 +1160,7 @@ async function loadEscolaDashboardData(escolaId, tenantId, options = {}) {
     const tenantSupport = await getTenantColumnSupport();
     const columnSupport = await getColumnSupport();
     await ensureAlunoComplementosTable();
+    await ensureAlunosEscolasWorkflowColumns();
     const limitAlunos = Number.isFinite(options.limitAlunos) ? Number(options.limitAlunos) : 25;
     const turmaFiltro = parseOptionalText(options.turma);
     const anoLetivoFiltro = parseOptionalInt(options.anoLetivo);
@@ -967,6 +1242,7 @@ async function loadEscolaDashboardData(escolaId, tenantId, options = {}) {
          ${alunosMunicipaisTenantJoin}
         WHERE ae.escola_id = $1
         ${alunosEscolasTenantJoin}
+          AND COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO'
     `;
 
     const turmasSql = `
@@ -981,6 +1257,7 @@ async function loadEscolaDashboardData(escolaId, tenantId, options = {}) {
          ${alunosMunicipaisTenantJoin}
         WHERE ae.escola_id = $1
         ${alunosEscolasTenantJoin}
+          AND COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO'
         GROUP BY 1, 2
         ORDER BY ae.ano_letivo DESC NULLS LAST, turma ASC
     `;
@@ -1013,6 +1290,7 @@ async function loadEscolaDashboardData(escolaId, tenantId, options = {}) {
         ${alunoComplementoJoin}
         WHERE ae.escola_id = $1
         ${alunosEscolasTenantJoin}
+          AND COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO'
         ${alunosFiltrosSql}
         ORDER BY ae.atualizado_em DESC NULLS LAST, nome ASC
         LIMIT ${limitAlunos}
@@ -1454,6 +1732,352 @@ async function saveAlunoComplementos(client, tenantId, alunoId, complementar = {
             JSON.stringify(dadosComplementares),
         ],
     );
+}
+
+async function loadAcademicOverview(escolaId, tenantId, anoLetivo = null) {
+    await ensureOcorrenciasEscolaresTable();
+    await ensureTransferenciasInternasTable();
+    await ensureTransferenciasExternasTable();
+    await ensureAlunosEscolasWorkflowColumns();
+    await ensureAcademicMaturityTables();
+    const tenantSupport = await getTenantColumnSupport();
+
+    const useAlunosEscolasTenant = !!(tenantSupport.alunos_escolas && tenantId);
+    const escolaBaseParams = [];
+    let escolaWhere = '';
+    if (useAlunosEscolasTenant) {
+        escolaBaseParams.push(tenantId);
+        escolaWhere += `ae.tenant_id = $${escolaBaseParams.length} AND `;
+    }
+    escolaBaseParams.push(escolaId);
+    escolaWhere += `ae.escola_id = $${escolaBaseParams.length}`;
+    const yearFilterSql = anoLetivo ? ` AND ae.ano_letivo = $${escolaBaseParams.length + 1}` : '';
+    const yearParams = anoLetivo ? [...escolaBaseParams, anoLetivo] : [...escolaBaseParams];
+    const tenantYearParams = anoLetivo ? [tenantId ?? null, escolaId, anoLetivo] : [tenantId ?? null, escolaId];
+    const currentYear = Number(anoLetivo || new Date().getFullYear());
+    const nextYear = currentYear + 1;
+    const rematriculasBaseParams = [...escolaBaseParams, currentYear, nextYear];
+    const currentYearParamIndex = escolaBaseParams.length + 1;
+    const nextYearParamIndex = escolaBaseParams.length + 2;
+    const proxTenantClause = useAlunosEscolasTenant ? `AND prox.tenant_id = ae.tenant_id` : '';
+
+    const tenantBaseParams = [tenantId ?? null, escolaId];
+    const tenantYearBaseParams = anoLetivo ? [tenantId ?? null, escolaId, anoLetivo] : [tenantId ?? null, escolaId];
+    const [matriculas, ocorrencias, internas, externas, rematriculas, diario, avaliacoes, conselho, fechamentos] = await Promise.all([
+        pool.query(
+            `
+            SELECT
+                COUNT(*) FILTER (WHERE COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO')::int AS ativas,
+                COUNT(*) FILTER (WHERE COALESCE(ae.status_matricula, 'ATIVO') <> 'ATIVO')::int AS inativas,
+                COUNT(DISTINCT ae.turma)::int AS turmas
+            FROM alunos_escolas ae
+            WHERE ${escolaWhere}
+              ${yearFilterSql}
+            `,
+            yearParams
+        ),
+        pool.query(
+            `
+            SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE status IN ('ABERTA','EM_ANDAMENTO'))::int AS abertas,
+                COUNT(*) FILTER (WHERE gravidade = 'ALTA')::int AS altas
+            FROM aluno_ocorrencias_escolares
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+            `,
+            tenantYearParams
+        ),
+        pool.query(
+            `
+            SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE status <> 'CONCLUIDA')::int AS pendentes
+            FROM alunos_transferencias_internas
+            WHERE tenant_id = $1
+              AND (escola_origem_id = $2 OR escola_destino_id = $2)
+              ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+            `,
+            tenantYearParams
+        ),
+        pool.query(
+            `
+            SELECT
+                COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE status <> 'CONCLUIDA')::int AS pendentes
+            FROM alunos_transferencias_externas
+            WHERE tenant_id = $1
+              AND escola_origem_id = $2
+              ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+            `,
+            tenantYearParams
+        ),
+        pool.query(
+            `
+            SELECT COUNT(*)::int AS previstas
+            FROM alunos_escolas ae
+            WHERE ${escolaWhere}
+              AND ae.ano_letivo = $${currentYearParamIndex}
+              AND COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO'
+              AND EXISTS (
+                    SELECT 1
+                    FROM alunos_escolas prox
+                    WHERE prox.aluno_id = ae.aluno_id
+                      AND prox.escola_id = ae.escola_id
+                      ${proxTenantClause}
+                      AND prox.ano_letivo = $${nextYearParamIndex}
+              ) = FALSE
+            `,
+            rematriculasBaseParams
+        ),
+        pool.query(
+            `
+            SELECT COUNT(*)::int AS total,
+                   COUNT(*) FILTER (WHERE status = 'FECHADO')::int AS fechados
+            FROM escola_diario_classe
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+            `,
+            tenantYearBaseParams
+        ),
+        pool.query(
+            `
+            SELECT COUNT(*)::int AS lancamentos,
+                   ROUND(AVG(nota)::numeric, 2) AS media_geral,
+                   ROUND(AVG(frequencia)::numeric, 2) AS frequencia_media
+            FROM escola_avaliacoes_componentes
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+            `,
+            tenantYearBaseParams
+        ),
+        pool.query(
+            `
+            SELECT COUNT(*)::int AS total,
+                   COUNT(*) FILTER (WHERE status IN ('REALIZADO','FECHADO'))::int AS concluidos
+            FROM escola_conselho_classe
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+            `,
+            tenantYearBaseParams
+        ),
+        pool.query(
+            `
+            SELECT COUNT(*)::int AS total,
+                   COUNT(*) FILTER (WHERE status = 'FECHADO')::int AS fechados
+            FROM escola_fechamentos_periodo
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+            `,
+            tenantYearBaseParams
+        ),
+    ]);
+
+    return {
+        matriculas: matriculas.rows[0] || { ativas: 0, inativas: 0, turmas: 0 },
+        ocorrencias: ocorrencias.rows[0] || { total: 0, abertas: 0, altas: 0 },
+        transferencias_internas: internas.rows[0] || { total: 0, pendentes: 0 },
+        transferencias_externas: externas.rows[0] || { total: 0, pendentes: 0 },
+        diario_classe: diario.rows[0] || { total: 0, fechados: 0 },
+        avaliacoes: avaliacoes.rows[0] || { lancamentos: 0, media_geral: null, frequencia_media: null },
+        conselho_classe: conselho.rows[0] || { total: 0, concluidos: 0 },
+        fechamentos: fechamentos.rows[0] || { total: 0, fechados: 0 },
+        rematriculas: {
+            ano_atual: currentYear,
+            ano_destino: nextYear,
+            previstas: rematriculas.rows[0]?.previstas || 0,
+        },
+    };
+}
+
+async function loadHistoricoEscolarData({ escolaId, alunoId, tenantId }) {
+    await ensureMatriculasHistoricoTable();
+    await ensureOcorrenciasEscolaresTable();
+    await ensureTransferenciasInternasTable();
+    await ensureTransferenciasExternasTable();
+    await ensureAlunosEscolasWorkflowColumns();
+    await ensureAcademicMaturityTables();
+    const tenantSupport = await getTenantColumnSupport();
+    const useAlunosEscolasTenant = !!(tenantSupport.alunos_escolas && tenantId);
+
+    const aluno = await loadAlunoMatriculaDetalhes({ escolaId, alunoId, tenantId });
+    if (!aluno) return null;
+
+    const vinculosParams = [alunoId];
+    let vinculosTenantWhere = '';
+    if (useAlunosEscolasTenant) {
+        vinculosParams.push(tenantId);
+        vinculosTenantWhere = 'AND ae.tenant_id = $2';
+    }
+
+    const [vinculosResult, historicoResult, ocorrenciasResult, transferenciasInternasResult, transferenciasExternasResult, notasResult] = await Promise.all([
+        pool.query(
+            `
+            SELECT ae.*,
+                   e.nome AS escola_nome
+            FROM alunos_escolas ae
+            LEFT JOIN escolas e ON e.id = ae.escola_id
+            WHERE ae.aluno_id = $1
+              ${vinculosTenantWhere}
+            ORDER BY ae.ano_letivo DESC NULLS LAST, ae.data_entrada DESC NULLS LAST, ae.id DESC
+            `,
+            vinculosParams
+        ),
+        pool.query(
+            `
+            SELECT h.*,
+                   eo.nome AS escola_nome,
+                   ed.nome AS escola_destino_nome
+            FROM alunos_escolas_historico h
+            LEFT JOIN escolas eo ON eo.id = h.escola_id
+            LEFT JOIN escolas ed ON ed.id = h.escola_destino_id
+            WHERE h.aluno_id = $1
+              AND h.tenant_id = $2
+            ORDER BY h.criado_em DESC, h.id DESC
+            `,
+            [alunoId, tenantId]
+        ),
+        pool.query(
+            `
+            SELECT id, categoria, subcategoria, gravidade, status, titulo, data_ocorrencia, data_fechamento
+            FROM aluno_ocorrencias_escolares
+            WHERE aluno_id = $1
+              AND tenant_id = $2
+            ORDER BY data_ocorrencia DESC, id DESC
+            `,
+            [alunoId, tenantId]
+        ),
+        pool.query(
+            `
+            SELECT id, escola_origem_id, escola_destino_id, ano_letivo, turma_origem, turma_destino, status, protocolo, criado_em, concluido_em
+            FROM alunos_transferencias_internas
+            WHERE aluno_id = $1
+              AND tenant_id = $2
+            ORDER BY criado_em DESC, id DESC
+            `,
+            [alunoId, tenantId]
+        ),
+        pool.query(
+            `
+            SELECT id, escola_origem_id, escola_destino_nome, rede_destino, municipio_destino, uf_destino, ano_letivo, turma_origem, status, protocolo, criado_em, concluido_em
+            FROM alunos_transferencias_externas
+            WHERE aluno_id = $1
+              AND tenant_id = $2
+            ORDER BY criado_em DESC, id DESC
+            `,
+            [alunoId, tenantId]
+        ),
+        pool.query(
+            `
+            SELECT periodo_letivo, disciplina_id, disciplina_nome, tipo_avaliacao, nota, frequencia, faltas, recuperacao, parecer_descritivo, status, ano_letivo, criado_em
+            FROM escola_avaliacoes_componentes
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              AND aluno_id = $3
+            ORDER BY ano_letivo DESC, periodo_letivo ASC, disciplina_nome ASC, criado_em DESC
+            `,
+            [tenantId, escolaId, alunoId]
+        ),
+    ]);
+
+    const vinculos = vinculosResult.rows || [];
+    const historico = historicoResult.rows || [];
+    const ocorrencias = ocorrenciasResult.rows || [];
+    const transferenciasInternas = transferenciasInternasResult.rows || [];
+    const transferenciasExternas = transferenciasExternasResult.rows || [];
+    const notas = notasResult.rows || [];
+    const rendimentoPorDisciplina = Object.values(notas.reduce((acc, item) => {
+        const key = [item.ano_letivo, item.periodo_letivo, item.disciplina_nome].join('|');
+        if (!acc[key]) {
+            acc[key] = {
+                ano_letivo: item.ano_letivo,
+                periodo_letivo: item.periodo_letivo,
+                disciplina_nome: item.disciplina_nome,
+                media: [],
+                frequencia: [],
+                faltas: 0,
+                pareceres: [],
+                recuperacao: false,
+                status: item.status,
+            };
+        }
+        if (item.nota !== null && item.nota !== undefined) acc[key].media.push(Number(item.nota));
+        if (item.frequencia !== null && item.frequencia !== undefined) acc[key].frequencia.push(Number(item.frequencia));
+        acc[key].faltas += Number(item.faltas || 0);
+        if (item.parecer_descritivo) acc[key].pareceres.push(item.parecer_descritivo);
+        if (item.recuperacao) acc[key].recuperacao = true;
+        return acc;
+    }, {})).map((item) => ({
+        ano_letivo: item.ano_letivo,
+        periodo_letivo: item.periodo_letivo,
+        disciplina_nome: item.disciplina_nome,
+        media: item.media.length ? Number((item.media.reduce((a, b) => a + b, 0) / item.media.length).toFixed(2)) : null,
+        frequencia: item.frequencia.length ? Number((item.frequencia.reduce((a, b) => a + b, 0) / item.frequencia.length).toFixed(2)) : null,
+        faltas: item.faltas,
+        pareceres: item.pareceres,
+        recuperacao: item.recuperacao,
+        status: item.status,
+    }));
+
+    const linhaDoTempo = [
+        ...historico.map((item) => ({
+            tipo: item.tipo_evento,
+            titulo: item.tipo_evento,
+            descricao: [item.escola_nome, item.escola_destino_nome, item.turma, item.turma_destino].filter(Boolean).join(' • '),
+            ano_letivo: item.ano_letivo,
+            criado_em: item.criado_em,
+            origem: 'historico',
+        })),
+        ...ocorrencias.map((item) => ({
+            tipo: 'OCORRENCIA',
+            titulo: item.titulo,
+            descricao: [item.categoria, item.subcategoria, item.gravidade, item.status].filter(Boolean).join(' • '),
+            ano_letivo: null,
+            criado_em: item.data_ocorrencia,
+            origem: 'ocorrencia',
+        })),
+        ...transferenciasInternas.map((item) => ({
+            tipo: 'TRANSFERENCIA_INTERNA',
+            titulo: 'Transferência interna',
+            descricao: [item.turma_origem, item.turma_destino, item.status, item.protocolo].filter(Boolean).join(' • '),
+            ano_letivo: item.ano_letivo,
+            criado_em: item.criado_em,
+            origem: 'transferencia_interna',
+        })),
+        ...transferenciasExternas.map((item) => ({
+            tipo: 'TRANSFERENCIA_EXTERNA',
+            titulo: 'Transferência externa',
+            descricao: [item.escola_destino_nome, item.rede_destino, item.municipio_destino, item.uf_destino, item.status].filter(Boolean).join(' • '),
+            ano_letivo: item.ano_letivo,
+            criado_em: item.criado_em,
+            origem: 'transferencia_externa',
+        })),
+    ].sort((a, b) => new Date(b.criado_em || 0).valueOf() - new Date(a.criado_em || 0).valueOf());
+
+    const resumoAcademico = {
+        total_vinculos: vinculos.length,
+        anos_letivos: sortAnosDesc(vinculos.map((item) => item.ano_letivo)),
+        ocorrencias_abertas: ocorrencias.filter((item) => ['ABERTA', 'EM_ANDAMENTO'].includes(String(item.status || '').toUpperCase())).length,
+        transferencias_pendentes: transferenciasInternas.filter((item) => item.status !== 'CONCLUIDA').length + transferenciasExternas.filter((item) => item.status !== 'CONCLUIDA').length,
+        componentes_lancados: rendimentoPorDisciplina.length,
+    };
+
+    return {
+        aluno,
+        resumo: resumoAcademico,
+        vinculos,
+        historico,
+        ocorrencias,
+        transferencias_internas: transferenciasInternas,
+        transferencias_externas: transferenciasExternas,
+        rendimento_disciplinas: rendimentoPorDisciplina,
+        linha_do_tempo: linhaDoTempo,
+    };
 }
 
 router.get("/", async (req, res) => {
@@ -2013,6 +2637,7 @@ router.post("/:id/matriculas", requirePermission('school.students.manage'), asyn
 
         await client.query("BEGIN");
         await ensureMatriculasHistoricoTable();
+        await ensureAlunosEscolasWorkflowColumns();
 
         const escolaParams = [escolaId];
         let escolaTenantWhere = '';
@@ -2185,10 +2810,14 @@ router.post("/:id/matriculas", requirePermission('school.students.manage'), asyn
 
             await client.query(
                 `
-                INSERT INTO alunos_escolas (tenant_id, aluno_id, escola_id, ano_letivo, turma)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO alunos_escolas (tenant_id, aluno_id, escola_id, ano_letivo, turma, status_matricula, transferencia_id, motivo_status, data_entrada, data_saida)
+                VALUES ($1, $2, $3, $4, $5, 'ATIVO', NULL, NULL, NOW(), NULL)
                 ON CONFLICT (aluno_id, escola_id, ano_letivo) DO UPDATE
                 SET turma = EXCLUDED.turma,
+                    status_matricula = 'ATIVO',
+                    transferencia_id = NULL,
+                    motivo_status = NULL,
+                    data_saida = NULL,
                     atualizado_em = NOW()
                 `,
                 [tenantId, alunoId, escolaId, anoLetivo, turma]
@@ -2233,8 +2862,8 @@ router.post("/:id/matriculas", requirePermission('school.students.manage'), asyn
 
             await client.query(
                 `
-                INSERT INTO alunos_escolas (aluno_id, escola_id, ano_letivo, turma)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO alunos_escolas (aluno_id, escola_id, ano_letivo, turma, status_matricula, transferencia_id, motivo_status, data_entrada, data_saida)
+                VALUES ($1, $2, $3, $4, 'ATIVO', NULL, NULL, NOW(), NULL)
                 `,
                 [alunoId, escolaId, anoLetivo, turma]
             );
@@ -2437,8 +3066,11 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
         }
 
         const tenantId = getTenantId(req);
+        const tenantSupport = await getTenantColumnSupport();
+        const columnSupport = await getColumnSupport();
         await ensureTransferenciasInternasTable();
         await ensureMatriculasHistoricoTable();
+        await ensureAlunosEscolasWorkflowColumns();
 
         const [aluno, escolaOrigem, escolaDestino] = await Promise.all([
             loadAlunoMatriculaDetalhes({ escolaId: escolaOrigemId, alunoId, tenantId }),
@@ -2452,16 +3084,19 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
 
         await client.query("BEGIN");
 
+        const codigoValidacao = generateTransferValidationCode();
+
         const insertResult = await client.query(
             `
             INSERT INTO alunos_transferencias_internas (
                 tenant_id, aluno_id, escola_origem_id, escola_destino_id, ano_letivo,
                 turma_origem, turma_destino, status, motivo, observacoes,
+                codigo_validacao,
                 responsavel_nome, responsavel_documento, responsavel_parentesco,
                 responsavel_telefone, responsavel_email, solicitado_por_usuario_id,
                 autorizacao_assinada, atualizado_em
             )
-            VALUES ($1,$2,$3,$4,$5,$6,$7,'PENDENTE_AUTORIZACAO',$8,$9,$10,$11,$12,$13,$14,$15,false,NOW())
+            VALUES ($1,$2,$3,$4,$5,$6,$7,'AGUARDANDO_RECEBIMENTO_DESTINO',$8,$9,$10,$11,$12,$13,$14,$15,$16,false,NOW())
             RETURNING id, criado_em
             `,
             [
@@ -2474,6 +3109,7 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
                 turmaDestino,
                 parseOptionalText(req.body?.motivo),
                 parseOptionalText(req.body?.observacoes),
+                codigoValidacao,
                 parseOptionalText(req.body?.responsavel_nome) || parseOptionalText(aluno.responsavel),
                 parseOptionalText(req.body?.responsavel_documento),
                 parseOptionalText(req.body?.responsavel_parentesco),
@@ -2491,6 +3127,44 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
             [transferenciaId, protocolo],
         );
 
+        const origemParams = [alunoId, anoLetivo, escolaOrigemId, transferenciaId];
+        let origemTenantWhere = '';
+        if (tenantSupport.alunos_escolas && tenantId) {
+            origemParams.push(tenantId);
+            origemTenantWhere = 'AND tenant_id = $5';
+        }
+        await client.query(
+            `
+            UPDATE alunos_escolas
+               SET status_matricula = 'EM_TRANSFERENCIA',
+                   transferencia_id = $4,
+                   motivo_status = 'Transferência interna aguardando validação da escola de destino',
+                   data_saida = NOW(),
+                   atualizado_em = NOW()
+             WHERE aluno_id = $1
+               AND ano_letivo = $2
+               AND escola_id = $3
+               ${origemTenantWhere}
+            `,
+            origemParams,
+        );
+
+        const updateAlunoParams = [alunoId];
+        let updateAlunoWhere = 'WHERE id = $1';
+        if (columnSupport.alunosMunicipaisTenantId && tenantId) {
+            updateAlunoParams.push(tenantId);
+            updateAlunoWhere += ' AND tenant_id = $2';
+        }
+        await client.query(
+            `
+            UPDATE alunos_municipais
+               SET status = 'em_transferencia',
+                   atualizado_em = NOW()
+             ${updateAlunoWhere}
+            `,
+            updateAlunoParams,
+        );
+
         await registrarHistoricoMatricula(client, tenantId, {
             aluno_id: alunoId,
             escola_id: escolaOrigemId,
@@ -2499,10 +3173,11 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
             turma: aluno.turma_escola || aluno.turma,
             turma_destino: turmaDestino,
             tipo_evento: "TRANSFERENCIA_INTERNA_SOLICITADA",
-            status_aluno: parseOptionalText(aluno.status) || "ativo",
+            status_aluno: "em_transferencia",
             detalhes: {
                 transferencia_id: transferenciaId,
                 protocolo,
+                codigo_validacao: codigoValidacao,
                 motivo: parseOptionalText(req.body?.motivo),
                 observacoes: parseOptionalText(req.body?.observacoes),
                 escola_origem_nome: escolaOrigem.nome,
@@ -2526,6 +3201,7 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
                 turma_origem: aluno.turma_escola || aluno.turma || null,
                 turma_destino: turmaDestino,
                 protocolo,
+                codigo_validacao: codigoValidacao,
             },
         });
 
@@ -2541,7 +3217,7 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
             message: "Solicitação de transferência interna registrada.",
             transferencia_id: transferenciaId,
             protocolo,
-            status: "PENDENTE_AUTORIZACAO",
+            status: "AGUARDANDO_RECEBIMENTO_DESTINO",
             pdf_url: `/api/escolas/${escolaOrigemId}/alunos/${alunoId}/transferencias-internas/${transferenciaId}/autorizacao-pdf`,
         });
     } catch (err) {
@@ -2554,13 +3230,74 @@ router.post("/:id/alunos/:alunoId/transferencias-internas", requirePermission('s
 });
 
 router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concluir", requirePermission('school.transfer.manage'), async (req, res) => {
+    return res.status(400).json({ error: "A conclusão da transferência deve ser feita pela escola de destino, com o código de validação do documento." });
+});
+
+router.get("/:id/transferencias-internas/recebidas", requirePermission('school.transfer.manage'), async (req, res) => {
+    try {
+        const escolaDestinoId = parseInt(req.params.id, 10);
+        if (Number.isNaN(escolaDestinoId)) {
+            return res.status(400).json({ error: "ID de escola inválido." });
+        }
+
+        const tenantId = getTenantId(req);
+        await ensureTransferenciasInternasTable();
+
+        const params = [escolaDestinoId];
+        let tenantWhere = '';
+        if (tenantId) {
+            params.push(tenantId);
+            tenantWhere = 'AND t.tenant_id = $2';
+        }
+
+        const result = await pool.query(
+            `
+            SELECT
+                t.id,
+                t.aluno_id,
+                t.escola_origem_id,
+                t.escola_destino_id,
+                t.ano_letivo,
+                t.turma_origem,
+                t.turma_destino,
+                t.status,
+                t.protocolo,
+                t.criado_em,
+                t.responsavel_nome,
+                ao.pessoa_nome,
+                eo.nome AS escola_origem_nome
+            FROM alunos_transferencias_internas t
+            JOIN alunos_municipais ao ON ao.id = t.aluno_id
+            JOIN escolas eo ON eo.id = t.escola_origem_id
+            WHERE t.escola_destino_id = $1
+              ${tenantWhere}
+              AND COALESCE(t.status, 'AGUARDANDO_RECEBIMENTO_DESTINO') = 'AGUARDANDO_RECEBIMENTO_DESTINO'
+            ORDER BY t.criado_em DESC, t.id DESC
+            `,
+            params,
+        );
+
+        return res.json(result.rows || []);
+    } catch (err) {
+        console.error("Erro ao listar transferências internas recebidas:", err);
+        return res.status(500).json({ error: "Erro ao listar transferências internas recebidas." });
+    }
+});
+
+router.post("/:id/transferencias-internas/:transferenciaId/aceitar", requirePermission('school.transfer.manage'), async (req, res) => {
     const client = await pool.connect();
     try {
-        const escolaOrigemId = parseInt(req.params.id, 10);
-        const alunoId = parseInt(req.params.alunoId, 10);
+        const escolaDestinoId = parseInt(req.params.id, 10);
         const transferenciaId = parseInt(req.params.transferenciaId, 10);
-        if ([escolaOrigemId, alunoId, transferenciaId].some((value) => Number.isNaN(value))) {
+        const codigoValidacao = parseOptionalText(req.body?.codigo_validacao);
+        if ([escolaDestinoId, transferenciaId].some((value) => Number.isNaN(value))) {
             return res.status(400).json({ error: "Identificadores inválidos para concluir a transferência." });
+        }
+        if (!codigoValidacao) {
+            return res.status(400).json({ error: "Informe o código de validação da autorização." });
+        }
+        if (req.body?.autorizacao_assinada !== true) {
+            return res.status(400).json({ error: "Confirme que a autorização assinada foi apresentada pela família." });
         }
 
         const tenantId = getTenantId(req);
@@ -2568,14 +3305,15 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
         const columnSupport = await getColumnSupport();
         await ensureTransferenciasInternasTable();
         await ensureMatriculasHistoricoTable();
+        await ensureAlunosEscolasWorkflowColumns();
 
         await client.query("BEGIN");
 
-        const transferenciaParams = [transferenciaId, alunoId, escolaOrigemId];
+        const transferenciaParams = [transferenciaId, escolaDestinoId];
         let tenantWhereTransfer = "";
         if (tenantId) {
             transferenciaParams.push(tenantId);
-            tenantWhereTransfer = `AND tenant_id = $4`;
+            tenantWhereTransfer = `AND tenant_id = $3`;
         }
 
         const transferenciaResult = await client.query(
@@ -2583,8 +3321,7 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
             SELECT *
             FROM alunos_transferencias_internas
             WHERE id = $1
-              AND aluno_id = $2
-              AND escola_origem_id = $3
+              AND escola_destino_id = $2
               ${tenantWhereTransfer}
             LIMIT 1
             `,
@@ -2599,8 +3336,13 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
             await client.query("ROLLBACK");
             return res.status(409).json({ error: "Esta transferência interna já foi concluída." });
         }
+        if (String(transferencia.codigo_validacao || '') !== String(codigoValidacao)) {
+            await client.query("ROLLBACK");
+            return res.status(400).json({ error: "Código de validação inválido." });
+        }
+        const alunoId = Number(transferencia.aluno_id);
 
-        const escolaDestino = await loadEscolaById(client, Number(transferencia.escola_destino_id), tenantId);
+        const escolaDestino = await loadEscolaById(client, escolaDestinoId, tenantId);
         if (!escolaDestino) {
             await client.query("ROLLBACK");
             return res.status(404).json({ error: "Escola de destino não encontrada." });
@@ -2627,29 +3369,50 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
             vinculosParams,
         );
         const vinculosExistentes = vinculosResult.rows || [];
-        const vinculoOrigem = vinculosExistentes.find((row) => Number(row.escola_id) === escolaOrigemId) || null;
+        const vinculoOrigem = vinculosExistentes.find((row) => Number(row.escola_id) === Number(transferencia.escola_origem_id)) || null;
 
-        for (const vinculo of vinculosExistentes.filter((row) => Number(row.escola_id) !== Number(transferencia.escola_destino_id))) {
-            await registrarHistoricoMatricula(client, tenantId, {
-                aluno_id: alunoId,
-                escola_id: vinculo.escola_id,
-                escola_destino_id: Number(transferencia.escola_destino_id),
-                ano_letivo: anoLetivo,
-                turma: vinculo.turma,
-                turma_destino: turmaDestino,
-                tipo_evento: "TRANSFERENCIA_SAIDA",
-                status_aluno: "transferido",
-                detalhes: {
-                    origem: "transferencia_interna",
-                    transferencia_id: transferenciaId,
-                    protocolo: transferencia.protocolo,
-                },
-            });
+        const origemParams = [alunoId, anoLetivo, Number(transferencia.escola_origem_id), transferenciaId];
+        let origemTenantWhere = '';
+        if (tenantSupport.alunos_escolas && tenantId) {
+            origemParams.push(tenantId);
+            origemTenantWhere = 'AND tenant_id = $5';
         }
+        await client.query(
+            `
+            UPDATE alunos_escolas
+               SET status_matricula = 'TRANSFERIDO',
+                   transferencia_id = $4,
+                   motivo_status = 'Transferência interna concluída para outra unidade',
+                   data_saida = COALESCE(data_saida, NOW()),
+                   atualizado_em = NOW()
+             WHERE aluno_id = $1
+               AND ano_letivo = $2
+               AND escola_id = $3
+               ${origemTenantWhere}
+            `,
+            origemParams,
+        );
 
         await registrarHistoricoMatricula(client, tenantId, {
             aluno_id: alunoId,
-            escola_id: escolaOrigemId,
+            escola_id: Number(transferencia.escola_origem_id),
+            escola_destino_id: Number(transferencia.escola_destino_id),
+            ano_letivo: anoLetivo,
+            turma: vinculoOrigem?.turma || transferencia.turma_origem,
+            turma_destino: turmaDestino,
+            tipo_evento: "TRANSFERENCIA_SAIDA",
+            status_aluno: "transferido",
+            detalhes: {
+                origem: "transferencia_interna",
+                transferencia_id: transferenciaId,
+                protocolo: transferencia.protocolo,
+                autorizacao_assinada: true,
+            },
+        });
+
+        await registrarHistoricoMatricula(client, tenantId, {
+            aluno_id: alunoId,
+            escola_id: Number(transferencia.escola_origem_id),
             escola_destino_id: Number(transferencia.escola_destino_id),
             ano_letivo: anoLetivo,
             turma: vinculoOrigem?.turma || transferencia.turma_origem,
@@ -2667,45 +3430,33 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
         if (tenantSupport.alunos_escolas) {
             await client.query(
                 `
-                DELETE FROM alunos_escolas
-                WHERE aluno_id = $1
-                  AND ano_letivo = $2
-                  AND tenant_id = $3
-                  AND escola_id <> $4
-                `,
-                [alunoId, anoLetivo, tenantId, Number(transferencia.escola_destino_id)],
-            );
-
-            await client.query(
-                `
-                INSERT INTO alunos_escolas (tenant_id, aluno_id, escola_id, ano_letivo, turma)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO alunos_escolas (tenant_id, aluno_id, escola_id, ano_letivo, turma, status_matricula, transferencia_id, motivo_status, data_entrada, data_saida)
+                VALUES ($1, $2, $3, $4, $5, 'ATIVO', $6, NULL, NOW(), NULL)
                 ON CONFLICT (aluno_id, escola_id, ano_letivo) DO UPDATE
                 SET turma = EXCLUDED.turma,
+                    status_matricula = 'ATIVO',
+                    transferencia_id = $6,
+                    motivo_status = NULL,
+                    data_entrada = COALESCE(alunos_escolas.data_entrada, NOW()),
+                    data_saida = NULL,
                     atualizado_em = NOW()
                 `,
-                [tenantId, alunoId, Number(transferencia.escola_destino_id), anoLetivo, turmaDestino],
+                [tenantId, alunoId, Number(transferencia.escola_destino_id), anoLetivo, turmaDestino, transferenciaId],
             );
         } else {
             await client.query(
                 `
-                DELETE FROM alunos_escolas
-                WHERE aluno_id = $1
-                  AND ano_letivo = $2
-                  AND escola_id <> $3
-                `,
-                [alunoId, anoLetivo, Number(transferencia.escola_destino_id)],
-            );
-
-            await client.query(
-                `
-                INSERT INTO alunos_escolas (aluno_id, escola_id, ano_letivo, turma)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO alunos_escolas (aluno_id, escola_id, ano_letivo, turma, status_matricula, transferencia_id, motivo_status, data_entrada, data_saida)
+                VALUES ($1, $2, $3, $4, 'ATIVO', $5, NULL, NOW(), NULL)
                 ON CONFLICT (aluno_id, escola_id, ano_letivo) DO UPDATE
                 SET turma = EXCLUDED.turma,
+                    status_matricula = 'ATIVO',
+                    transferencia_id = $5,
+                    motivo_status = NULL,
+                    data_saida = NULL,
                     atualizado_em = NOW()
                 `,
-                [alunoId, Number(transferencia.escola_destino_id), anoLetivo, turmaDestino],
+                [alunoId, Number(transferencia.escola_destino_id), anoLetivo, turmaDestino, transferenciaId],
             );
         }
 
@@ -2772,12 +3523,13 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
             acao: "TRANSFERENCIA_INTERNA_CONCLUIDA",
             detalhes: {
                 aluno_id: alunoId,
-                escola_origem_id: escolaOrigemId,
+                escola_origem_id: Number(transferencia.escola_origem_id),
                 escola_destino_id: Number(transferencia.escola_destino_id),
                 escola_destino_nome: escolaDestino.nome,
                 ano_letivo: anoLetivo,
                 turma_destino: turmaDestino,
                 protocolo: transferencia.protocolo,
+                codigo_validacao: codigoValidacao,
             },
         });
 
@@ -2787,7 +3539,7 @@ router.post("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/concl
             targetType: 'aluno_transferencia',
             targetId: transferenciaId,
             description: 'Transferência interna concluída.',
-            metadata: { aluno_id: alunoId, escola_origem_id: escolaOrigemId, escola_destino_id: Number(transferencia.escola_destino_id), ano_letivo: anoLetivo, turma_destino: turmaDestino }
+            metadata: { aluno_id: alunoId, escola_origem_id: Number(transferencia.escola_origem_id), escola_destino_id: Number(transferencia.escola_destino_id), ano_letivo: anoLetivo, turma_destino: turmaDestino }
         });
         return res.json({
             message: "Transferência interna concluída com sucesso.",
@@ -2874,6 +3626,7 @@ router.get("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/autori
         doc.moveDown(1.4);
         doc.font("Helvetica").fontSize(11);
         doc.text(`Protocolo: ${transferencia.protocolo || "Não informado"}`);
+        doc.text(`Código de validação: ${transferencia.codigo_validacao || "Não informado"}`);
         doc.text(`Data da solicitação: ${formatDatePtBr(transferencia.criado_em)}`);
         doc.moveDown(1);
         doc.text(
@@ -2892,7 +3645,7 @@ router.get("/:id/alunos/:alunoId/transferencias-internas/:transferenciaId/autori
             doc.text(`Observações: ${transferencia.observacoes}`, { align: "justify" });
         }
         doc.moveDown(1.5);
-        doc.text("Este documento deve acompanhar o estudante até a escola de destino para formalização definitiva da transferência.", { align: "justify" });
+        doc.text("Este documento deve acompanhar o estudante até a escola de destino para formalização definitiva da transferência. O código de validação acima deverá ser informado pela escola receptora no momento do aceite.", { align: "justify" });
         doc.moveDown(2.5);
         doc.text("__________________________________________", { align: "center" });
         doc.font("Helvetica-Bold").text(transferencia.responsavel_nome || "Responsável legal", { align: "center" });
@@ -3076,6 +3829,1355 @@ router.get("/:id/alunos/:alunoId/ficha-matricula-pdf", requirePermission('school
     } catch (err) {
         console.error("Erro ao gerar ficha de matrícula:", err);
         return res.status(500).json({ error: "Erro ao gerar ficha de matrícula" });
+    }
+});
+
+router.get("/:id/academico/overview", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        const overview = await loadAcademicOverview(escolaId, tenantId, anoLetivo);
+        return res.json(overview);
+    } catch (err) {
+        console.error("Erro ao carregar overview acadêmico:", err);
+        return res.status(500).json({ error: "Erro ao carregar overview acadêmico." });
+    }
+});
+
+router.get("/:id/diario-classe", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        await ensureAcademicMaturityTables();
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        const turma = parseOptionalText(req.query?.turma);
+        const params = [tenantId, escolaId];
+        const filtros = ['tenant_id = $1', 'escola_id = $2'];
+        if (anoLetivo) {
+            params.push(anoLetivo);
+            filtros.push(`ano_letivo = $${params.length}`);
+        }
+        if (turma) {
+            params.push(turma);
+            filtros.push(`turma = $${params.length}`);
+        }
+        const result = await pool.query(
+            `
+            SELECT *
+            FROM escola_diario_classe
+            WHERE ${filtros.join(' AND ')}
+            ORDER BY data_aula DESC, turma ASC, disciplina_nome ASC, id DESC
+            `,
+            params
+        );
+        const disciplinas = await loadDisciplinasContexto(tenantId);
+        return res.json({ registros: result.rows || [], disciplinas });
+    } catch (err) {
+        console.error("Erro ao listar diário de classe:", err);
+        return res.status(500).json({ error: "Erro ao listar diário de classe." });
+    }
+});
+
+router.post("/:id/diario-classe", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            INSERT INTO escola_diario_classe (
+                tenant_id, escola_id, turma, ano_letivo, data_aula, periodo_letivo, disciplina_id, disciplina_nome,
+                professor_nome, conteudo, metodologia, atividade_prevista, observacoes,
+                total_previsto, presentes, ausentes, justificados, status
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,$7,$8,
+                $9,$10,$11,$12,$13,
+                $14,$15,$16,$17,$18
+            )
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalText(req.body?.turma), parseOptionalInt(req.body?.ano_letivo) || new Date().getFullYear(),
+                parseOptionalDate(req.body?.data_aula) || new Date().toISOString().slice(0, 10), parseOptionalText(req.body?.periodo_letivo),
+                parseOptionalInt(req.body?.disciplina_id), parseOptionalText(req.body?.disciplina_nome),
+                parseOptionalText(req.body?.professor_nome), parseOptionalText(req.body?.conteudo), parseOptionalText(req.body?.metodologia),
+                parseOptionalText(req.body?.atividade_prevista), parseOptionalText(req.body?.observacoes),
+                parseOptionalInt(req.body?.total_previsto) || 0, parseOptionalInt(req.body?.presentes) || 0,
+                parseOptionalInt(req.body?.ausentes) || 0, parseOptionalInt(req.body?.justificados) || 0,
+                parseOptionalText(req.body?.status) || 'LANÇADO',
+            ]
+        );
+        await registrarAuditoriaEscolar(pool, req, {
+            tenant_id: tenantId,
+            modulo: "academico",
+            entidade: "diario_classe",
+            entidade_id: result.rows[0]?.id,
+            acao: "DIARIO_CLASSE_LANCADO",
+            detalhes: result.rows[0] || {},
+        });
+        return res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao lançar diário de classe:", err);
+        return res.status(500).json({ error: "Erro ao lançar diário de classe." });
+    }
+});
+
+router.put("/:id/diario-classe/:registroId", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        const registroId = parseInt(req.params.registroId, 10);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            UPDATE escola_diario_classe
+            SET turma = $3,
+                ano_letivo = $4,
+                data_aula = $5,
+                periodo_letivo = $6,
+                disciplina_id = $7,
+                disciplina_nome = $8,
+                professor_nome = $9,
+                conteudo = $10,
+                metodologia = $11,
+                atividade_prevista = $12,
+                observacoes = $13,
+                total_previsto = $14,
+                presentes = $15,
+                ausentes = $16,
+                justificados = $17,
+                status = $18,
+                atualizado_em = NOW()
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              AND id = $19
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalText(req.body?.turma), parseOptionalInt(req.body?.ano_letivo),
+                parseOptionalDate(req.body?.data_aula), parseOptionalText(req.body?.periodo_letivo),
+                parseOptionalInt(req.body?.disciplina_id), parseOptionalText(req.body?.disciplina_nome),
+                parseOptionalText(req.body?.professor_nome), parseOptionalText(req.body?.conteudo), parseOptionalText(req.body?.metodologia),
+                parseOptionalText(req.body?.atividade_prevista), parseOptionalText(req.body?.observacoes),
+                parseOptionalInt(req.body?.total_previsto) || 0, parseOptionalInt(req.body?.presentes) || 0,
+                parseOptionalInt(req.body?.ausentes) || 0, parseOptionalInt(req.body?.justificados) || 0,
+                parseOptionalText(req.body?.status) || 'LANÇADO', registroId,
+            ]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Registro de diário não encontrado." });
+        return res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao atualizar diário de classe:", err);
+        return res.status(500).json({ error: "Erro ao atualizar diário de classe." });
+    }
+});
+
+router.get("/:id/notas-componentes", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        await ensureAcademicMaturityTables();
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        const turma = parseOptionalText(req.query?.turma);
+        const alunoId = parseOptionalInt(req.query?.aluno_id);
+        const params = [tenantId, escolaId];
+        const filtros = ['n.tenant_id = $1', 'n.escola_id = $2'];
+        if (anoLetivo) { params.push(anoLetivo); filtros.push(`n.ano_letivo = $${params.length}`); }
+        if (turma) { params.push(turma); filtros.push(`n.turma = $${params.length}`); }
+        if (alunoId) { params.push(alunoId); filtros.push(`n.aluno_id = $${params.length}`); }
+        const result = await pool.query(
+            `
+            SELECT n.*, a.pessoa_nome, a.id_pessoa
+            FROM escola_avaliacoes_componentes n
+            LEFT JOIN alunos_municipais a ON a.id = n.aluno_id
+            WHERE ${filtros.join(' AND ')}
+            ORDER BY n.ano_letivo DESC, n.periodo_letivo ASC, n.disciplina_nome ASC, a.pessoa_nome ASC
+            `,
+            params
+        );
+        const disciplinas = await loadDisciplinasContexto(tenantId);
+        return res.json({ lancamentos: result.rows || [], disciplinas });
+    } catch (err) {
+        console.error("Erro ao listar notas por componente:", err);
+        return res.status(500).json({ error: "Erro ao listar notas por componente." });
+    }
+});
+
+router.post("/:id/notas-componentes", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            INSERT INTO escola_avaliacoes_componentes (
+                tenant_id, escola_id, aluno_id, turma, ano_letivo, periodo_letivo, disciplina_id, disciplina_nome,
+                tipo_avaliacao, nota, frequencia, faltas, recuperacao, parecer_descritivo, status
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,$7,$8,
+                $9,$10,$11,$12,$13,$14,$15
+            )
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalInt(req.body?.aluno_id), parseOptionalText(req.body?.turma),
+                parseOptionalInt(req.body?.ano_letivo) || new Date().getFullYear(), parseOptionalText(req.body?.periodo_letivo),
+                parseOptionalInt(req.body?.disciplina_id), parseOptionalText(req.body?.disciplina_nome), parseOptionalText(req.body?.tipo_avaliacao) || 'REGULAR',
+                req.body?.nota === '' ? null : Number(req.body?.nota), req.body?.frequencia === '' ? null : Number(req.body?.frequencia),
+                parseOptionalInt(req.body?.faltas) || 0, Boolean(req.body?.recuperacao), parseOptionalText(req.body?.parecer_descritivo),
+                parseOptionalText(req.body?.status) || 'LANÇADO',
+            ]
+        );
+        await registrarAuditoriaEscolar(pool, req, {
+            tenant_id: tenantId,
+            modulo: "academico",
+            entidade: "avaliacao_componente",
+            entidade_id: result.rows[0]?.id,
+            acao: "NOTA_COMPONENTE_LANCADA",
+            detalhes: result.rows[0] || {},
+        });
+        return res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao lançar notas por componente:", err);
+        return res.status(500).json({ error: "Erro ao lançar notas por componente." });
+    }
+});
+
+router.put("/:id/notas-componentes/:lancamentoId", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        const lancamentoId = parseInt(req.params.lancamentoId, 10);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            UPDATE escola_avaliacoes_componentes
+            SET aluno_id = $3,
+                turma = $4,
+                ano_letivo = $5,
+                periodo_letivo = $6,
+                disciplina_id = $7,
+                disciplina_nome = $8,
+                tipo_avaliacao = $9,
+                nota = $10,
+                frequencia = $11,
+                faltas = $12,
+                recuperacao = $13,
+                parecer_descritivo = $14,
+                status = $15,
+                atualizado_em = NOW()
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              AND id = $16
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalInt(req.body?.aluno_id), parseOptionalText(req.body?.turma),
+                parseOptionalInt(req.body?.ano_letivo), parseOptionalText(req.body?.periodo_letivo),
+                parseOptionalInt(req.body?.disciplina_id), parseOptionalText(req.body?.disciplina_nome), parseOptionalText(req.body?.tipo_avaliacao),
+                req.body?.nota === '' ? null : Number(req.body?.nota), req.body?.frequencia === '' ? null : Number(req.body?.frequencia),
+                parseOptionalInt(req.body?.faltas) || 0, Boolean(req.body?.recuperacao), parseOptionalText(req.body?.parecer_descritivo),
+                parseOptionalText(req.body?.status) || 'LANÇADO', lancamentoId,
+            ]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Lançamento não encontrado." });
+        return res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao atualizar notas por componente:", err);
+        return res.status(500).json({ error: "Erro ao atualizar notas por componente." });
+    }
+});
+
+router.get("/:id/conselho-classe", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        await ensureAcademicMaturityTables();
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        const turma = parseOptionalText(req.query?.turma);
+        const params = [tenantId, escolaId];
+        const filtros = ['tenant_id = $1', 'escola_id = $2'];
+        if (anoLetivo) { params.push(anoLetivo); filtros.push(`ano_letivo = $${params.length}`); }
+        if (turma) { params.push(turma); filtros.push(`turma = $${params.length}`); }
+        const result = await pool.query(
+            `
+            SELECT *
+            FROM escola_conselho_classe
+            WHERE ${filtros.join(' AND ')}
+            ORDER BY ano_letivo DESC, periodo_letivo ASC, data_reuniao DESC NULLS LAST, id DESC
+            `,
+            params
+        );
+        return res.json(result.rows || []);
+    } catch (err) {
+        console.error("Erro ao listar conselho de classe:", err);
+        return res.status(500).json({ error: "Erro ao listar conselho de classe." });
+    }
+});
+
+router.post("/:id/conselho-classe", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            INSERT INTO escola_conselho_classe (
+                tenant_id, escola_id, turma, ano_letivo, periodo_letivo, data_reuniao, status, coordenador_nome,
+                pauta, deliberacoes, encaminhamentos, alunos_em_atencao, participantes
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,$7,$8,
+                $9,$10,$11,$12::jsonb,$13::jsonb
+            )
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalText(req.body?.turma), parseOptionalInt(req.body?.ano_letivo) || new Date().getFullYear(),
+                parseOptionalText(req.body?.periodo_letivo), parseOptionalDate(req.body?.data_reuniao),
+                parseOptionalText(req.body?.status) || 'PLANEJADO', parseOptionalText(req.body?.coordenador_nome),
+                parseOptionalText(req.body?.pauta), parseOptionalText(req.body?.deliberacoes), parseOptionalText(req.body?.encaminhamentos),
+                JSON.stringify(parseOptionalJsonArray(req.body?.alunos_em_atencao) || []),
+                JSON.stringify(parseOptionalJsonArray(req.body?.participantes) || []),
+            ]
+        );
+        return res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao registrar conselho de classe:", err);
+        return res.status(500).json({ error: "Erro ao registrar conselho de classe." });
+    }
+});
+
+router.put("/:id/conselho-classe/:registroId", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        const registroId = parseInt(req.params.registroId, 10);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            UPDATE escola_conselho_classe
+            SET turma = $3,
+                ano_letivo = $4,
+                periodo_letivo = $5,
+                data_reuniao = $6,
+                status = $7,
+                coordenador_nome = $8,
+                pauta = $9,
+                deliberacoes = $10,
+                encaminhamentos = $11,
+                alunos_em_atencao = $12::jsonb,
+                participantes = $13::jsonb,
+                atualizado_em = NOW()
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              AND id = $14
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalText(req.body?.turma), parseOptionalInt(req.body?.ano_letivo),
+                parseOptionalText(req.body?.periodo_letivo), parseOptionalDate(req.body?.data_reuniao),
+                parseOptionalText(req.body?.status) || 'PLANEJADO', parseOptionalText(req.body?.coordenador_nome),
+                parseOptionalText(req.body?.pauta), parseOptionalText(req.body?.deliberacoes), parseOptionalText(req.body?.encaminhamentos),
+                JSON.stringify(parseOptionalJsonArray(req.body?.alunos_em_atencao) || []),
+                JSON.stringify(parseOptionalJsonArray(req.body?.participantes) || []),
+                registroId,
+            ]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Conselho de classe não encontrado." });
+        return res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao atualizar conselho de classe:", err);
+        return res.status(500).json({ error: "Erro ao atualizar conselho de classe." });
+    }
+});
+
+router.get("/:id/fechamentos", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        await ensureAcademicMaturityTables();
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        const params = [tenantId, escolaId];
+        const filtros = ['tenant_id = $1', 'escola_id = $2'];
+        if (anoLetivo) { params.push(anoLetivo); filtros.push(`ano_letivo = $${params.length}`); }
+        const result = await pool.query(
+            `
+            SELECT *
+            FROM escola_fechamentos_periodo
+            WHERE ${filtros.join(' AND ')}
+            ORDER BY ano_letivo DESC, periodo_letivo ASC, turma ASC NULLS FIRST, id DESC
+            `,
+            params
+        );
+        return res.json(result.rows || []);
+    } catch (err) {
+        console.error("Erro ao listar fechamentos:", err);
+        return res.status(500).json({ error: "Erro ao listar fechamentos." });
+    }
+});
+
+router.post("/:id/fechamentos", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            INSERT INTO escola_fechamentos_periodo (
+                tenant_id, escola_id, turma, ano_letivo, periodo_letivo, data_inicio, data_fechamento, status,
+                frequencia_minima, nota_minima, total_alunos, total_aprovados, total_reprovados, total_transferidos, total_abandono, observacoes
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,$7,$8,
+                $9,$10,$11,$12,$13,$14,$15,$16
+            )
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalText(req.body?.turma), parseOptionalInt(req.body?.ano_letivo) || new Date().getFullYear(),
+                parseOptionalText(req.body?.periodo_letivo), parseOptionalDate(req.body?.data_inicio), parseOptionalDate(req.body?.data_fechamento),
+                parseOptionalText(req.body?.status) || 'ABERTO', req.body?.frequencia_minima === '' ? null : Number(req.body?.frequencia_minima),
+                req.body?.nota_minima === '' ? null : Number(req.body?.nota_minima), parseOptionalInt(req.body?.total_alunos) || 0,
+                parseOptionalInt(req.body?.total_aprovados) || 0, parseOptionalInt(req.body?.total_reprovados) || 0,
+                parseOptionalInt(req.body?.total_transferidos) || 0, parseOptionalInt(req.body?.total_abandono) || 0,
+                parseOptionalText(req.body?.observacoes),
+            ]
+        );
+        return res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao registrar fechamento de período:", err);
+        return res.status(500).json({ error: "Erro ao registrar fechamento de período." });
+    }
+});
+
+router.put("/:id/fechamentos/:fechamentoId", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const escolaId = parseInt(req.params.id, 10);
+        const fechamentoId = parseInt(req.params.fechamentoId, 10);
+        await ensureAcademicMaturityTables();
+        const result = await pool.query(
+            `
+            UPDATE escola_fechamentos_periodo
+            SET turma = $3,
+                ano_letivo = $4,
+                periodo_letivo = $5,
+                data_inicio = $6,
+                data_fechamento = $7,
+                status = $8,
+                frequencia_minima = $9,
+                nota_minima = $10,
+                total_alunos = $11,
+                total_aprovados = $12,
+                total_reprovados = $13,
+                total_transferidos = $14,
+                total_abandono = $15,
+                observacoes = $16,
+                atualizado_em = NOW()
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              AND id = $17
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, parseOptionalText(req.body?.turma), parseOptionalInt(req.body?.ano_letivo),
+                parseOptionalText(req.body?.periodo_letivo), parseOptionalDate(req.body?.data_inicio), parseOptionalDate(req.body?.data_fechamento),
+                parseOptionalText(req.body?.status) || 'ABERTO', req.body?.frequencia_minima === '' ? null : Number(req.body?.frequencia_minima),
+                req.body?.nota_minima === '' ? null : Number(req.body?.nota_minima), parseOptionalInt(req.body?.total_alunos) || 0,
+                parseOptionalInt(req.body?.total_aprovados) || 0, parseOptionalInt(req.body?.total_reprovados) || 0,
+                parseOptionalInt(req.body?.total_transferidos) || 0, parseOptionalInt(req.body?.total_abandono) || 0,
+                parseOptionalText(req.body?.observacoes), fechamentoId,
+            ]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Fechamento não encontrado." });
+        return res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao atualizar fechamento de período:", err);
+        return res.status(500).json({ error: "Erro ao atualizar fechamento de período." });
+    }
+});
+
+router.get("/:id/ocorrencias", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        const status = parseOptionalText(req.query?.status);
+        const alunoId = parseOptionalInt(req.query?.aluno_id);
+        await ensureOcorrenciasEscolaresTable();
+
+        const params = [tenantId, escolaId];
+        const filtros = ['o.tenant_id = $1', 'o.escola_id = $2'];
+        if (anoLetivo) {
+            params.push(anoLetivo);
+            filtros.push(`o.ano_letivo = $${params.length}`);
+        }
+        if (status) {
+            params.push(status);
+            filtros.push(`o.status = $${params.length}`);
+        }
+        if (alunoId) {
+            params.push(alunoId);
+            filtros.push(`o.aluno_id = $${params.length}`);
+        }
+
+        const rows = await pool.query(
+            `
+            SELECT o.*,
+                   a.pessoa_nome,
+                   a.id_pessoa,
+                   a.turma,
+                   a.status AS aluno_status
+            FROM aluno_ocorrencias_escolares o
+            LEFT JOIN alunos_municipais a ON a.id = o.aluno_id
+            WHERE ${filtros.join(' AND ')}
+            ORDER BY o.data_ocorrencia DESC, o.id DESC
+            `,
+            params
+        );
+        return res.json(rows.rows || []);
+    } catch (err) {
+        console.error("Erro ao listar ocorrências escolares:", err);
+        return res.status(500).json({ error: "Erro ao listar ocorrências escolares." });
+    }
+});
+
+router.post("/:id/ocorrencias", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const alunoId = parseOptionalInt(req.body?.aluno_id);
+        const titulo = parseOptionalText(req.body?.titulo);
+        const categoria = parseOptionalText(req.body?.categoria);
+        if (!alunoId || !titulo || !categoria) {
+            return res.status(400).json({ error: "aluno_id, titulo e categoria são obrigatórios." });
+        }
+        await ensureOcorrenciasEscolaresTable();
+        const result = await pool.query(
+            `
+            INSERT INTO aluno_ocorrencias_escolares (
+                tenant_id, escola_id, aluno_id, turma, ano_letivo, categoria, subcategoria, gravidade, status,
+                titulo, descricao, providencias, encaminhamento, data_ocorrencia,
+                responsavel_registro_id, responsavel_registro_nome, sigilosa
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,$7,$8,$9,
+                $10,$11,$12,$13,$14,
+                $15,$16,$17
+            )
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId, alunoId, parseOptionalText(req.body?.turma), parseOptionalInt(req.body?.ano_letivo),
+                categoria, parseOptionalText(req.body?.subcategoria), parseOptionalText(req.body?.gravidade) || 'MEDIA',
+                parseOptionalText(req.body?.status) || 'ABERTA',
+                titulo, parseOptionalText(req.body?.descricao), parseOptionalText(req.body?.providencias),
+                parseOptionalText(req.body?.encaminhamento), parseOptionalDate(req.body?.data_ocorrencia) || new Date().toISOString(),
+                req?.user?.id ? Number(req.user.id) : null, parseOptionalText(req.user?.nome),
+                Boolean(req.body?.sigilosa),
+            ]
+        );
+        await registrarAuditoriaEscolar(pool, req, {
+            tenant_id: tenantId,
+            modulo: "academico",
+            entidade: "ocorrencia",
+            entidade_id: result.rows[0]?.id,
+            acao: "OCORRENCIA_CRIADA",
+            detalhes: result.rows[0] || {},
+        });
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_OCCURRENCE_CREATED',
+            targetType: 'ocorrencia',
+            targetId: result.rows[0]?.id,
+            description: 'Ocorrência escolar registrada.',
+            metadata: { escola_id: escolaId, aluno_id: alunoId, categoria }
+        });
+        return res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao criar ocorrência escolar:", err);
+        return res.status(500).json({ error: "Erro ao criar ocorrência escolar." });
+    }
+});
+
+router.put("/:id/ocorrencias/:ocorrenciaId", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const ocorrenciaId = parseInt(req.params.ocorrenciaId, 10);
+        const tenantId = getTenantId(req);
+        await ensureOcorrenciasEscolaresTable();
+        const result = await pool.query(
+            `
+            UPDATE aluno_ocorrencias_escolares
+            SET categoria = $3,
+                subcategoria = $4,
+                gravidade = $5,
+                status = $6,
+                titulo = $7,
+                descricao = $8,
+                providencias = $9,
+                encaminhamento = $10,
+                data_ocorrencia = COALESCE($11, data_ocorrencia),
+                data_fechamento = $12,
+                sigilosa = $13,
+                atualizado_em = NOW()
+            WHERE tenant_id = $1
+              AND escola_id = $2
+              AND id = $14
+            RETURNING *
+            `,
+            [
+                tenantId, escolaId,
+                parseOptionalText(req.body?.categoria),
+                parseOptionalText(req.body?.subcategoria),
+                parseOptionalText(req.body?.gravidade) || 'MEDIA',
+                parseOptionalText(req.body?.status) || 'ABERTA',
+                parseOptionalText(req.body?.titulo),
+                parseOptionalText(req.body?.descricao),
+                parseOptionalText(req.body?.providencias),
+                parseOptionalText(req.body?.encaminhamento),
+                parseOptionalDate(req.body?.data_ocorrencia),
+                parseOptionalDate(req.body?.data_fechamento),
+                Boolean(req.body?.sigilosa),
+                ocorrenciaId,
+            ]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Ocorrência não encontrada." });
+        await registrarSegurancaEscolar(req, {
+            action: 'SCHOOL_OCCURRENCE_UPDATED',
+            targetType: 'ocorrencia',
+            targetId: ocorrenciaId,
+            description: 'Ocorrência escolar atualizada.',
+            metadata: { escola_id: escolaId }
+        });
+        return res.json(result.rows[0]);
+    } catch (err) {
+        console.error("Erro ao atualizar ocorrência escolar:", err);
+        return res.status(500).json({ error: "Erro ao atualizar ocorrência escolar." });
+    }
+});
+
+router.delete("/:id/ocorrencias/:ocorrenciaId", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const ocorrenciaId = parseInt(req.params.ocorrenciaId, 10);
+        const tenantId = getTenantId(req);
+        await ensureOcorrenciasEscolaresTable();
+        const result = await pool.query(
+            `DELETE FROM aluno_ocorrencias_escolares WHERE tenant_id = $1 AND escola_id = $2 AND id = $3 RETURNING id`,
+            [tenantId, escolaId, ocorrenciaId]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Ocorrência não encontrada." });
+        return res.json({ success: true });
+    } catch (err) {
+        console.error("Erro ao excluir ocorrência escolar:", err);
+        return res.status(500).json({ error: "Erro ao excluir ocorrência escolar." });
+    }
+});
+
+router.get("/:id/transferencias-externas", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        await ensureTransferenciasExternasTable();
+        const result = await pool.query(
+            `
+            SELECT t.*, a.pessoa_nome, a.id_pessoa
+            FROM alunos_transferencias_externas t
+            LEFT JOIN alunos_municipais a ON a.id = t.aluno_id
+            WHERE t.tenant_id = $1
+              AND t.escola_origem_id = $2
+            ORDER BY t.criado_em DESC, t.id DESC
+            `,
+            [tenantId, escolaId]
+        );
+        return res.json(result.rows || []);
+    } catch (err) {
+        console.error("Erro ao listar transferências externas:", err);
+        return res.status(500).json({ error: "Erro ao listar transferências externas." });
+    }
+});
+
+router.post("/:id/alunos/:alunoId/transferencias-externas", requirePermission('school.students.manage'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const tenantId = getTenantId(req);
+        await ensureTransferenciasExternasTable();
+        await ensureMatriculasHistoricoTable();
+        await ensureAlunosEscolasWorkflowColumns();
+
+        const aluno = await loadAlunoMatriculaDetalhes({ escolaId, alunoId, tenantId });
+        if (!aluno) return res.status(404).json({ error: "Aluno não encontrado na unidade." });
+
+        const escolaDestinoNome = parseOptionalText(req.body?.escola_destino_nome);
+        if (!escolaDestinoNome) return res.status(400).json({ error: "Escola de destino é obrigatória." });
+
+        const protocolo = `TE-${String(Date.now()).slice(-8)}`;
+        const codigoValidacao = randomCode('EXT', 6);
+        const anoLetivo = parseOptionalInt(req.body?.ano_letivo) || parseOptionalInt(aluno.ano_letivo) || new Date().getFullYear();
+
+        await client.query('BEGIN');
+        const transfer = await client.query(
+            `
+            INSERT INTO alunos_transferencias_externas (
+                tenant_id, aluno_id, escola_origem_id, escola_destino_nome, rede_destino, municipio_destino, uf_destino,
+                ano_letivo, turma_origem, status, motivo, observacoes, protocolo, codigo_validacao,
+                responsavel_nome, responsavel_documento, responsavel_parentesco, responsavel_telefone, responsavel_email,
+                solicitado_por_usuario_id
+            ) VALUES (
+                $1,$2,$3,$4,$5,$6,$7,
+                $8,$9,'AGUARDANDO_DOCUMENTO',$10,$11,$12,$13,
+                $14,$15,$16,$17,$18,$19
+            )
+            RETURNING *
+            `,
+            [
+                tenantId, alunoId, escolaId, escolaDestinoNome, parseOptionalText(req.body?.rede_destino),
+                parseOptionalText(req.body?.municipio_destino), parseOptionalText(req.body?.uf_destino),
+                anoLetivo, parseOptionalText(aluno.turma_escola || aluno.turma), parseOptionalText(req.body?.motivo),
+                parseOptionalText(req.body?.observacoes), protocolo, codigoValidacao,
+                parseOptionalText(req.body?.responsavel_nome || aluno.responsavel),
+                parseOptionalText(req.body?.responsavel_documento),
+                parseOptionalText(req.body?.responsavel_parentesco),
+                parseOptionalText(req.body?.responsavel_telefone || aluno.telefone_responsavel),
+                parseOptionalText(req.body?.responsavel_email || aluno.email_responsavel),
+                req?.user?.id ? Number(req.user.id) : null,
+            ]
+        );
+        const transferencia = transfer.rows[0];
+
+        await client.query(
+            `
+            UPDATE alunos_escolas
+            SET status_matricula = 'TRANSFERENCIA_EXTERNA',
+                transferencia_id = $4,
+                motivo_status = COALESCE($3, motivo_status),
+                data_saida = COALESCE(data_saida, NOW()),
+                atualizado_em = NOW()
+            WHERE tenant_id = $1
+              AND aluno_id = $2
+              AND escola_id = $5
+              AND ano_letivo = $6
+              AND COALESCE(status_matricula, 'ATIVO') = 'ATIVO'
+            `,
+            [tenantId, alunoId, parseOptionalText(req.body?.motivo), transferencia.id, escolaId, anoLetivo]
+        );
+
+        const columnSupport = await getColumnSupport();
+        const alunoParams = [alunoId];
+        let alunoWhere = 'WHERE id = $1';
+        if (columnSupport.alunosMunicipaisTenantId) {
+            alunoParams.push(tenantId);
+            alunoWhere += ' AND tenant_id = $2';
+        }
+        await client.query(
+            `
+            UPDATE alunos_municipais
+            SET status = 'transferido',
+                atualizado_em = NOW()
+            ${alunoWhere}
+            `,
+            alunoParams
+        );
+
+        await client.query(
+            `
+            INSERT INTO alunos_escolas_historico (
+                tenant_id, aluno_id, escola_id, ano_letivo, turma, tipo_evento, status_aluno, detalhes
+            ) VALUES ($1,$2,$3,$4,$5,'TRANSFERENCIA_EXTERNA_SOLICITADA','transferido',$6::jsonb)
+            `,
+            [tenantId, alunoId, escolaId, anoLetivo, parseOptionalText(aluno.turma_escola || aluno.turma), JSON.stringify({
+                escola_destino_nome: escolaDestinoNome,
+                protocolo,
+                codigo_validacao: codigoValidacao,
+                rede_destino: parseOptionalText(req.body?.rede_destino),
+            })]
+        );
+        await client.query('COMMIT');
+
+        return res.status(201).json({
+            transferencia_id: transferencia.id,
+            protocolo,
+            codigo_validacao: codigoValidacao,
+            pdf_url: `/api/escolas/${escolaId}/alunos/${alunoId}/transferencias-externas/${transferencia.id}/autorizacao-pdf`,
+        });
+    } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (_) {}
+        console.error("Erro ao solicitar transferência externa:", err);
+        return res.status(500).json({ error: "Erro ao solicitar transferência externa." });
+    } finally {
+        client.release();
+    }
+});
+
+router.post("/:id/transferencias-externas/:transferenciaId/concluir", requirePermission('school.students.manage'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const transferenciaId = parseInt(req.params.transferenciaId, 10);
+        const tenantId = getTenantId(req);
+        await ensureTransferenciasExternasTable();
+        const codigo = parseOptionalText(req.body?.codigo_validacao);
+        if (!codigo) return res.status(400).json({ error: "Código de validação é obrigatório." });
+
+        const result = await pool.query(
+            `
+            UPDATE alunos_transferencias_externas
+            SET status = 'CONCLUIDA',
+                autorizacao_assinada = TRUE,
+                documento_recebido = TRUE,
+                concluido_em = NOW(),
+                atualizado_em = NOW(),
+                concluido_por_usuario_id = $4
+            WHERE tenant_id = $1
+              AND escola_origem_id = $2
+              AND id = $3
+              AND codigo_validacao = $5
+            RETURNING *
+            `,
+            [tenantId, escolaId, transferenciaId, req?.user?.id ? Number(req.user.id) : null, codigo]
+        );
+        if (!result.rowCount) return res.status(404).json({ error: "Transferência externa não encontrada ou código inválido." });
+        return res.json({ success: true, transferencia: result.rows[0] });
+    } catch (err) {
+        console.error("Erro ao concluir transferência externa:", err);
+        return res.status(500).json({ error: "Erro ao concluir transferência externa." });
+    }
+});
+
+router.get("/:id/alunos/:alunoId/transferencias-externas/:transferenciaId/autorizacao-pdf", requirePermission('school.documents.emit'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const transferenciaId = parseInt(req.params.transferenciaId, 10);
+        const tenantId = getTenantId(req);
+        await ensureTransferenciasExternasTable();
+        const result = await pool.query(
+            `
+            SELECT t.*, a.pessoa_nome, a.id_pessoa, eo.nome AS escola_origem_nome
+            FROM alunos_transferencias_externas t
+            JOIN alunos_municipais a ON a.id = t.aluno_id
+            JOIN escolas eo ON eo.id = t.escola_origem_id
+            WHERE t.tenant_id = $1 AND t.escola_origem_id = $2 AND t.aluno_id = $3 AND t.id = $4
+            LIMIT 1
+            `,
+            [tenantId, escolaId, alunoId, transferenciaId]
+        );
+        const transferencia = result.rows[0];
+        if (!transferencia) return res.status(404).json({ error: "Transferência não encontrada." });
+
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="autorizacao_transferencia_externa_${transferenciaId}.pdf"`);
+        const doc = new PDFDocument({ size: "A4", margin: 45 });
+        doc.pipe(res);
+        drawCabecalho(doc, branding);
+        doc.y = 120;
+        doc.font("Helvetica-Bold").fontSize(15).text("AUTORIZAÇÃO DE TRANSFERÊNCIA EXTERNA", { align: "center" });
+        doc.moveDown(1.4);
+        doc.font("Helvetica").fontSize(11);
+        doc.text(`Protocolo: ${transferencia.protocolo}`);
+        doc.text(`Código de validação: ${transferencia.codigo_validacao}`);
+        doc.text(`Aluno: ${transferencia.pessoa_nome} • Matrícula na rede: ${transferencia.id_pessoa || 'N/I'}`);
+        doc.text(`Escola de origem: ${transferencia.escola_origem_nome}`);
+        doc.text(`Destino: ${transferencia.escola_destino_nome} • ${[transferencia.rede_destino, transferencia.municipio_destino, transferencia.uf_destino].filter(Boolean).join(' / ')}`);
+        doc.moveDown(1);
+        doc.text(`Responsável: ${transferencia.responsavel_nome || 'Não informado'} • Documento: ${transferencia.responsavel_documento || 'Não informado'}`);
+        doc.text(`Motivo: ${transferencia.motivo || 'Não informado'}`, { align: "justify" });
+        if (transferencia.observacoes) doc.text(`Observações: ${transferencia.observacoes}`, { align: "justify" });
+        doc.moveDown(2);
+        doc.text("A transferência somente poderá ser concluída após apresentação deste documento assinado pelo responsável legal, com o código de validação acima.", { align: "justify" });
+        doc.moveDown(3);
+        doc.text("__________________________________________", { align: "center" });
+        doc.text("Responsável legal", { align: "center" });
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar autorização de transferência externa:", err);
+        return res.status(500).json({ error: "Erro ao gerar autorização de transferência externa." });
+    }
+});
+
+router.get("/:id/rematriculas/preview", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const tenantSupport = await getTenantColumnSupport();
+        const anoOrigem = parseOptionalInt(req.query?.ano_origem) || new Date().getFullYear();
+        const anoDestino = parseOptionalInt(req.query?.ano_destino) || (anoOrigem + 1);
+        const useAlunosEscolasTenant = !!(tenantSupport.alunos_escolas && tenantId);
+        const params = [];
+        let where = '';
+        if (useAlunosEscolasTenant) {
+            params.push(tenantId);
+            where += `ae.tenant_id = $${params.length} AND `;
+        }
+        params.push(escolaId);
+        where += `ae.escola_id = $${params.length}`;
+        params.push(anoOrigem);
+        const anoOrigemParam = params.length;
+        params.push(anoDestino);
+        const anoDestinoParam = params.length;
+        const proxTenantClause = useAlunosEscolasTenant ? 'AND prox.tenant_id = ae.tenant_id' : '';
+        const result = await pool.query(
+            `
+            SELECT a.id, a.pessoa_nome, a.id_pessoa, ae.turma, ae.ano_letivo
+            FROM alunos_escolas ae
+            JOIN alunos_municipais a ON a.id = ae.aluno_id
+            WHERE ${where}
+              AND ae.ano_letivo = $${anoOrigemParam}
+              AND COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO'
+              AND NOT EXISTS (
+                SELECT 1
+                FROM alunos_escolas prox
+                WHERE prox.aluno_id = ae.aluno_id
+                  AND prox.escola_id = ae.escola_id
+                  ${proxTenantClause}
+                  AND prox.ano_letivo = $${anoDestinoParam}
+              )
+            ORDER BY a.pessoa_nome ASC
+            `,
+            params
+        );
+        return res.json({ ano_origem: anoOrigem, ano_destino: anoDestino, alunos: result.rows || [] });
+    } catch (err) {
+        console.error("Erro ao simular rematrículas:", err);
+        return res.status(500).json({ error: "Erro ao simular rematrículas." });
+    }
+});
+
+router.post("/:id/rematriculas/processar", requirePermission('school.students.manage'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const tenantSupport = await getTenantColumnSupport();
+        const anoOrigem = parseOptionalInt(req.body?.ano_origem) || new Date().getFullYear();
+        const anoDestino = parseOptionalInt(req.body?.ano_destino) || (anoOrigem + 1);
+        const alunoIds = Array.isArray(req.body?.aluno_ids) ? req.body.aluno_ids.map((item) => Number(item)).filter(Number.isFinite) : null;
+        await ensureMatriculasHistoricoTable();
+        await ensureAlunosEscolasWorkflowColumns();
+        const useAlunosEscolasTenant = !!(tenantSupport.alunos_escolas && tenantId);
+
+        await client.query('BEGIN');
+        const rowsParams = [];
+        let rowsWhere = '';
+        if (useAlunosEscolasTenant) {
+            rowsParams.push(tenantId);
+            rowsWhere += `ae.tenant_id = $${rowsParams.length} AND `;
+        }
+        rowsParams.push(escolaId);
+        rowsWhere += `ae.escola_id = $${rowsParams.length}`;
+        rowsParams.push(anoOrigem);
+        const anoOrigemParam = rowsParams.length;
+        const alunoIdsClause = alunoIds && alunoIds.length ? `AND ae.aluno_id = ANY($${rowsParams.length + 1}::int[])` : '';
+        if (alunoIds && alunoIds.length) rowsParams.push(alunoIds);
+        const rows = await client.query(
+            `
+            SELECT ae.aluno_id, ae.turma, a.pessoa_nome
+            FROM alunos_escolas ae
+            JOIN alunos_municipais a ON a.id = ae.aluno_id
+            WHERE ${rowsWhere}
+              AND ae.ano_letivo = $${anoOrigemParam}
+              AND COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO'
+              ${alunoIdsClause}
+            `,
+            rowsParams
+        );
+        let processados = 0;
+        for (const row of rows.rows || []) {
+            const exists = useAlunosEscolasTenant
+                ? await client.query(
+                    `SELECT 1 FROM alunos_escolas WHERE tenant_id = $1 AND aluno_id = $2 AND escola_id = $3 AND ano_letivo = $4 LIMIT 1`,
+                    [tenantId, row.aluno_id, escolaId, anoDestino]
+                )
+                : await client.query(
+                    `SELECT 1 FROM alunos_escolas WHERE aluno_id = $1 AND escola_id = $2 AND ano_letivo = $3 LIMIT 1`,
+                    [row.aluno_id, escolaId, anoDestino]
+                );
+            if (exists.rowCount) continue;
+            if (useAlunosEscolasTenant) {
+                await client.query(
+                    `
+                    INSERT INTO alunos_escolas (tenant_id, aluno_id, escola_id, ano_letivo, turma, status_matricula, data_entrada)
+                    VALUES ($1,$2,$3,$4,$5,'ATIVO',NOW())
+                    `,
+                    [tenantId, row.aluno_id, escolaId, anoDestino, row.turma]
+                );
+            } else {
+                await client.query(
+                    `
+                    INSERT INTO alunos_escolas (aluno_id, escola_id, ano_letivo, turma, status_matricula, data_entrada)
+                    VALUES ($1,$2,$3,$4,'ATIVO',NOW())
+                    `,
+                    [row.aluno_id, escolaId, anoDestino, row.turma]
+                );
+            }
+            await client.query(
+                `
+                INSERT INTO alunos_escolas_historico (tenant_id, aluno_id, escola_id, ano_letivo, turma, tipo_evento, status_aluno, detalhes)
+                VALUES ($1,$2,$3,$4,$5,'REMATRICULA','ativo',$6::jsonb)
+                `,
+                [tenantId, row.aluno_id, escolaId, anoDestino, row.turma, JSON.stringify({ ano_origem: anoOrigem, ano_destino: anoDestino })]
+            );
+            processados += 1;
+        }
+        await client.query('COMMIT');
+        return res.json({ success: true, processados, ano_destino: anoDestino });
+    } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (_) {}
+        console.error("Erro ao processar rematrículas:", err);
+        return res.status(500).json({ error: "Erro ao processar rematrículas." });
+    } finally {
+        client.release();
+    }
+});
+
+router.post("/:id/enturmacao/processar", requirePermission('school.students.manage'), async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const tenantSupport = await getTenantColumnSupport();
+        const anoLetivo = parseOptionalInt(req.body?.ano_letivo);
+        const turmaDestino = parseOptionalText(req.body?.turma_destino);
+        const alunoIds = Array.isArray(req.body?.aluno_ids) ? req.body.aluno_ids.map((item) => Number(item)).filter(Number.isFinite) : [];
+        if (!anoLetivo || !turmaDestino || !alunoIds.length) {
+            return res.status(400).json({ error: "ano_letivo, turma_destino e aluno_ids são obrigatórios." });
+        }
+        await ensureMatriculasHistoricoTable();
+        const useAlunosEscolasTenant = !!(tenantSupport.alunos_escolas && tenantId);
+        await client.query('BEGIN');
+        if (useAlunosEscolasTenant) {
+            await client.query(
+                `
+                UPDATE alunos_escolas
+                SET turma = $4,
+                    atualizado_em = NOW()
+                WHERE tenant_id = $1
+                  AND escola_id = $2
+                  AND ano_letivo = $3
+                  AND aluno_id = ANY($5::int[])
+                `,
+                [tenantId, escolaId, anoLetivo, turmaDestino, alunoIds]
+            );
+        } else {
+            await client.query(
+                `
+                UPDATE alunos_escolas
+                SET turma = $3,
+                    atualizado_em = NOW()
+                WHERE escola_id = $1
+                  AND ano_letivo = $2
+                  AND aluno_id = ANY($4::int[])
+                `,
+                [escolaId, anoLetivo, turmaDestino, alunoIds]
+            );
+        }
+        await client.query(
+            `
+            UPDATE alunos_municipais
+            SET turma = $2,
+                atualizado_em = NOW()
+            WHERE id = ANY($1::int[])
+              AND ${ (await getColumnSupport()).alunosMunicipaisTenantId ? 'tenant_id = $3' : '1=1' }
+            `,
+            (await getColumnSupport()).alunosMunicipaisTenantId ? [alunoIds, turmaDestino, tenantId] : [alunoIds, turmaDestino]
+        );
+        for (const alunoId of alunoIds) {
+            await client.query(
+                `
+                INSERT INTO alunos_escolas_historico (tenant_id, aluno_id, escola_id, ano_letivo, turma, tipo_evento, status_aluno, detalhes)
+                VALUES ($1,$2,$3,$4,$5,'ENTURMACAO','ativo',$6::jsonb)
+                `,
+                [tenantId, alunoId, escolaId, anoLetivo, turmaDestino, JSON.stringify({ turma_destino: turmaDestino })]
+            );
+        }
+        await client.query('COMMIT');
+        return res.json({ success: true, enturmados: alunoIds.length, turma_destino: turmaDestino });
+    } catch (err) {
+        try { await client.query('ROLLBACK'); } catch (_) {}
+        console.error("Erro ao processar enturmação:", err);
+        return res.status(500).json({ error: "Erro ao processar enturmação." });
+    } finally {
+        client.release();
+    }
+});
+
+router.get("/:id/alunos/:alunoId/historico-escolar", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const tenantId = getTenantId(req);
+        const data = await loadHistoricoEscolarData({ escolaId, alunoId, tenantId });
+        if (!data) return res.status(404).json({ error: "Aluno não encontrado." });
+        return res.json(data);
+    } catch (err) {
+        console.error("Erro ao carregar histórico escolar:", err);
+        return res.status(500).json({ error: "Erro ao carregar histórico escolar." });
+    }
+});
+
+router.get("/:id/alunos/:alunoId/historico-escolar-pdf", requirePermission('school.documents.emit'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const tenantId = getTenantId(req);
+        const data = await loadHistoricoEscolarData({ escolaId, alunoId, tenantId });
+        if (!data) return res.status(404).json({ error: "Aluno não encontrado." });
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="historico_escolar_${alunoId}.pdf"`);
+        const doc = new PDFDocument({ size: "A4", margin: 45 });
+        doc.pipe(res);
+        drawCabecalho(doc, branding);
+        doc.y = 120;
+        doc.font("Helvetica-Bold").fontSize(15).text("HISTÓRICO ESCOLAR E MOVIMENTAÇÃO", { align: "center" });
+        doc.moveDown();
+        doc.font("Helvetica").fontSize(11);
+        doc.text(`Aluno: ${data.aluno.pessoa_nome || 'Não informado'}`);
+        doc.text(`Matrícula na rede: ${data.aluno.id_pessoa || 'N/I'}`);
+        doc.text(`CPF: ${maskCpf(data.aluno.cpf)}`);
+        doc.moveDown();
+        doc.font("Helvetica-Bold").text("Vínculos escolares");
+        doc.font("Helvetica");
+        (data.vinculos || []).forEach((item) => {
+            doc.text(`• ${item.ano_letivo || 'N/I'} • ${item.escola_nome || 'Escola'} • ${item.turma || 'Sem turma'} • ${item.status_matricula || 'ATIVO'}`);
+        });
+        doc.moveDown();
+        doc.font("Helvetica-Bold").text("Rendimento por disciplina");
+        doc.font("Helvetica");
+        if ((data.rendimento_disciplinas || []).length) {
+            (data.rendimento_disciplinas || []).slice(0, 30).forEach((item) => {
+                doc.text(`• ${item.ano_letivo || 'N/I'} • ${item.periodo_letivo || 'Período'} • ${item.disciplina_nome || 'Disciplina'} • Nota ${formatDecimal(item.media)} • Freq. ${formatDecimal(item.frequencia)}% • Faltas ${item.faltas || 0}`);
+            });
+        } else {
+            doc.text('Nenhum lançamento de nota/frequência por disciplina disponível.');
+        }
+        doc.moveDown();
+        doc.font("Helvetica-Bold").text("Linha do tempo");
+        doc.font("Helvetica");
+        (data.linha_do_tempo || []).slice(0, 18).forEach((item) => {
+            doc.text(`• ${formatDatePtBr(item.criado_em)} • ${item.titulo} • ${item.descricao || 'Sem detalhes'}`);
+        });
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar histórico escolar em PDF:", err);
+        return res.status(500).json({ error: "Erro ao gerar histórico escolar em PDF." });
+    }
+});
+
+router.get("/:id/alunos/:alunoId/declaracao-escolar-pdf", requirePermission('school.documents.emit'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const tenantId = getTenantId(req);
+        const aluno = await loadAlunoMatriculaDetalhes({ escolaId, alunoId, tenantId });
+        if (!aluno) return res.status(404).json({ error: "Aluno não encontrado." });
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="declaracao_escolar_${alunoId}.pdf"`);
+        const doc = new PDFDocument({ size: "A4", margin: 45 });
+        doc.pipe(res);
+        drawCabecalho(doc, branding);
+        doc.y = 120;
+        doc.font("Helvetica-Bold").fontSize(15).text("DECLARAÇÃO ESCOLAR", { align: "center" });
+        doc.moveDown(2);
+        doc.font("Helvetica").fontSize(12).text(`Declaramos que ${aluno.pessoa_nome || 'o(a) estudante'}, matrícula ${aluno.id_pessoa || 'N/I'}, está vinculado(a) à unidade ${aluno.escola_nome || aluno.unidade_ensino || 'Não informada'}, no ano letivo ${aluno.ano_letivo || 'N/I'}, turma ${aluno.turma_escola || aluno.turma || 'Não informada'}.`, { align: "justify" });
+        doc.moveDown();
+        doc.text("A presente declaração é emitida para fins escolares e administrativos.", { align: "justify" });
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar declaração escolar:", err);
+        return res.status(500).json({ error: "Erro ao gerar declaração escolar." });
+    }
+});
+
+router.get("/:id/alunos/:alunoId/boletim-pdf", requirePermission('school.documents.emit'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const alunoId = parseInt(req.params.alunoId, 10);
+        const tenantId = getTenantId(req);
+        const data = await loadHistoricoEscolarData({ escolaId, alunoId, tenantId });
+        if (!data) return res.status(404).json({ error: "Aluno não encontrado." });
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="boletim_${alunoId}.pdf"`);
+        const doc = new PDFDocument({ size: "A4", margin: 45 });
+        doc.pipe(res);
+        drawCabecalho(doc, branding);
+        doc.y = 120;
+        doc.font("Helvetica-Bold").fontSize(15).text("BOLETIM ESCOLAR", { align: "center" });
+        doc.moveDown();
+        doc.font("Helvetica").fontSize(11);
+        doc.text(`Aluno: ${data.aluno.pessoa_nome || 'Não informado'}`);
+        doc.text(`Turma: ${data.aluno.turma_escola || data.aluno.turma || 'Não informada'} • Ano letivo: ${data.aluno.ano_letivo || 'N/I'}`);
+        doc.moveDown();
+        const rendimento = data.rendimento_disciplinas || [];
+        if (rendimento.length) {
+            rendimento.slice(0, 30).forEach((item) => {
+                doc.text(`${item.periodo_letivo || 'Período'}  |  ${item.disciplina_nome || 'Disciplina'}  |  Nota: ${formatDecimal(item.media)}  |  Frequência: ${formatDecimal(item.frequencia)}%  |  Faltas: ${item.faltas || 0}`);
+            });
+        } else {
+            doc.text('Nenhum lançamento de boletim por disciplina disponível.');
+        }
+        doc.moveDown();
+        doc.text(`Situação atual: ${academicLabel(data.aluno.status, 'Em acompanhamento')}`);
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar boletim:", err);
+        return res.status(500).json({ error: "Erro ao gerar boletim." });
+    }
+});
+
+router.get("/:id/documentos/ata-turma-pdf", requirePermission('school.documents.emit'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const tenantSupport = await getTenantColumnSupport();
+        const turma = parseOptionalText(req.query?.turma);
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        if (!turma || !anoLetivo) return res.status(400).json({ error: "turma e ano_letivo são obrigatórios." });
+        const useAlunosEscolasTenant = !!(tenantSupport.alunos_escolas && tenantId);
+        const ataParams = [];
+        let ataWhere = '';
+        if (useAlunosEscolasTenant) {
+            ataParams.push(tenantId);
+            ataWhere += `ae.tenant_id = $${ataParams.length} AND `;
+        }
+        ataParams.push(escolaId, anoLetivo, turma);
+        ataWhere += `ae.escola_id = $${useAlunosEscolasTenant ? 2 : 1}
+              AND ae.ano_letivo = $${useAlunosEscolasTenant ? 3 : 2}
+              AND ae.turma = $${useAlunosEscolasTenant ? 4 : 3}`;
+        const result = await pool.query(
+            `
+            SELECT a.pessoa_nome, a.id_pessoa, ae.turma, ae.ano_letivo, e.nome AS escola_nome
+            FROM alunos_escolas ae
+            JOIN alunos_municipais a ON a.id = ae.aluno_id
+            JOIN escolas e ON e.id = ae.escola_id
+            WHERE ${ataWhere}
+              AND COALESCE(ae.status_matricula, 'ATIVO') = 'ATIVO'
+            ORDER BY a.pessoa_nome ASC
+            `,
+            ataParams
+        );
+        const branding = await getBranding(tenantId);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `inline; filename="ata_turma_${anoLetivo}_${turma}.pdf"`);
+        const doc = new PDFDocument({ size: "A4", margin: 45 });
+        doc.pipe(res);
+        drawCabecalho(doc, branding);
+        doc.y = 120;
+        doc.font("Helvetica-Bold").fontSize(15).text("ATA DA TURMA", { align: "center" });
+        doc.moveDown();
+        doc.font("Helvetica").fontSize(11);
+        doc.text(`Turma: ${turma} • Ano letivo: ${anoLetivo}`);
+        doc.text(`Total de estudantes: ${result.rowCount}`);
+        doc.moveDown();
+        (result.rows || []).forEach((row, index) => {
+            doc.text(`${index + 1}. ${row.pessoa_nome || 'Sem nome'} • Matrícula ${row.id_pessoa || 'N/I'}`);
+        });
+        drawRodape(doc, branding);
+        doc.end();
+    } catch (err) {
+        console.error("Erro ao gerar ata de turma:", err);
+        return res.status(500).json({ error: "Erro ao gerar ata de turma." });
+    }
+});
+
+router.get("/:id/relatorios-academicos", requirePermission('school.dashboard.view'), async (req, res) => {
+    try {
+        const escolaId = parseInt(req.params.id, 10);
+        const tenantId = getTenantId(req);
+        const anoLetivo = parseOptionalInt(req.query?.ano_letivo);
+        const dashboard = await loadEscolaDashboardData(escolaId, tenantId, { limitAlunos: 1000, anoLetivo });
+        const overview = await loadAcademicOverview(escolaId, tenantId, anoLetivo);
+        if (!dashboard) return res.status(404).json({ error: "Escola não encontrada." });
+        await ensureAcademicMaturityTables();
+        const alunos = Array.isArray(dashboard.alunos) ? dashboard.alunos : [];
+        const [notas, conselhos, fechamentos] = await Promise.all([
+            pool.query(
+                `
+                SELECT periodo_letivo, disciplina_nome, nota, frequencia, faltas, turma
+                FROM escola_avaliacoes_componentes
+                WHERE tenant_id = $1
+                  AND escola_id = $2
+                  ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+                `,
+                anoLetivo ? [tenantId, escolaId, anoLetivo] : [tenantId, escolaId]
+            ),
+            pool.query(
+                `
+                SELECT turma, periodo_letivo, status, data_reuniao
+                FROM escola_conselho_classe
+                WHERE tenant_id = $1
+                  AND escola_id = $2
+                  ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+                ORDER BY data_reuniao DESC NULLS LAST
+                `,
+                anoLetivo ? [tenantId, escolaId, anoLetivo] : [tenantId, escolaId]
+            ),
+            pool.query(
+                `
+                SELECT turma, periodo_letivo, status, total_alunos, total_aprovados, total_reprovados, total_transferidos, total_abandono
+                FROM escola_fechamentos_periodo
+                WHERE tenant_id = $1
+                  AND escola_id = $2
+                  ${anoLetivo ? 'AND ano_letivo = $3' : ''}
+                ORDER BY periodo_letivo ASC
+                `,
+                anoLetivo ? [tenantId, escolaId, anoLetivo] : [tenantId, escolaId]
+            ),
+        ]);
+        const porTurma = Object.entries(alunos.reduce((acc, aluno) => {
+            const key = academicLabel(aluno.turma_escola || aluno.turma);
+            acc[key] = acc[key] || { turma: key, total: 0, transporte: 0, deficiencia: 0 };
+            acc[key].total += 1;
+            if (aluno.transporte_apto) acc[key].transporte += 1;
+            if (parseOptionalText(aluno.deficiencia)) acc[key].deficiencia += 1;
+            return acc;
+        }, {})).map(([, value]) => value).sort((a, b) => b.total - a.total);
+        const rendimentoPorDisciplina = Object.values((notas.rows || []).reduce((acc, item) => {
+            const key = academicLabel(item.disciplina_nome);
+            acc[key] = acc[key] || { disciplina: key, total_lancamentos: 0, media_notas: [], media_frequencia: [], faltas: 0 };
+            acc[key].total_lancamentos += 1;
+            if (item.nota !== null && item.nota !== undefined) acc[key].media_notas.push(Number(item.nota));
+            if (item.frequencia !== null && item.frequencia !== undefined) acc[key].media_frequencia.push(Number(item.frequencia));
+            acc[key].faltas += Number(item.faltas || 0);
+            return acc;
+        }, {})).map((item) => ({
+            disciplina: item.disciplina,
+            total_lancamentos: item.total_lancamentos,
+            media_nota: item.media_notas.length ? Number((item.media_notas.reduce((a, b) => a + b, 0) / item.media_notas.length).toFixed(2)) : null,
+            media_frequencia: item.media_frequencia.length ? Number((item.media_frequencia.reduce((a, b) => a + b, 0) / item.media_frequencia.length).toFixed(2)) : null,
+            faltas: item.faltas,
+        })).sort((a, b) => (b.total_lancamentos - a.total_lancamentos));
+        return res.json({
+            escola: dashboard.escola,
+            filtros: { ano_letivo: anoLetivo },
+            overview,
+            por_turma: porTurma,
+            rendimento_por_disciplina: rendimentoPorDisciplina,
+            conselhos: conselhos.rows || [],
+            fechamentos: fechamentos.rows || [],
+            distribuicoes: {
+                etapas: alunos.reduce((acc, aluno) => {
+                    const key = academicLabel(aluno.etapa);
+                    acc[key] = (acc[key] || 0) + 1;
+                    return acc;
+                }, {}),
+                status: alunos.reduce((acc, aluno) => {
+                    const key = academicLabel(aluno.status);
+                    acc[key] = (acc[key] || 0) + 1;
+                    return acc;
+                }, {}),
+            },
+        });
+    } catch (err) {
+        console.error("Erro ao gerar relatórios acadêmicos:", err);
+        return res.status(500).json({ error: "Erro ao gerar relatórios acadêmicos." });
     }
 });
 

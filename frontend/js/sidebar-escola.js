@@ -59,6 +59,21 @@
                 item(window.EscolaContexto.montarUrlModulo(escolaId, 'turmas'), 'fe-layers', 'Turmas') +
                 item(window.EscolaContexto.montarUrlModulo(escolaId, 'alunos'), 'fe-users', 'Alunos') +
             '</ul>' +
+            '<p class="text-muted nav-heading mt-4 mb-1"><span>Acadêmico</span></p>' +
+            '<ul class="navbar-nav flex-fill w-100 mb-2">' +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'matriculas'), 'fe-file-text', 'Matrículas') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'diario-classe'), 'fe-edit-3', 'Diário de classe') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'notas-componentes'), 'fe-award', 'Notas e componentes') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'rematriculas'), 'fe-repeat', 'Rematrículas') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'enturmacao'), 'fe-git-merge', 'Enturmação') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'transferencias'), 'fe-send', 'Transferências') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'conselho-classe'), 'fe-users', 'Conselho de classe') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'fechamentos'), 'fe-check-square', 'Fechamentos') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'historico-escolar'), 'fe-book-open', 'Histórico escolar') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'documentos'), 'fe-folder', 'Documentos') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'ocorrencias'), 'fe-alert-circle', 'Ocorrências') +
+                item(window.EscolaContexto.montarUrlModulo(escolaId, 'relatorios'), 'fe-bar-chart-2', 'Relatórios') +
+            '</ul>' +
             '<p class="text-muted nav-heading mt-4 mb-1"><span>Navegacao</span></p>' +
             '<ul class="navbar-nav flex-fill w-100 mb-2">' +
                 item('/escolas', 'fe-map-pin', 'Voltar para escolas') +

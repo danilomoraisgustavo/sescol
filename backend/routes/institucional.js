@@ -23,6 +23,25 @@ function parseOptionalText(value) {
     return normalized ? normalized : null;
 }
 
+function parseOptionalTextArray(value) {
+    if (Array.isArray(value)) {
+        const items = value.map((item) => parseOptionalText(item)).filter(Boolean);
+        return items.length ? items : null;
+    }
+    if (value === null || value === undefined) return null;
+    const normalized = String(value)
+        .split(',')
+        .map((item) => parseOptionalText(item))
+        .filter(Boolean);
+    return normalized.length ? normalized : null;
+}
+
+function parseOptionalDecimal(value) {
+    if (value === null || value === undefined || value === '') return null;
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+}
+
 function parseBoolean(value, fallback = false) {
     if (value === null || value === undefined || value === '') return fallback;
     if (typeof value === 'boolean') return value;
@@ -271,6 +290,22 @@ async function ensureInstitutionalSchema() {
     await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS observacoes_rede TEXT NULL`);
     await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
     await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS id BIGSERIAL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS nome_rede TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS secretaria_nome TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS municipio_uf TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS ano_letivo_padrao INT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS regra_avaliacao TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS emite_documentos_com_logomarca BOOLEAN NOT NULL DEFAULT TRUE`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS rematricula_automatica BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS exige_documentacao_completa_matricula BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS permite_transferencia_com_pendencia BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS exige_validacao_transferencia_interna BOOLEAN NOT NULL DEFAULT TRUE`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS distancia_minima_transporte_km NUMERIC(6,2) NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS limite_faltas_alerta INT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS tamanho_maximo_turma_infantil INT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS tamanho_maximo_turma_fundamental INT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS tamanho_maximo_turma_medio INT NULL`);
+    await pool.query(`ALTER TABLE institucional_parametros_gerais ADD COLUMN IF NOT EXISTS observacoes_normativas TEXT NULL`);
 
     await pool.query(`ALTER TABLE institucional_servidores ADD COLUMN IF NOT EXISTS matricula_rede TEXT NULL`);
     await pool.query(`ALTER TABLE institucional_servidores ADD COLUMN IF NOT EXISTS matricula_funcional TEXT NULL`);
@@ -297,6 +332,47 @@ async function ensureInstitutionalSchema() {
     await pool.query(`ALTER TABLE institucional_servidores ADD COLUMN IF NOT EXISTS jornada_descricao TEXT NULL`);
     await pool.query(`ALTER TABLE institucional_servidores ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
     await pool.query(`ALTER TABLE institucional_servidores ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS bncc_area TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS eixo_formativo TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS etapa_recomendada TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS sigla_censo TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS ordem_curricular INT NULL`);
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS componente_obrigatorio BOOLEAN NOT NULL DEFAULT TRUE`);
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS usa_nota BOOLEAN NOT NULL DEFAULT TRUE`);
+    await pool.query(`ALTER TABLE institucional_disciplinas ADD COLUMN IF NOT EXISTS observacoes TEXT NULL`);
+
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS segmento TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS nomenclatura_censo TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS etapa_modalidade TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS idade_referencia INT NULL`);
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS carga_horaria_anual_horas INT NULL`);
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS permite_distorcao_idade BOOLEAN NOT NULL DEFAULT TRUE`);
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS usa_progressao_parcial BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE institucional_series ADD COLUMN IF NOT EXISTS observacoes TEXT NULL`);
+
+    await pool.query(`ALTER TABLE institucional_turnos ADD COLUMN IF NOT EXISTS tolerancia_entrada_min INT NULL`);
+    await pool.query(`ALTER TABLE institucional_turnos ADD COLUMN IF NOT EXISTS tolerancia_saida_min INT NULL`);
+    await pool.query(`ALTER TABLE institucional_turnos ADD COLUMN IF NOT EXISTS intervalo_minutos INT NULL`);
+    await pool.query(`ALTER TABLE institucional_turnos ADD COLUMN IF NOT EXISTS dias_semana TEXT[] NULL`);
+    await pool.query(`ALTER TABLE institucional_turnos ADD COLUMN IF NOT EXISTS atendimento_sabado BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE institucional_turnos ADD COLUMN IF NOT EXISTS observacoes TEXT NULL`);
+
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS modelo_calendario TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS referencia_normativa TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS etapa_alcance TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS usa_sabado_letivo BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS dias_planejamento INT NULL`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS dias_recesso INT NULL`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS dias_avaliacao INT NULL`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS dias_nao_letivos INT NULL`);
+    await pool.query(`ALTER TABLE institucional_calendarios_letivos ADD COLUMN IF NOT EXISTS aplica_transporte_escolar BOOLEAN NOT NULL DEFAULT TRUE`);
+
+    await pool.query(`ALTER TABLE institucional_periodos_letivos ADD COLUMN IF NOT EXISTS referencia_codigo TEXT NULL`);
+    await pool.query(`ALTER TABLE institucional_periodos_letivos ADD COLUMN IF NOT EXISTS peso_avaliativo NUMERIC(6,2) NULL`);
+    await pool.query(`ALTER TABLE institucional_periodos_letivos ADD COLUMN IF NOT EXISTS exige_fechamento BOOLEAN NOT NULL DEFAULT TRUE`);
+    await pool.query(`ALTER TABLE institucional_periodos_letivos ADD COLUMN IF NOT EXISTS permite_lancamento_fora_periodo BOOLEAN NOT NULL DEFAULT FALSE`);
+    await pool.query(`ALTER TABLE institucional_periodos_letivos ADD COLUMN IF NOT EXISTS observacoes TEXT NULL`);
 
     await pool.query(`UPDATE institucional_servidores SET matricula_rede = COALESCE(matricula_rede, matricula) WHERE matricula_rede IS NULL AND matricula IS NOT NULL`);
     await pool.query(`UPDATE institucional_servidores SET funcao_principal = COALESCE(funcao_principal, funcao) WHERE funcao_principal IS NULL AND funcao IS NOT NULL`);
@@ -855,6 +931,14 @@ mountSimpleCrud('disciplinas', 'institucional_disciplinas', 'INSTITUTIONAL_DISCI
         abreviacao: parseOptionalText(body.abreviacao),
         area_conhecimento: parseOptionalText(body.area_conhecimento),
         carga_horaria_padrao: parseOptionalInt(body.carga_horaria_padrao),
+        bncc_area: parseOptionalText(body.bncc_area),
+        eixo_formativo: parseOptionalText(body.eixo_formativo),
+        etapa_recomendada: parseOptionalText(body.etapa_recomendada),
+        sigla_censo: parseOptionalText(body.sigla_censo),
+        ordem_curricular: parseOptionalInt(body.ordem_curricular),
+        componente_obrigatorio: parseBoolean(body.componente_obrigatorio, true),
+        usa_nota: parseBoolean(body.usa_nota, true),
+        observacoes: parseOptionalText(body.observacoes),
         ativo: parseBoolean(body.ativo, true),
     };
 });
@@ -869,8 +953,16 @@ mountSimpleCrud('series', 'institucional_series', 'INSTITUTIONAL_SERIES', 'ordem
         nome,
         etapa,
         ordem: parseOptionalInt(body.ordem) ?? 0,
+        segmento: parseOptionalText(body.segmento),
+        nomenclatura_censo: parseOptionalText(body.nomenclatura_censo),
+        etapa_modalidade: parseOptionalText(body.etapa_modalidade),
         idade_minima: parseOptionalInt(body.idade_minima),
         idade_maxima: parseOptionalInt(body.idade_maxima),
+        idade_referencia: parseOptionalInt(body.idade_referencia),
+        carga_horaria_anual_horas: parseOptionalInt(body.carga_horaria_anual_horas),
+        permite_distorcao_idade: parseBoolean(body.permite_distorcao_idade, true),
+        usa_progressao_parcial: parseBoolean(body.usa_progressao_parcial, false),
+        observacoes: parseOptionalText(body.observacoes),
         ativo: parseBoolean(body.ativo, true),
     };
 });
@@ -885,6 +977,12 @@ mountSimpleCrud('turnos', 'institucional_turnos', 'INSTITUTIONAL_SHIFT', 'nome A
         hora_inicio: parseOptionalText(body.hora_inicio),
         hora_fim: parseOptionalText(body.hora_fim),
         carga_horaria_minutos: parseOptionalInt(body.carga_horaria_minutos),
+        tolerancia_entrada_min: parseOptionalInt(body.tolerancia_entrada_min),
+        tolerancia_saida_min: parseOptionalInt(body.tolerancia_saida_min),
+        intervalo_minutos: parseOptionalInt(body.intervalo_minutos),
+        dias_semana: parseOptionalTextArray(body.dias_semana),
+        atendimento_sabado: parseBoolean(body.atendimento_sabado, false),
+        observacoes: parseOptionalText(body.observacoes),
         ativo: parseBoolean(body.ativo, true),
     };
 });
@@ -900,6 +998,15 @@ mountSimpleCrud('calendarios', 'institucional_calendarios_letivos', 'INSTITUTION
         data_inicio: parseOptionalText(body.data_inicio),
         data_fim: parseOptionalText(body.data_fim),
         dias_letivos_previstos: parseOptionalInt(body.dias_letivos_previstos),
+        modelo_calendario: parseOptionalText(body.modelo_calendario),
+        referencia_normativa: parseOptionalText(body.referencia_normativa),
+        etapa_alcance: parseOptionalText(body.etapa_alcance),
+        usa_sabado_letivo: parseBoolean(body.usa_sabado_letivo, false),
+        dias_planejamento: parseOptionalInt(body.dias_planejamento),
+        dias_recesso: parseOptionalInt(body.dias_recesso),
+        dias_avaliacao: parseOptionalInt(body.dias_avaliacao),
+        dias_nao_letivos: parseOptionalInt(body.dias_nao_letivos),
+        aplica_transporte_escolar: parseBoolean(body.aplica_transporte_escolar, true),
         status: parseOptionalText(body.status) || 'PLANEJADO',
         observacoes: parseOptionalText(body.observacoes),
     };
@@ -915,10 +1022,15 @@ mountSimpleCrud('periodos', 'institucional_periodos_letivos', 'INSTITUTIONAL_PER
         nome,
         tipo,
         ordem: parseOptionalInt(body.ordem) ?? 1,
+        referencia_codigo: parseOptionalText(body.referencia_codigo),
+        peso_avaliativo: parseOptionalDecimal(body.peso_avaliativo),
+        exige_fechamento: parseBoolean(body.exige_fechamento, true),
+        permite_lancamento_fora_periodo: parseBoolean(body.permite_lancamento_fora_periodo, false),
         data_inicio: parseOptionalText(body.data_inicio),
         data_fim: parseOptionalText(body.data_fim),
         data_fechamento: parseOptionalText(body.data_fechamento),
         status: parseOptionalText(body.status) || 'ABERTO',
+        observacoes: parseOptionalText(body.observacoes),
     };
 });
 
@@ -937,10 +1049,15 @@ router.put('/parametros', requirePermission('institution.master.manage'), async 
         const tenantId = requireTenantId(req);
         const current = await getParametrosGerais(tenantId);
         const next = {
+            nome_rede: req.body?.nome_rede ?? current.nome_rede,
+            secretaria_nome: req.body?.secretaria_nome ?? current.secretaria_nome,
+            municipio_uf: req.body?.municipio_uf ?? current.municipio_uf,
+            ano_letivo_padrao: req.body?.ano_letivo_padrao ?? current.ano_letivo_padrao,
             frequencia_minima: req.body?.frequencia_minima ?? current.frequencia_minima,
             nota_minima: req.body?.nota_minima ?? current.nota_minima,
             dias_letivos_minimos: req.body?.dias_letivos_minimos ?? current.dias_letivos_minimos,
             carga_horaria_anual_horas: req.body?.carga_horaria_anual_horas ?? current.carga_horaria_anual_horas,
+            regra_avaliacao: req.body?.regra_avaliacao ?? current.regra_avaliacao,
             idade_corte_infantil: req.body?.idade_corte_infantil ?? current.idade_corte_infantil,
             idade_corte_fundamental: req.body?.idade_corte_fundamental ?? current.idade_corte_fundamental,
             permite_multisseriada: req.body?.permite_multisseriada ?? current.permite_multisseriada,
@@ -950,35 +1067,67 @@ router.put('/parametros', requirePermission('institution.master.manage'), async 
             tipo_avaliacao: req.body?.tipo_avaliacao ?? current.tipo_avaliacao,
             usa_recuperacao_paralela: req.body?.usa_recuperacao_paralela ?? current.usa_recuperacao_paralela,
             conselho_classe_obrigatorio: req.body?.conselho_classe_obrigatorio ?? current.conselho_classe_obrigatorio,
+            emite_documentos_com_logomarca: req.body?.emite_documentos_com_logomarca ?? current.emite_documentos_com_logomarca,
+            rematricula_automatica: req.body?.rematricula_automatica ?? current.rematricula_automatica,
+            exige_documentacao_completa_matricula: req.body?.exige_documentacao_completa_matricula ?? current.exige_documentacao_completa_matricula,
+            permite_transferencia_com_pendencia: req.body?.permite_transferencia_com_pendencia ?? current.permite_transferencia_com_pendencia,
+            exige_validacao_transferencia_interna: req.body?.exige_validacao_transferencia_interna ?? current.exige_validacao_transferencia_interna,
+            distancia_minima_transporte_km: req.body?.distancia_minima_transporte_km ?? current.distancia_minima_transporte_km,
+            limite_faltas_alerta: req.body?.limite_faltas_alerta ?? current.limite_faltas_alerta,
+            tamanho_maximo_turma_infantil: req.body?.tamanho_maximo_turma_infantil ?? current.tamanho_maximo_turma_infantil,
+            tamanho_maximo_turma_fundamental: req.body?.tamanho_maximo_turma_fundamental ?? current.tamanho_maximo_turma_fundamental,
+            tamanho_maximo_turma_medio: req.body?.tamanho_maximo_turma_medio ?? current.tamanho_maximo_turma_medio,
             observacoes_rede: req.body?.observacoes_rede ?? current.observacoes_rede,
+            observacoes_normativas: req.body?.observacoes_normativas ?? current.observacoes_normativas,
         };
         const { rows } = await pool.query(
             `
             UPDATE institucional_parametros_gerais
-               SET frequencia_minima = $2,
-                   nota_minima = $3,
-                   dias_letivos_minimos = $4,
-                   carga_horaria_anual_horas = $5,
-                   idade_corte_infantil = $6,
-                   idade_corte_fundamental = $7,
-                   permite_multisseriada = $8,
-                   max_estudantes_publico_ee_por_turma = $9,
-                   tamanho_padrao_turma = $10,
-                   turno_padrao = $11,
-                   tipo_avaliacao = $12,
-                   usa_recuperacao_paralela = $13,
-                   conselho_classe_obrigatorio = $14,
-                   observacoes_rede = $15,
+               SET nome_rede = $2,
+                   secretaria_nome = $3,
+                   municipio_uf = $4,
+                   ano_letivo_padrao = $5,
+                   frequencia_minima = $6,
+                   nota_minima = $7,
+                   dias_letivos_minimos = $8,
+                   carga_horaria_anual_horas = $9,
+                   regra_avaliacao = $10,
+                   idade_corte_infantil = $11,
+                   idade_corte_fundamental = $12,
+                   permite_multisseriada = $13,
+                   max_estudantes_publico_ee_por_turma = $14,
+                   tamanho_padrao_turma = $15,
+                   turno_padrao = $16,
+                   tipo_avaliacao = $17,
+                   usa_recuperacao_paralela = $18,
+                   conselho_classe_obrigatorio = $19,
+                   emite_documentos_com_logomarca = $20,
+                   rematricula_automatica = $21,
+                   exige_documentacao_completa_matricula = $22,
+                   permite_transferencia_com_pendencia = $23,
+                   exige_validacao_transferencia_interna = $24,
+                   distancia_minima_transporte_km = $25,
+                   limite_faltas_alerta = $26,
+                   tamanho_maximo_turma_infantil = $27,
+                   tamanho_maximo_turma_fundamental = $28,
+                   tamanho_maximo_turma_medio = $29,
+                   observacoes_rede = $30,
+                   observacoes_normativas = $31,
                    updated_at = NOW()
              WHERE tenant_id = $1
              RETURNING *
             `,
             [
                 tenantId,
+                parseOptionalText(next.nome_rede),
+                parseOptionalText(next.secretaria_nome),
+                parseOptionalText(next.municipio_uf),
+                parseOptionalInt(next.ano_letivo_padrao),
                 Number(next.frequencia_minima),
                 Number(next.nota_minima),
                 Number(next.dias_letivos_minimos),
                 Number(next.carga_horaria_anual_horas),
+                parseOptionalText(next.regra_avaliacao),
                 Number(next.idade_corte_infantil),
                 Number(next.idade_corte_fundamental),
                 parseBoolean(next.permite_multisseriada, true),
@@ -988,7 +1137,18 @@ router.put('/parametros', requirePermission('institution.master.manage'), async 
                 parseOptionalText(next.tipo_avaliacao),
                 parseBoolean(next.usa_recuperacao_paralela, true),
                 parseBoolean(next.conselho_classe_obrigatorio, true),
+                parseBoolean(next.emite_documentos_com_logomarca, true),
+                parseBoolean(next.rematricula_automatica, false),
+                parseBoolean(next.exige_documentacao_completa_matricula, false),
+                parseBoolean(next.permite_transferencia_com_pendencia, false),
+                parseBoolean(next.exige_validacao_transferencia_interna, true),
+                parseOptionalDecimal(next.distancia_minima_transporte_km),
+                parseOptionalInt(next.limite_faltas_alerta),
+                parseOptionalInt(next.tamanho_maximo_turma_infantil),
+                parseOptionalInt(next.tamanho_maximo_turma_fundamental),
+                parseOptionalInt(next.tamanho_maximo_turma_medio),
                 parseOptionalText(next.observacoes_rede),
+                parseOptionalText(next.observacoes_normativas),
             ]
         );
         await registrarAuditoriaInstitucional(req, {

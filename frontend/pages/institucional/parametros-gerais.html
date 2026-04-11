@@ -24,6 +24,18 @@
                 <div class="row" data-role="stats"></div>
 
                 <div class="institutional-section-card">
+                    <div class="institutional-form-section-title">Identidade da rede</div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="form-group"><label>Nome da rede</label><input class="form-control" data-parameter-name="nome_rede" type="text"></div></div>
+                        <div class="col-md-4"><div class="form-group"><label>Secretaria responsável</label><input class="form-control" data-parameter-name="secretaria_nome" type="text"></div></div>
+                        <div class="col-md-4"><div class="form-group"><label>Município / UF</label><input class="form-control" data-parameter-name="municipio_uf" type="text"></div></div>
+                        <div class="col-md-3"><div class="form-group"><label>Ano letivo padrão</label><input class="form-control" data-parameter-name="ano_letivo_padrao" type="number"></div></div>
+                        <div class="col-md-3 d-flex align-items-end"><div class="custom-control custom-switch mb-3"><input class="custom-control-input" id="param-logomarca" data-parameter-name="emite_documentos_com_logomarca" type="checkbox"><label class="custom-control-label" for="param-logomarca">Emitir documentos com logomarca</label></div></div>
+                    </div>
+                    <div class="section-actions"><button class="btn btn-primary" data-save-section>Salvar identidade da rede</button></div>
+                </div>
+
+                <div class="institutional-section-card">
                     <div class="institutional-form-section-title">Regras acadêmicas</div>
                     <div class="row">
                         <div class="col-md-3"><div class="form-group"><label>Frequência mínima (%)</label><input class="form-control" data-parameter-name="frequencia_minima" type="number" step="0.01"></div></div>
@@ -31,6 +43,7 @@
                         <div class="col-md-3"><div class="form-group"><label>Dias letivos mínimos</label><input class="form-control" data-parameter-name="dias_letivos_minimos" type="number"></div></div>
                         <div class="col-md-3"><div class="form-group"><label>Carga anual (horas)</label><input class="form-control" data-parameter-name="carga_horaria_anual_horas" type="number"></div></div>
                         <div class="col-md-4"><div class="form-group"><label>Tipo de avaliação</label><input class="form-control" data-parameter-name="tipo_avaliacao" type="text"></div></div>
+                        <div class="col-md-4"><div class="form-group"><label>Regra de avaliação</label><input class="form-control" data-parameter-name="regra_avaliacao" type="text"></div></div>
                         <div class="col-md-4 d-flex align-items-end"><div class="custom-control custom-switch mb-3"><input class="custom-control-input" id="param-usa-recuperacao" data-parameter-name="usa_recuperacao_paralela" type="checkbox"><label class="custom-control-label" for="param-usa-recuperacao">Usa recuperação paralela</label></div></div>
                         <div class="col-md-4 d-flex align-items-end"><div class="custom-control custom-switch mb-3"><input class="custom-control-input" id="param-conselho-classe" data-parameter-name="conselho_classe_obrigatorio" type="checkbox"><label class="custom-control-label" for="param-conselho-classe">Conselho de classe obrigatório</label></div></div>
                     </div>
@@ -51,9 +64,40 @@
                 </div>
 
                 <div class="institutional-section-card">
+                    <div class="institutional-form-section-title">Matrícula e transferência</div>
+                    <div class="row">
+                        <div class="col-md-3 d-flex align-items-end"><div class="custom-control custom-switch mb-3"><input class="custom-control-input" id="param-rematricula" data-parameter-name="rematricula_automatica" type="checkbox"><label class="custom-control-label" for="param-rematricula">Rematrícula automática</label></div></div>
+                        <div class="col-md-3 d-flex align-items-end"><div class="custom-control custom-switch mb-3"><input class="custom-control-input" id="param-docs-matricula" data-parameter-name="exige_documentacao_completa_matricula" type="checkbox"><label class="custom-control-label" for="param-docs-matricula">Exigir documentação completa</label></div></div>
+                        <div class="col-md-3 d-flex align-items-end"><div class="custom-control custom-switch mb-3"><input class="custom-control-input" id="param-transf-pendencia" data-parameter-name="permite_transferencia_com_pendencia" type="checkbox"><label class="custom-control-label" for="param-transf-pendencia">Permitir transferência com pendência</label></div></div>
+                        <div class="col-md-3 d-flex align-items-end"><div class="custom-control custom-switch mb-3"><input class="custom-control-input" id="param-validacao-interna" data-parameter-name="exige_validacao_transferencia_interna" type="checkbox"><label class="custom-control-label" for="param-validacao-interna">Exigir validação de transferência interna</label></div></div>
+                    </div>
+                    <div class="section-actions"><button class="btn btn-primary" data-save-section>Salvar regras de matrícula</button></div>
+                </div>
+
+                <div class="institutional-section-card">
+                    <div class="institutional-form-section-title">Transporte e alertas</div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="form-group"><label>Distância mínima para transporte (km)</label><input class="form-control" data-parameter-name="distancia_minima_transporte_km" type="number" step="0.01"></div></div>
+                        <div class="col-md-4"><div class="form-group"><label>Limite de faltas para alerta</label><input class="form-control" data-parameter-name="limite_faltas_alerta" type="number"></div></div>
+                    </div>
+                    <div class="section-actions"><button class="btn btn-primary" data-save-section>Salvar transporte e alertas</button></div>
+                </div>
+
+                <div class="institutional-section-card">
+                    <div class="institutional-form-section-title">Limites por etapa</div>
+                    <div class="row">
+                        <div class="col-md-4"><div class="form-group"><label>Tamanho máximo turma infantil</label><input class="form-control" data-parameter-name="tamanho_maximo_turma_infantil" type="number"></div></div>
+                        <div class="col-md-4"><div class="form-group"><label>Tamanho máximo turma fundamental</label><input class="form-control" data-parameter-name="tamanho_maximo_turma_fundamental" type="number"></div></div>
+                        <div class="col-md-4"><div class="form-group"><label>Tamanho máximo turma médio</label><input class="form-control" data-parameter-name="tamanho_maximo_turma_medio" type="number"></div></div>
+                    </div>
+                    <div class="section-actions"><button class="btn btn-primary" data-save-section>Salvar limites por etapa</button></div>
+                </div>
+
+                <div class="institutional-section-card">
                     <div class="institutional-form-section-title">Observações da rede</div>
                     <div class="row">
                         <div class="col-12"><div class="form-group"><label>Diretrizes e observações gerais</label><textarea class="form-control" data-parameter-name="observacoes_rede" rows="5"></textarea></div></div>
+                        <div class="col-12"><div class="form-group"><label>Observações normativas</label><textarea class="form-control" data-parameter-name="observacoes_normativas" rows="5"></textarea></div></div>
                     </div>
                     <div class="section-actions"><button class="btn btn-primary" data-save-section>Salvar observações</button></div>
                 </div>
